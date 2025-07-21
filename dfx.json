@@ -1,0 +1,85 @@
+{
+  "version": 1,
+  "canisters": {
+    "socialwave_frontend": {
+      "type": "assets",
+      "source": ["dist/"],
+      "dependencies": ["socialwave_backend"],
+      "build": ["npm run build"]
+    },
+    "socialwave_backend": {
+      "type": "motoko",
+      "main": "src/socialwave_backend/main.mo",
+      "dependencies": [
+        "ai_engine",
+        "content_storage",
+        "analytics_engine",
+        "user_identity"
+      ]
+    },
+    "ai_engine": {
+      "type": "motoko",
+      "main": "src/ai_engine/main.mo",
+      "dependencies": ["content_storage"],
+      "build": {
+        "args": "--max-stable-pages 65536"
+      }
+    },
+    "content_storage": {
+      "type": "motoko",
+      "main": "src/content_storage/main.mo",
+      "build": {
+        "args": "--max-stable-pages 131072"
+      }
+    },
+    "analytics_engine": {
+      "type": "motoko",
+      "main": "src/analytics_engine/main.mo",
+      "dependencies": ["content_storage"],
+      "build": {
+        "args": "--max-stable-pages 32768"
+      }
+    },
+    "user_identity": {
+      "type": "motoko",
+      "main": "src/user_identity/main.mo",
+      "build": {
+        "args": "--max-stable-pages 16384"
+      }
+    }
+  },
+  "networks": {
+    "local": {
+      "bind": "127.0.0.1:4943",
+      "type": "ephemeral",
+      "replica": {
+        "port": 4943,
+        "subnet_type": "application"
+      }
+    },
+    "ic": {
+      "providers": ["https://ic0.app"],
+      "type": "persistent"
+    },
+    "playground": {
+      "providers": ["https://playground.dfinity.network"],
+      "type": "persistent"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    },
+    "replica": {
+      "port": 4943,
+      "subnet_type": "application"
+    }
+  },
+  "dfx": "0.15.0",
+  "output_env_file": ".env.local",
+  "build": {
+    "packtool": "moc",
+    "args": "--release"
+  }
+}
