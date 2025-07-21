@@ -1,10 +1,6 @@
 # SocialWave - AI-Powered Decentralized Social Media Management Platform
 
-[![Internet Computer](https://img.shields.io/badge/Internet%20Computer-ICP-blue)](https://internetcomputer.org/)
-[![AI-Decentralized Intelligence](https://img.shields.io/badge/Track-AI--Decentralized%20Intelligence-green)](https://dorahacks.io/hackathon/wchl25-qualification-round/detail)
-[![Hackathon](https://img.shields.io/badge/Hackathon-Web3%20Champions%20League-orange)](https://dorahacks.io/hackathon/wchl25-qualification-round/detail)
-
-## 🏆 Hackathon Submission - Web3 Champions League 2025
+# 🏆 Hackathon Submission - Web3 Champions League 2025
 
 **Track**: AI-Decentralized Intelligence  
 **Team**: SocialWave  
@@ -269,15 +265,7 @@ Push to the branch (git push origin feature/amazing-feature)
 Open a Pull Request
 📞 Contact & Support
 Team
-Technical Lead: [Your Name] - [your.email@socialwave.ai]
-Blockchain Developer: [Team Member 2] - [member2@socialwave.ai]
-Links
-Website: socialwave.adaptive.ai
-Twitter: @SocialWaveAI
-Discord: Join our community
-Documentation: docs.socialwave.ai
-Support
-Email: support@socialwave.ai
+Technical Lead: Varun Krishna varunk@theaigency.biz
 Discord: Technical support channel
 GitHub Issues: Bug reports and feature requests
 📄 License
@@ -289,15 +277,3 @@ DFINITY Foundation: For the amazing ICP ecosystem and tools
 Web3 Champions League: For organizing this incredible hackathon
 Open Source Community: For the libraries and tools that make this possible
 🚀 Built with ❤️ for the decentralized future of social media
-
-SocialWave - Where AI meets blockchain to revolutionize social media management
-
-
-
-This README is comprehensive and hackathon-ready with:
-
-✅ **All required elements**: Repository description, setup instructions, dfx.json, ICP integration  
-✅ **Hackathon-specific sections**: Track alignment, innovation highlights, submission requirements  
-✅ **Technical documentation**: Complete setup guide, deployment instructions, architecture  
-✅ **Professional presentation**: Badges, formatting, clear structure  
-✅ **Call-to-action**: Links to demo, contact information, contribution guidelines  
