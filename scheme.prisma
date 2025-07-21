@@ -1,0 +1,564 @@
+// SocialWave Prisma Schema
+// Last updated: 2025-06-20
+
+model User {
+  id                     String                   @id @default(cuid())
+  name                   String?
+  image                  String?
+  email                  String?
+  handle                 String?
+  isSuperAdmin           Boolean                  @default(false)
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime                 @updatedAt
+  lastLoginAt            DateTime?
+  hasCompletedTour       Boolean                  @default(false)
+  // Social accounts
+  accounts               Account[]
+  // Comments
+  comments               Comment[]
+  // Brand guidelines
+  brandGuidelines        BrandGuidelines?
+  // User settings
+  settings               UserSettings?
+  UserResponsePreference UserResponsePreference?
+  ContentStrategy        ContentStrategy?
+  UploadedDocument       UploadedDocument[]
+  RecommendationFeedback RecommendationFeedback[]
+  BrandSignal            BrandSignal?
+  ContentPillar          ContentPillar[]
+  GeneratedContent       GeneratedContent[]
+  ScheduledPost          ScheduledPost[]
+  BlogPost               BlogPost[]
+  BrandContext           BrandContext?
+  TrendAnalysis          TrendAnalysis[]
+  SavedInsight           SavedInsight[]
+  UserCredits            UserCredits?
+  CreditTransaction      CreditTransaction[]
+}
+
+model Account {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform     String // "facebook", "instagram", "twitter", "youtube", "linkedin"
+  name         String // Display name of the account
+  accountId    String // Platform-specific ID
+  accessToken  String // OAuth token or API key
+  refreshToken String? // For OAuth refresh
+  expiresAt    DateTime?
+  // Legacy fields - kept for backward compatibility
+  pageId       String? // For Facebook/Instagram pages
+  pageToken    String? // For Facebook/Instagram page access
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  // Comments from this account
+  comments     Comment[]
+  // Facebook pages
+  pages        Page[]
+
+  @@unique([userId, platform, accountId])
+}
+
+model Page {
+  id        String    @id @default(cuid())
+  accountId String
+  account   Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  pageId    String // Facebook page ID
+  pageName  String // Facebook page name
+  pageToken String // Facebook page access token
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  // Comments from this page
+  comments  Comment[]
+
+  @@unique([accountId, pageId])
+}
+
+model OAuthState {
+  id        String   @id @default(cuid())
+  userId    String
+  state     String   @unique
+  platform  String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model AIRequestLog {
+  id           String   @id @default(cuid())
+  userId       String
+  endpoint     String // Which API endpoint made the request
+  operation    String // What operation was performed (e.g., "sentiment_analysis")
+  timestamp    DateTime @default(now())
+  success      Boolean  @default(true)
+  errorMsg     String?
+  cacheKey     String? // Optional key for caching results
+  responseData String? // Cached response data as JSON string
+
+  @@index([userId, timestamp]) // Index for efficient querying by user and time
+  @@index([cacheKey])
+}
+
+model AnalyticsCache {
+  id          String    @id @default(cuid())
+  userId      String
+  cacheKey    String    @unique
+  cacheType   String
+  status      String // PENDING, GENERATING, COMPLETED, FAILED
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  error       String?
+  data        String? // JSON stringified data
+
+  @@index([userId, cacheType])
+}
+
+model BrandGuidelines {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  brandVoice       String   @default("professional") // formal, casual, friendly, professional
+  tonePriorities   String // Stored as JSON string
+  phrasesToUse     String // Stored as JSON string
+  phrasesToAvoid   String // Stored as JSON string
+  exampleResponses String // Stored as JSON string
+  additionalNotes  String? // any additional guidelines
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model UserResponsePreference {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Profiled style/intent
+  tone           String?
+  length         String? // short, medium, long
+  positivity     Float? // -1 to 1
+  directness     Float? // 0-1
+  keywords       String? // JSON string array
+  lastAnalyzedAt DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([userId])
+}
+
+model UserSettings {
+  id                           String    @id @default(cuid())
+  userId                       String    @unique
+  user                         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fetchFrequency               String    @default("manual") // manual, hourly, daily, weekly
+  emailAlertsEnabled           Boolean   @default(false)
+  emailAlertsPriorityThreshold Int       @default(8) // 1-10 scale, default to 8 (high priority)
+  lastAlertSentAt              DateTime? // To prevent duplicate alerts
+  createdAt                    DateTime  @default(now())
+  updatedAt                    DateTime  @updatedAt
+}
+
+model Comment {
+  id            String    @id @default(cuid())
+  // Platform details
+  platform      String // "facebook", "instagram", "twitter", "youtube", "linkedin"
+  commentId     String // Original ID from the platform
+  postId        String // ID of the post/content being commented on
+  // Parent-child relationship for threaded comments
+  parentId      String? // ID of parent comment (null for main/top-level comments)
+  parentComment Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: SetNull)
+  replies       Comment[] @relation("CommentReplies")
+  isMainComment Boolean   @default(true) // true for top-level comments, false for replies
+  // Comment content
+  text          String
+  authorName    String
+  authorId      String
+  authorImage   String?
+  createdAt     DateTime
+  // Response tracking
+  responded     Boolean   @default(false)
+  responseText  String?
+  respondedAt   DateTime?
+  status        String    @default("pending") // "pending", "responded", "reacted", "dismissed"
+  // Sentiment analysis
+  sentiment     String? // "positive", "neutral", "negative"
+  // AI analysis fields - cached to reduce repeated analysis
+  aiAnalyzed    Boolean   @default(false) // Whether this comment has been analyzed by AI
+  aiAnalyzedAt  DateTime? // When the AI analysis was performed
+  topics        String? // JSON string array of topics
+  priority      Int? // Priority score 1-10
+  // Engagement metrics
+  likeCount     Int       @default(0)
+  replyCount    Int       @default(0)
+  reactionsData String? // JSON string of reactions data
+  // Relations
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId     String
+  account       Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  // Facebook page relation (optional)
+  pageId        String?
+  page          Page?     @relation(fields: [pageId], references: [id], onDelete: SetNull)
+  // System fields
+  fetchedAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([platform, commentId])
+}
+
+model PageAnalytics {
+  id             String   @id @default(cuid())
+  pageId         String
+  date           DateTime
+  impressions    Int
+  reach          Int
+  engagementRate Float
+  followerCount  Int
+  createdAt      DateTime @default(now())
+
+  @@unique([pageId, date])
+}
+
+model PostAnalytics {
+  id          String   @id @default(cuid())
+  postId      String   @unique
+  impressions Int
+  reach       Int
+  engagement  Int
+  sentiment   String
+  createdAt   DateTime @default(now())
+}
+
+model ContentStrategy {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  strategyData String?
+  status       String   @default("NONE") // NONE, GENERATING, COMPLETED, FAILED
+  error        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// Tracks threads hidden by users from their view.
+
+model HiddenThread {
+  id        String   @id @default(cuid())
+  threadId  String   @unique
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model ContentPillar {
+  id                String             @id @default(cuid())
+  userId            String
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name              String
+  description       String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  generatedContents GeneratedContent[]
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+model GeneratedContent {
+  id                 String           @id @default(cuid())
+  userId             String
+  user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pillarId           String
+  pillar             ContentPillar    @relation(fields: [pillarId], references: [id], onDelete: Cascade)
+  title              String
+  type               String // "TEXT", "IMAGE", "VIDEO"
+  content            String // For text content or URL for image/video
+  status             String           @default("DRAFT") // DRAFT, PUBLISHED, ARCHIVED, PENDING, GENERATING, FAILED
+  sourceIdea         String? // The original idea that prompted this content (JSON string)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  tags               ContentTagging[]
+  // Fields from GeneratedVideo
+  museContentId      String?          @unique
+  museTaskId         String?
+  thumbnailUrl       String?
+  customThumbnailUrl String?
+
+  @@index([userId])
+  @@index([pillarId])
+}
+
+// New Model for Brand Signals - what the AI has learned
+
+model BrandSignal {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Learned attributes
+  preferredTones     String? // JSON array of preferred tones (e.g., ["witty", "formal"])
+  commonKeywords     String? // JSON array of frequently used keywords
+  engagementPatterns String? // JSON object describing when/how user engages
+  sentimentProfile   String? // JSON object for user's typical sentiment
+  contentPillars     String? // JSON array of most successful content pillars
+  lastUpdatedAt      DateTime @updatedAt
+  createdAt          DateTime @default(now())
+}
+
+model RecommendationFeedback {
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recommendationId String
+  source           String // Where the feedback was given, e.g. "content-strategy"
+  feedbackType     String // "love", "like", "neutral", "dislike"
+  feedbackTags     String? // JSON array of strings
+  feedbackComment  String?
+  createdAt        DateTime @default(now())
+
+  @@index([userId, recommendationId])
+}
+
+model UploadedDocument {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  url       String
+  fileType  String
+  size      Int
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model ViralThreadTag {
+  id        String               @id @default(cuid())
+  name      String
+  nameLower String
+  userId    String
+  threads   ViralThreadTagging[]
+  createdAt DateTime             @default(now())
+
+  @@unique([userId, nameLower])
+  @@index([userId])
+}
+
+model ViralThreadTagging {
+  id         String         @id @default(cuid())
+  threadId   String
+  tag        ViralThreadTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  tagId      String
+  assignedAt DateTime       @default(now())
+  assignedBy String // userId
+
+  @@unique([threadId, tagId])
+}
+
+model ContentTag {
+  id        String           @id @default(cuid())
+  name      String
+  nameLower String
+  userId    String
+  content   ContentTagging[]
+  createdAt DateTime         @default(now())
+
+  @@unique([userId, nameLower])
+  @@index([userId])
+}
+
+model ContentTagging {
+  id         String           @id @default(cuid())
+  content    GeneratedContent @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  contentId  String
+  tag        ContentTag       @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  tagId      String
+  assignedAt DateTime         @default(now())
+  assignedBy String // userId
+
+  @@unique([contentId, tagId])
+}
+
+model ScheduledPost {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content     String
+  platform    String
+  accountId   String
+  pageId      String?
+  scheduledAt DateTime
+  status      String   @default("PENDING") // PENDING, POSTED, FAILED
+  error       String?
+  sourceType  String // VIRAL_THREAD, VIDEO, GENERATED_CONTENT
+  sourceId    String
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId, status, scheduledAt])
+}
+
+model BlogPost {
+  id               String    @id @default(cuid())
+  title            String
+  slug             String    @unique
+  content          String
+  authorId         String
+  author           User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  publishedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  isPublished      Boolean   @default(false)
+  tags             String?
+  featuredImageUrl String?
+  metaTitle        String?
+  metaDescription  String?
+
+  @@index([authorId])
+  @@index([isPublished, publishedAt])
+}
+
+model BrandContext {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  industry           String?
+  niche              String?
+  targetAudience     String? // JSON object
+  brandPersonality   String? // JSON object
+  competitorAnalysis String? // JSON object
+  brandValues        String? // JSON array
+  contentThemes      String? // JSON array
+  riskTolerance      String   @default("medium") // low, medium, high
+  trendAdoptionSpeed String   @default("moderate") // conservative, moderate, early-adopter
+  lastAnalyzedAt     DateTime @default(now())
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model TrendingTopic {
+  id            String       @id @default(cuid())
+  platform      String // tiktok, instagram, twitter, youtube
+  topic         String
+  hashtag       String?
+  description   String?
+  momentum      Float        @default(0) // 0-1 trending momentum
+  viralityScore Float        @default(0) // 0-10 virality potential
+  category      String?
+  peakTime      DateTime?
+  detectedAt    DateTime     @default(now())
+  expiresAt     DateTime?
+  metadata      String? // JSON object with platform-specific data
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  trendMatches  TrendMatch[]
+
+  @@index([platform, momentum])
+  @@index([detectedAt])
+}
+
+model TrendMatch {
+  id               String        @id @default(cuid())
+  userId           String
+  trendId          String
+  trend            TrendingTopic @relation(fields: [trendId], references: [id], onDelete: Cascade)
+  matchScore       Float // 0-1 how well trend matches brand
+  opportunityScore Float // 0-1 opportunity potential
+  riskScore        Float // 0-1 brand risk assessment
+  timingScore      Float // 0-1 timing opportunity
+  brandAlignment   String? // JSON object with alignment details
+  generatedContent String? // Pre-generated content ideas
+  status           String        @default("active") // active, dismissed, used
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  @@unique([userId, trendId])
+  @@index([userId, opportunityScore])
+}
+
+model TrendAnalysis {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rawTrends      String // JSON object with raw trending topics data
+  brandAnalysis  String // JSON object with brand-specific analysis
+  brandContext   String? // Brand context used for analysis
+  industry       String?
+  targetAudience String?
+  contentGoals   String? // Comma-separated goals
+  avoidTopics    String? // Comma-separated topics to avoid
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([userId, createdAt])
+}
+
+model SavedInsight {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String // 'trending', 'viral', 'audience'
+  data      String // JSON string of the insight data
+  title     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, type])
+  @@index([createdAt])
+}
+
+// Credit System Models
+
+model UserCredits {
+  id                String              @id @default(cuid())
+  userId            String              @unique
+  user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  totalCredits      Float               @default(0) // Total credits available
+  usedCredits       Float               @default(0) // Credits consumed
+  subscriptionPlan  String              @default("none") // none, starter, professional, enterprise
+  monthlyAllocation Float               @default(0) // Monthly credit allocation based on plan
+  extraCredits      Float               @default(0) // Additional purchased credits
+  lastResetAt       DateTime            @default(now()) // When monthly credits were last reset
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  transactions      CreditTransaction[]
+
+  @@index([userId])
+}
+
+model CreditTransaction {
+  id            String      @id @default(cuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userCreditsId String
+  userCredits   UserCredits @relation(fields: [userCreditsId], references: [id], onDelete: Cascade)
+  type          String // 'usage', 'purchase', 'allocation', 'refund'
+  amount        Float // Positive for additions, negative for usage
+  operation     String // Specific operation that consumed/added credits
+  description   String? // Human-readable description
+  metadata      String? // JSON string with additional details
+  createdAt     DateTime    @default(now())
+
+  @@index([userId, createdAt])
+  @@index([type, createdAt])
+}
+
+model CreditPricing {
+  id             String   @id @default(cuid())
+  operation      String   @unique // e.g., 'generateContent', 'analyzeComment', etc.
+  creditsPerUnit Float // How many credits this operation costs
+  description    String? // Description of what this operation does
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([operation, isActive])
+}
+
+model Waitlist {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  usageDetails String // How they plan to use SocialWave
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([createdAt])
+}
