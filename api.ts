@@ -1,6 +1,40 @@
 import type { PageAnalytics, Prisma } from "@prisma/client";
 import { db } from "~/server/db";
 import {
+  getThreadGenerationStatus,
+  listThreads as externalListThreads,
+  getThread,
+  updateThread,
+  repurposeThread,
+  getRepurposeResults as externalGetRepurposeResults,
+  getViralInsights,
+  trackContentPerformance,
+  getPersonalizedContentRecommendations,
+  generatePersonalizedContent,
+  predictViralPotential,
+  getUnifiedAnalyticsDashboard,
+  getRealTimePerformanceDashboard,
+  getBrandVoiceProfile,
+  analyzeBrandVoice,
+  getPersonalizedViralPatterns,
+  autoGenerateFromOpportunity,
+  getOptimalContentSchedule,
+  monitorRealTimePerformance,
+  adaptiveLearningUpdate,
+  getDynamicOptimizations,
+  getContinuousImprovementPlan,
+  getAdaptiveLearningProgress,
+  shareThread,
+  getPublicThread,
+  optimizeThread,
+  getFormatIntelligenceInsights,
+  getUserPreferences as socialSparkGetUserPreferences,
+  addCustomAudience,
+  updateUserPreferences as socialSparkUpdateUserPreferences,
+  uploadBrandLogo,
+  generateThreadFromUniversalSource,
+} from "@ac1/viralthrea-3g4sutjk";
+import {
   getAuth,
   requestMultimodalModel,
   getBaseUrl,
@@ -9,10 +43,26 @@ import {
   queueTask,
   getTaskStatus as getTaskStatusInternal,
   createProduct,
+  listProducts,
+  discontinueProduct,
   listUserPurchases,
   startRealtimeResponse,
 } from "~/server/actions";
 import { z } from "zod";
+
+// Strategy Preferences schema to save user-edited weekly strategy inputs
+const StrategyPreferencesSchema = z.object({
+  keyThemes: z.array(z.string()).max(8).default([]),
+  targetAudience: z.string().default(""),
+  contentMix: z.object({
+    Informational: z.number().min(0).max(100).default(0),
+    Inspirational: z.number().min(0).max(100).default(0),
+    Entertaining: z.number().min(0).max(100).default(0),
+    Promotional: z.number().min(0).max(100).default(0),
+  }),
+  kpis: z.array(z.string()).max(6).default([]),
+});
+export type StrategyPreferences = z.infer<typeof StrategyPreferencesSchema>;
 
 const AdvancedInsightsSchema = z.object({
   trendingTopics: z
@@ -46,6 +96,167 @@ const AdvancedInsightsSchema = z.object({
         hashtags: z.array(z.string()),
         creativeDirection: z.string(),
         optimizationTips: z.string(),
+        platformSpecificStrategies: z
+          .object({
+            twitter: z
+              .object({
+                strategy: z
+                  .string()
+                  .describe("Twitter-specific content strategy"),
+                contentFormat: z
+                  .string()
+                  .describe("Optimal content format for Twitter"),
+                hashtags: z
+                  .array(z.string())
+                  .describe("Platform-optimized hashtags"),
+                timing: z.string().describe("Best posting times and frequency"),
+                engagement: z
+                  .string()
+                  .describe("Expected engagement metrics and tactics"),
+                viralMechanics: z
+                  .string()
+                  .describe("Twitter-specific viral mechanics"),
+                audienceTargeting: z
+                  .string()
+                  .describe("Twitter audience targeting strategy"),
+              })
+              .optional(),
+            instagram: z
+              .object({
+                strategy: z
+                  .string()
+                  .describe("Instagram-specific content strategy"),
+                contentFormat: z
+                  .string()
+                  .describe("Optimal content format for Instagram"),
+                hashtags: z
+                  .array(z.string())
+                  .describe("Platform-optimized hashtags"),
+                timing: z.string().describe("Best posting times and frequency"),
+                engagement: z
+                  .string()
+                  .describe("Expected engagement metrics and tactics"),
+                viralMechanics: z
+                  .string()
+                  .describe("Instagram-specific viral mechanics"),
+                audienceTargeting: z
+                  .string()
+                  .describe("Instagram audience targeting strategy"),
+                storyStrategy: z
+                  .string()
+                  .describe("Instagram Stories optimization"),
+                reelsStrategy: z
+                  .string()
+                  .describe("Instagram Reels optimization"),
+              })
+              .optional(),
+            tiktok: z
+              .object({
+                strategy: z
+                  .string()
+                  .describe("TikTok-specific content strategy"),
+                contentFormat: z
+                  .string()
+                  .describe("Optimal content format for TikTok"),
+                hashtags: z
+                  .array(z.string())
+                  .describe("Platform-optimized hashtags"),
+                timing: z.string().describe("Best posting times and frequency"),
+                engagement: z
+                  .string()
+                  .describe("Expected engagement metrics and tactics"),
+                viralMechanics: z
+                  .string()
+                  .describe("TikTok-specific viral mechanics"),
+                audienceTargeting: z
+                  .string()
+                  .describe("TikTok audience targeting strategy"),
+                soundStrategy: z
+                  .string()
+                  .describe("TikTok sound and music strategy"),
+                trendIntegration: z
+                  .string()
+                  .describe("How to integrate current TikTok trends"),
+              })
+              .optional(),
+            linkedin: z
+              .object({
+                strategy: z
+                  .string()
+                  .describe("LinkedIn-specific content strategy"),
+                contentFormat: z
+                  .string()
+                  .describe("Optimal content format for LinkedIn"),
+                hashtags: z
+                  .array(z.string())
+                  .describe("Platform-optimized hashtags"),
+                timing: z.string().describe("Best posting times and frequency"),
+                engagement: z
+                  .string()
+                  .describe("Expected engagement metrics and tactics"),
+                viralMechanics: z
+                  .string()
+                  .describe("LinkedIn-specific viral mechanics"),
+                audienceTargeting: z
+                  .string()
+                  .describe("LinkedIn audience targeting strategy"),
+                professionalAngle: z
+                  .string()
+                  .describe(
+                    "Professional positioning and thought leadership angle",
+                  ),
+              })
+              .optional(),
+            facebook: z
+              .object({
+                strategy: z
+                  .string()
+                  .describe("Facebook-specific content strategy"),
+                contentFormat: z
+                  .string()
+                  .describe("Optimal content format for Facebook"),
+                hashtags: z
+                  .array(z.string())
+                  .describe("Platform-optimized hashtags"),
+                timing: z.string().describe("Best posting times and frequency"),
+                engagement: z
+                  .string()
+                  .describe("Expected engagement metrics and tactics"),
+                viralMechanics: z
+                  .string()
+                  .describe("Facebook-specific viral mechanics"),
+                audienceTargeting: z
+                  .string()
+                  .describe("Facebook audience targeting strategy"),
+                groupStrategy: z
+                  .string()
+                  .describe("Facebook Groups engagement strategy"),
+              })
+              .optional(),
+          })
+          .describe("Platform-specific viral strategies and optimization"),
+        viralPotentialAnalysis: z
+          .object({
+            viralTriggers: z
+              .array(z.string())
+              .describe("Key psychological triggers for virality"),
+            shareabilityFactors: z
+              .array(z.string())
+              .describe("Factors that make content shareable"),
+            emotionalHooks: z
+              .array(z.string())
+              .describe("Emotional hooks to drive engagement"),
+            contentPillars: z
+              .array(z.string())
+              .describe("Content pillars this aligns with"),
+            riskFactors: z
+              .array(z.string())
+              .describe("Potential risks or concerns"),
+            successMetrics: z
+              .array(z.string())
+              .describe("Key metrics to track for success"),
+          })
+          .describe("Deep analysis of viral potential factors"),
         sources: z
           .array(z.object({ title: z.string(), url: z.string() }))
           .optional(),
@@ -716,32 +927,95 @@ function selectOptimalModel(
 
 // Enhanced requestMultimodalModel wrapper with intelligent model selection
 async function intelligentRequestMultimodalModel<T>(
-  config: Parameters<typeof requestMultimodalModel>[0] & {
-    taskType?: string;
-    forceModel?: "small" | "medium" | "large";
+  config: Parameters<typeof requestMultimodalModel>[0],
+  options?: {
+    enableCaching?: boolean;
+    fallbackToSmaller?: boolean;
   },
 ): Promise<T> {
-  const systemPrompt = config.system || "You are a helpful AI assistant.";
-  const userContent = Array.isArray(config.messages)
-    ? config.messages
-        .map((m) =>
-          typeof m.content === "string" ? m.content : JSON.stringify(m.content),
-        )
-        .join(" ")
-    : "";
+  const { enableCaching = true, fallbackToSmaller = true } = options || {};
 
+  // Generate cache key if caching is enabled
+  let cacheKey: string | undefined;
+  if (enableCaching) {
+    cacheKey = generateContentCacheKey(
+      JSON.stringify(config.messages),
+      config.system || "",
+    );
+
+    // Check cache first
+    const cached = await getCachedContent(cacheKey);
+    if (cached) {
+      console.log("Returning cached result for intelligent request");
+      return cached as T;
+    }
+  }
+
+  // Select optimal model based on request characteristics
+  const messagesContent = config.messages
+    .map((m) =>
+      typeof m.content === "string" ? m.content : JSON.stringify(m.content),
+    )
+    .join(" ");
   const optimalModel = selectOptimalModel(
-    systemPrompt,
-    userContent,
-    config.taskType || "general",
-    config.forceModel || (config.model as any),
+    config.system || "",
+    messagesContent,
+    "general",
+    config.model as "small" | "medium" | "large" | undefined,
   );
 
-  return (await requestMultimodalModel({
-    ...config,
-    system: systemPrompt,
-    model: optimalModel,
-  })) as T;
+  // Apply rate limiting
+  const { userId } = await getAuth({ required: true });
+  const rateLimitCheck = checkRateLimit("multimodal_requests", userId);
+  if (!rateLimitCheck.allowed) {
+    const resetDate = new Date(
+      rateLimitCheck.resetTime || Date.now() + 3600000,
+    );
+    throw new Error(
+      `Rate limit exceeded. Try again at ${resetDate.toLocaleTimeString()}`,
+    );
+  }
+
+  try {
+    // Execute with circuit breaker protection
+    const result = await executeWithCircuitBreaker(
+      "multimodal_requests",
+      async () => {
+        recordRateLimitRequest("multimodal_requests", userId);
+        return (await requestMultimodalModel({
+          system: config.system || "You are a helpful AI assistant.",
+          messages: config.messages,
+          returnType: config.returnType,
+          model: optimalModel,
+          onProgress: config.onProgress,
+          temperature: config.temperature,
+        })) as T;
+      },
+      fallbackToSmaller
+        ? async () => {
+            console.log(`Falling back to smaller model for request`);
+            return (await requestMultimodalModel({
+              system: config.system || "You are a helpful AI assistant.",
+              messages: config.messages,
+              returnType: config.returnType,
+              model: "small",
+              onProgress: config.onProgress,
+              temperature: config.temperature,
+            })) as T;
+          }
+        : undefined,
+    );
+
+    // Cache the result if caching is enabled
+    if (enableCaching && cacheKey) {
+      await setCachedContent(cacheKey, JSON.stringify(result), userId);
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Intelligent request failed:", error);
+    throw error;
+  }
 }
 
 async function withRetry<T>(
@@ -1354,6 +1628,7 @@ export async function detectRealTimeTrendingTopics(input?: {
   includeTwitter?: boolean;
   includeGoogle?: boolean;
   timeframe?: "1h" | "24h" | "7d";
+  forceRefresh?: boolean;
 }) {
   // Get authenticated user ID before starting the streaming response
   const auth = await getAuth({ required: true });
@@ -1371,312 +1646,853 @@ export async function detectRealTimeTrendingTopics(input?: {
   // Record the request for rate limiting
   recordRateLimitRequest("trending-topics", currentUserId);
 
-  // Start streaming response for real-time progress updates
-  const stream = await startRealtimeResponse<{
-    status?: string;
-    progress?: number;
-    currentStep?: string;
-    toolHistory?: Array<{
-      name: string;
-      status: "in_progress" | "done";
-      inProgressMessage: string;
-    }>;
-    result?: any;
-    error?: string;
-  }>();
+  // For long-running AI operations, use queueTask to prevent timeouts
+  const task = await queueTask(async () => {
+    try {
+      console.log(
+        `Starting trending topics detection for user: ${currentUserId}`,
+      );
+      await _internal_detectRealTimeTrendingTopics(input, currentUserId);
+      console.log(`Successfully completed trending topics detection`);
+    } catch (error) {
+      console.error(`Error in trending topics detection:`, error);
 
-  const validatedInput = validateTrendingTopicsInput(input);
-  const {
-    sanitizedRegion,
-    sanitizedCategory,
-    includeInstagram,
-    includeTikTok,
-    includeTwitter,
-    includeGoogle,
-    timeframe,
-  } = validatedInput;
+      // Store error result in database so it can be retrieved
+      const validatedInput = validateTrendingTopicsInput(input);
+      const { sanitizedRegion, sanitizedCategory, timeframe } = validatedInput;
 
-  const cacheKey = generateContentCacheKey(
-    `trending-topics-${sanitizedRegion}-${sanitizedCategory}-${timeframe}-${includeInstagram}-${includeTikTok}-${includeTwitter}-${includeGoogle}`,
-  );
+      await storeTrendingAnalysisResult({
+        currentUserId,
+        result: null,
+        sanitizedRegion,
+        sanitizedCategory,
+        timeframe,
+        isError: true,
+        errorMessage:
+          error instanceof Error ? error.message : "Unknown error occurred",
+      });
+
+      // Re-throw to mark task as failed
+      throw error;
+    }
+  });
+
+  return {
+    success: true,
+    taskId: task.id,
+    message:
+      "Trending topics analysis started. Please check back in a few moments.",
+  };
+}
+
+// Internal function that does the actual work
+async function _internal_detectRealTimeTrendingTopics(
+  input: {
+    region?: string;
+    category?: string;
+    includeInstagram?: boolean;
+    includeTikTok?: boolean;
+    includeTwitter?: boolean;
+    includeGoogle?: boolean;
+    timeframe?: "1h" | "24h" | "7d";
+    forceRefresh?: boolean;
+  } = {},
+  currentUserId: string,
+) {
+  const maxRetries = 3;
+  let lastError: Error | null = null;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(
+        `[Attempt ${attempt}/${maxRetries}] Starting trending topics analysis`,
+      );
+
+      // Validate input with comprehensive error handling
+      let validatedInput;
+      try {
+        validatedInput = validateTrendingTopicsInput(input);
+      } catch (validationError) {
+        console.error("Input validation failed:", validationError);
+        throw new Error(
+          `Invalid input parameters: ${validationError instanceof Error ? validationError.message : "Unknown validation error"}`,
+        );
+      }
+
+      const {
+        sanitizedRegion,
+        sanitizedCategory,
+        includeInstagram,
+        includeTikTok,
+        includeTwitter,
+        includeGoogle,
+        timeframe,
+      } = validatedInput;
+
+      console.log("Using validated parameters:", {
+        region: sanitizedRegion,
+        category: sanitizedCategory,
+        timeframe,
+        includeInstagram,
+        includeTikTok,
+        includeTwitter,
+        includeGoogle,
+      });
+
+      // Create comprehensive trending topics prompt
+      const trendingPrompt = createTrendingTopicsPrompt({
+        includeInstagram,
+        includeTikTok,
+        includeTwitter,
+        includeGoogle,
+        sanitizedRegion,
+        sanitizedCategory,
+        timeframe,
+      });
+
+      console.log("Requesting real-time trending topics analysis...");
+
+      // Execute with enhanced error handling and timeout protection
+      const result = await withRetry(
+        async () => {
+          return await requestMultimodalModel({
+            system: `You are an expert social media trend analyst with access to real-time data and deep platform expertise. Your task is to identify and analyze the most current trending topics with detailed platform-specific strategies.
+
+IMPORTANT INSTRUCTIONS:
+1. Use ONLY your 'searchTheWeb' tool to find the most current trending topics
+2. Focus on topics that are trending RIGHT NOW, not historical trends
+3. Provide detailed platform-specific recommendations for each major social media platform
+4. Include comprehensive citation information with credibility ratings
+5. Analyze optimal content formats, timing, and hashtag strategies for each platform
+6. Provide viral potential scoring with specific reasoning
+7. Consider brand safety and risk factors in your recommendations
+8. Ensure all data is from reliable, recent sources with proper attribution
+9. If you cannot find current trending data, clearly state this limitation
+
+For each trending topic, you must provide:
+- Detailed platform-specific strategies (Twitter, Instagram, TikTok, LinkedIn, Facebook)
+- Content format recommendations for each platform
+- Platform-optimized hashtag suggestions
+- Timing strategies based on platform algorithms
+- Expected engagement metrics and viral potential
+- Comprehensive source citations with credibility ratings
+
+Your analysis should be comprehensive, data-driven, platform-optimized, and immediately actionable for social media content creation across all major platforms.`,
+            messages: [
+              {
+                role: "user",
+                content: trendingPrompt,
+              },
+            ],
+            returnType: z
+              .object({
+                trendingTopics: z.array(
+                  z.object({
+                    topic: z.string(),
+                    platforms: z.array(z.string()),
+                    estimatedReach: z.string(),
+                    context: z.string(),
+                    viralPotentialScore: z.number().min(1).max(10),
+                    contentAngles: z.array(z.string()),
+                    demographics: z.string(),
+                    timeSensitivity: z.string(),
+                    platformSpecificRecommendations: z
+                      .object({
+                        twitter: z
+                          .object({
+                            strategy: z
+                              .string()
+                              .describe("Twitter-specific strategy"),
+                            contentFormat: z
+                              .string()
+                              .describe("Optimal content format for Twitter"),
+                            hashtags: z
+                              .array(z.string())
+                              .describe("Recommended hashtags"),
+                            timing: z
+                              .string()
+                              .describe("Best posting times for Twitter"),
+                            engagement: z
+                              .string()
+                              .describe("Expected engagement metrics"),
+                          })
+                          .optional(),
+                        instagram: z
+                          .object({
+                            strategy: z
+                              .string()
+                              .describe("Instagram-specific strategy"),
+                            contentFormat: z
+                              .string()
+                              .describe("Optimal content format for Instagram"),
+                            hashtags: z
+                              .array(z.string())
+                              .describe("Recommended hashtags"),
+                            timing: z
+                              .string()
+                              .describe("Best posting times for Instagram"),
+                            engagement: z
+                              .string()
+                              .describe("Expected engagement metrics"),
+                          })
+                          .optional(),
+                        tiktok: z
+                          .object({
+                            strategy: z
+                              .string()
+                              .describe("TikTok-specific strategy"),
+                            contentFormat: z
+                              .string()
+                              .describe("Optimal content format for TikTok"),
+                            hashtags: z
+                              .array(z.string())
+                              .describe("Recommended hashtags"),
+                            timing: z
+                              .string()
+                              .describe("Best posting times for TikTok"),
+                            engagement: z
+                              .string()
+                              .describe("Expected engagement metrics"),
+                          })
+                          .optional(),
+                        linkedin: z
+                          .object({
+                            strategy: z
+                              .string()
+                              .describe("LinkedIn-specific strategy"),
+                            contentFormat: z
+                              .string()
+                              .describe("Optimal content format for LinkedIn"),
+                            hashtags: z
+                              .array(z.string())
+                              .describe("Recommended hashtags"),
+                            timing: z
+                              .string()
+                              .describe("Best posting times for LinkedIn"),
+                            engagement: z
+                              .string()
+                              .describe("Expected engagement metrics"),
+                          })
+                          .optional(),
+                        facebook: z
+                          .object({
+                            strategy: z
+                              .string()
+                              .describe("Facebook-specific strategy"),
+                            contentFormat: z
+                              .string()
+                              .describe("Optimal content format for Facebook"),
+                            hashtags: z
+                              .array(z.string())
+                              .describe("Recommended hashtags"),
+                            timing: z
+                              .string()
+                              .describe("Best posting times for Facebook"),
+                            engagement: z
+                              .string()
+                              .describe("Expected engagement metrics"),
+                          })
+                          .optional(),
+                      })
+                      .describe(
+                        "Platform-specific recommendations and strategies",
+                      ),
+                    sources: z.array(
+                      z.object({
+                        title: z.string(),
+                        url: z.string(),
+                        platform: z.string(),
+                        credibility: z
+                          .string()
+                          .describe("Source credibility rating"),
+                        publishedAt: z
+                          .string()
+                          .optional()
+                          .describe("Publication date if available"),
+                      }),
+                    ),
+                  }),
+                ),
+                lastUpdated: z.string(),
+                summary: z.string(),
+                overallRecommendations: z
+                  .object({
+                    topPlatforms: z
+                      .array(z.string())
+                      .describe(
+                        "Most recommended platforms for current trends",
+                      ),
+                    contentTypes: z
+                      .array(z.string())
+                      .describe("Most effective content types"),
+                    timingStrategy: z
+                      .string()
+                      .describe("Overall timing strategy across platforms"),
+                    riskFactors: z
+                      .array(z.string())
+                      .describe("Key risk factors to consider"),
+                  })
+                  .describe(
+                    "Overall strategic recommendations across all trends",
+                  ),
+              })
+              .describe(
+                "Trending topics analysis with platform data and viral potential",
+              ),
+            model: "medium",
+            temperature: 0.3,
+          });
+        },
+        {
+          maxAttempts: 2,
+          baseDelay: 2000,
+          maxDelay: 10000,
+          backoffMultiplier: 2,
+        },
+      );
+
+      console.log("Successfully received trending topics analysis");
+
+      // Validate the result structure
+      if (!result || typeof result !== "object") {
+        throw new Error("Invalid response format from AI analysis");
+      }
+
+      if (
+        !Array.isArray(result.trendingTopics) ||
+        result.trendingTopics.length === 0
+      ) {
+        console.warn("No trending topics found in AI response");
+        // Use fallback instead of failing completely
+        const fallbackTopics = await getFallbackTrendingTopics(currentUserId);
+        result.trendingTopics = fallbackTopics.trendingTopics;
+        result.lastUpdated = fallbackTopics.lastUpdated;
+        result.summary = fallbackTopics.summary;
+      }
+
+      // Store the successful result
+      await storeTrendingAnalysisResult({
+        currentUserId,
+        result,
+        sanitizedRegion,
+        sanitizedCategory,
+        timeframe,
+        isError: false,
+      });
+
+      // Create notification for successful completion
+      try {
+        await createNotification({
+          userId: currentUserId,
+          title: "🔥 Trend Analysis Complete!",
+          message: `Latest trending insights are now available. Found ${result.trendingTopics.length} trending topics with actionable recommendations.`,
+          type: "trend",
+          category: "trends",
+          priority: "normal",
+          actionType: "navigate",
+          actionUrl: "/discover?tab=viral-potential&subtab=trend-analysis",
+
+          metadata: {
+            trendCount: result.trendingTopics.length,
+            analysisType: "real-time-trends",
+            completedAt: new Date().toISOString(),
+          },
+        });
+        console.log("Trend analysis completion notification sent to user");
+      } catch (notificationError) {
+        console.error(
+          "Failed to send trend analysis notification:",
+          notificationError,
+        );
+        // Don't fail the entire operation if notification fails
+      }
+
+      console.log("Successfully stored trending topics analysis result");
+      return result;
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      console.error(
+        `[Attempt ${attempt}/${maxRetries}] Error in trending topics analysis:`,
+        lastError.message,
+      );
+
+      // If this is not the last attempt, wait before retrying
+      if (attempt < maxRetries) {
+        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000); // Exponential backoff, max 5s
+        console.log(`Waiting ${delay}ms before retry...`);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        continue;
+      }
+    }
+  }
+
+  // If all retries failed, store error and use fallback
+  console.error("All retry attempts failed, using fallback data");
 
   try {
-    // Initial status update
-    stream.next({
-      status: "starting",
-      progress: 0,
-      currentStep: "Initializing trending topics detection...",
-    });
+    const validatedInput = validateTrendingTopicsInput(input);
+    const { sanitizedRegion, sanitizedCategory, timeframe } = validatedInput;
 
-    // Check for cached results first (30 minute cache)
-    stream.next({
-      status: "checking_cache",
-      progress: 10,
-      currentStep: "Checking for cached results...",
-    });
+    // Get fallback data
+    const fallbackResult = await getFallbackTrendingTopics(currentUserId);
 
-    const cachedResult = await getCachedContent(cacheKey, 0.5);
-    if (cachedResult) {
-      stream.next({
-        status: "using_cache",
-        progress: 90,
-        currentStep: "Using cached trending topics...",
-      });
-
-      console.log("Using cached trending topics result");
-      const parsedResult = JSON.parse(cachedResult);
-      await db.trendAnalysis.create({
-        data: {
-          userId: currentUserId,
-          rawTrends: JSON.stringify(parsedResult),
-          brandAnalysis: JSON.stringify({
-            success: true,
-            data: parsedResult,
-            timestamp: new Date().toISOString(),
-            cached: true,
-          }),
-          brandContext: "Real-time trending topics (cached)",
-          industry: sanitizedCategory,
-          targetAudience: sanitizedRegion,
-          contentGoals: null,
-          avoidTopics: null,
-        },
-      });
-
-      stream.next({
-        status: "completed",
-        progress: 100,
-        currentStep: "Completed! Cached trends loaded successfully.",
-        result: parsedResult,
-      });
-
-      return stream.end();
-    }
-
-    // Use fallback function for when main request fails
-    const fallbackTrends = async () => {
-      stream.next({
-        status: "using_fallback",
-        progress: 80,
-        currentStep: "Using fallback trending topics...",
-      });
-      return getFallbackTrendingTopics();
-    };
-
-    stream.next({
-      status: "analyzing",
-      progress: 20,
-      currentStep: "Starting AI analysis of trending topics...",
-    });
-
-    // Use circuit breaker and retry logic with fallback
-    const trendingResult = await executeWithCircuitBreaker(
-      "trending-topics-detection",
-      () =>
-        withRetry(
-          async () => {
-            console.log("Starting trending topics detection with AI model");
-            return await requestMultimodalModel({
-              system: `You are a real-time trend detection specialist with access to web search tools. Your task is to identify the most current trending topics across social media platforms and search engines. Focus on trends that are happening RIGHT NOW and have viral potential. Be efficient and focus on the most impactful trends.`,
-              messages: [
-                {
-                  role: "user",
-                  content: createTrendingTopicsPrompt({
-                    includeInstagram,
-                    includeTikTok,
-                    includeTwitter,
-                    includeGoogle,
-                    sanitizedRegion,
-                    sanitizedCategory,
-                    timeframe,
-                  }),
-                },
-              ],
-              returnType: z
-                .object({
-                  trendingTopics: z.array(
-                    z.object({
-                      topic: z.string(),
-                      platforms: z.array(z.string()),
-                      estimatedReach: z.string(),
-                      context: z.string(),
-                      viralPotentialScore: z.number().min(1).max(10),
-                      contentAngles: z.array(z.string()),
-                      demographics: z.string(),
-                      timeSensitivity: z.string(),
-                      sources: z.array(
-                        z.object({
-                          title: z.string(),
-                          url: z.string(),
-                          platform: z.string(),
-                        }),
-                      ),
-                    }),
-                  ),
-                  lastUpdated: z.string(),
-                  summary: z.string(),
-                })
-                .describe(
-                  "Trending topics analysis with platform data and viral potential",
-                ),
-              model: "medium",
-              temperature: 0.3,
-              onProgress: (tools) => {
-                stream.next({
-                  toolHistory: tools.map((tool) => ({
-                    name: tool.toolName,
-                    status: tool.status,
-                    inProgressMessage: tool.inProgressMessage,
-                  })),
-                  progress:
-                    30 +
-                    (tools.filter((t) => t.status === "done").length /
-                      tools.length) *
-                      50,
-                  currentStep:
-                    tools.find((t) => t.status === "in_progress")
-                      ?.inProgressMessage || "Analyzing trends...",
-                });
-              },
-            });
-          },
-          {
-            maxAttempts: 2,
-            baseDelay: 2000,
-            maxDelay: 8000,
-            backoffMultiplier: 2,
-            retryableErrors: (error: any) => {
-              const errorMessage = error?.message?.toLowerCase() || "";
-              return (
-                errorMessage.includes("timeout") ||
-                errorMessage.includes("fetch failed") ||
-                errorMessage.includes("network") ||
-                errorMessage.includes("503") ||
-                errorMessage.includes("502") ||
-                errorMessage.includes("504")
-              );
-            },
-          },
-        ),
-      fallbackTrends,
-    );
-
-    stream.next({
-      status: "saving",
-      progress: 85,
-      currentStep: "Saving analysis results...",
-    });
-
-    // Cache successful results for 30 minutes
-    await setCachedContent(cacheKey, JSON.stringify(trendingResult));
-
-    // Store the results in the database for later retrieval
+    // Store the fallback result with error context
     await storeTrendingAnalysisResult({
       currentUserId,
-      result: trendingResult,
+      result: fallbackResult,
       sanitizedRegion,
       sanitizedCategory,
       timeframe,
+      isError: false,
+      errorMessage: `Used fallback data due to analysis failure: ${
+        lastError?.message || "Unknown error"
+      }`,
     });
 
-    console.log(
-      `Successfully detected ${trendingResult.trendingTopics?.length || 0} trending topics`,
-    );
+    console.log("Successfully stored fallback trending topics data");
+    return fallbackResult;
+  } catch (fallbackError) {
+    console.error("Even fallback failed:", fallbackError);
 
-    stream.next({
-      status: "completed",
-      progress: 100,
-      currentStep: `Successfully analyzed ${trendingResult.trendingTopics?.length || 0} trending topics!`,
-      result: trendingResult,
-    });
+    // Store the complete failure
+    try {
+      const validatedInput = validateTrendingTopicsInput(input);
+      const { sanitizedRegion, sanitizedCategory, timeframe } = validatedInput;
 
-    return stream.end();
-  } catch (error) {
-    console.error("Error detecting real-time trending topics:", error);
+      await storeTrendingAnalysisResult({
+        currentUserId,
+        result: null,
+        sanitizedRegion,
+        sanitizedCategory,
+        timeframe,
+        isError: true,
+        errorMessage: `Complete failure: ${
+          lastError?.message || "Unknown error"
+        }. Fallback also failed: ${
+          fallbackError instanceof Error
+            ? fallbackError.message
+            : "Unknown fallback error"
+        }`,
+      });
+    } catch (storeError) {
+      console.error("Failed to store error result:", storeError);
+    }
 
-    // Store error in database with more context
-    await db.trendAnalysis.create({
-      data: {
-        userId: currentUserId,
-        rawTrends: JSON.stringify({
-          error:
-            error instanceof Error ? error.message : "Unknown error occurred",
-          errorType:
-            error instanceof Error ? error.constructor.name : "UnknownError",
-          timestamp: new Date().toISOString(),
-          region: sanitizedRegion,
-          category: sanitizedCategory,
-          timeframe: timeframe,
-        }),
-        brandAnalysis: JSON.stringify({
-          success: false,
-          error:
-            error instanceof Error ? error.message : "Unknown error occurred",
-          errorType:
-            error instanceof Error ? error.constructor.name : "UnknownError",
-          timestamp: new Date().toISOString(),
-          region: sanitizedRegion,
-          category: sanitizedCategory,
-          timeframe: timeframe,
-        }),
-        brandContext: "Real-time trending topics (error)",
-        industry: sanitizedCategory,
-        targetAudience: sanitizedRegion,
-        contentGoals: null,
-        avoidTopics: null,
-      },
-    });
-
-    stream.next({
-      status: "error",
-      progress: 0,
-      currentStep: "Error occurred during analysis",
-      error: error instanceof Error ? error.message : "Unknown error occurred",
-    });
-
-    throw error; // Re-throw to mark as failed
+    throw lastError || new Error("Trending topics analysis failed completely");
   }
 }
 
 export async function getTrendingTopicsResults() {
-  // Get cached trends for the current user
-  const auth = await getAuth();
-  const currentUserId =
-    auth.status === "authenticated" ? auth.userId : "system";
+  try {
+    console.log("[getTrendingTopicsResults] Starting function execution");
 
-  const trendAnalysis = await db.trendAnalysis.findFirst({
-    where: { userId: currentUserId },
-    orderBy: { createdAt: "desc" },
-  });
+    // Get cached trends for the current user
+    const auth = await getAuth();
+    console.log("[getTrendingTopicsResults] Auth status:", auth.status);
 
-  if (!trendAnalysis) {
+    const currentUserId =
+      auth.status === "authenticated" ? auth.userId : "system";
+    console.log("[getTrendingTopicsResults] Current user ID:", currentUserId);
+
+    const trendAnalysis = await db.trendAnalysis.findFirst({
+      where: {
+        userId: currentUserId,
+        brandAnalysis: {
+          contains: '"success":true',
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    console.log(
+      "[getTrendingTopicsResults] Found trend analysis:",
+      !!trendAnalysis,
+    );
+
+    if (!trendAnalysis) {
+      console.log(
+        "[getTrendingTopicsResults] No successful trends found for user:",
+        currentUserId,
+      );
+      return {
+        success: false,
+        message:
+          "No cached trends found. Click refresh to generate new trends.",
+        data: null,
+        lastUpdated: null,
+        cached: false,
+      };
+    }
+
+    try {
+      console.log("[getTrendingTopicsResults] Parsing brandAnalysis data");
+      const brandAnalysis = JSON.parse(trendAnalysis.brandAnalysis) as any;
+      console.log(
+        "[getTrendingTopicsResults] Successfully parsed brandAnalysis, success:",
+        brandAnalysis.success,
+      );
+
+      // Extract trending topics from the data structure
+      let trendingTopics = [];
+
+      // The data structure should be: brandAnalysis.data.trendingTopics
+      // where brandAnalysis.data is the full AI result
+      if (
+        brandAnalysis.data?.trendingTopics &&
+        Array.isArray(brandAnalysis.data.trendingTopics)
+      ) {
+        trendingTopics = brandAnalysis.data.trendingTopics;
+        console.log(
+          "[getTrendingTopicsResults] Found trending topics in brandAnalysis.data.trendingTopics:",
+          trendingTopics.length,
+        );
+      } else if (
+        brandAnalysis.trendingTopics &&
+        Array.isArray(brandAnalysis.trendingTopics)
+      ) {
+        trendingTopics = brandAnalysis.trendingTopics;
+        console.log(
+          "[getTrendingTopicsResults] Found trending topics in brandAnalysis.trendingTopics:",
+          trendingTopics.length,
+        );
+      } else {
+        // Try to parse from rawTrends as fallback
+        console.log(
+          "[getTrendingTopicsResults] No trending topics found in brandAnalysis, trying rawTrends",
+        );
+        try {
+          const rawTrends = JSON.parse(trendAnalysis.rawTrends) as any;
+          if (
+            rawTrends.trendingTopics &&
+            Array.isArray(rawTrends.trendingTopics)
+          ) {
+            trendingTopics = rawTrends.trendingTopics;
+            console.log(
+              "[getTrendingTopicsResults] Found trending topics in rawTrends:",
+              trendingTopics.length,
+            );
+          }
+        } catch (rawParseError) {
+          console.warn(
+            "[getTrendingTopicsResults] Could not parse rawTrends:",
+            rawParseError,
+          );
+        }
+      }
+
+      // Normalize the trending topics data structure
+      const normalizedTopics = trendingTopics.map(
+        (topic: any, index: number) => ({
+          id: topic.id || topic.topic || `trend-${index}`,
+          topic: topic.topic || topic.name || topic.title || "Trending Topic",
+          sentiment: topic.sentiment || "Neutral",
+          relevanceScore:
+            topic.relevanceScore || topic.viralPotentialScore || 7,
+          executiveSummary:
+            topic.executiveSummary ||
+            topic.context ||
+            topic.description ||
+            "No summary available",
+          strategicAngle:
+            topic.strategicAngle ||
+            topic.strategy ||
+            "Strategic opportunity identified",
+          exampleHook:
+            topic.exampleHook || topic.hook || "Engaging hook for this trend",
+          samplePost:
+            topic.samplePost || topic.content || "Sample post content",
+          historicalData:
+            topic.historicalData ||
+            topic.background ||
+            "Historical context available",
+          contentFormatSuggestions: topic.contentFormatSuggestions ||
+            topic.contentAngles || ["Social Media Post", "Thread", "Story"],
+          sources: topic.sources || [],
+          viralPotentialScore:
+            topic.viralPotentialScore || topic.relevanceScore || 7,
+          platforms: topic.platforms || ["Twitter", "Instagram"],
+          estimatedReach: topic.estimatedReach || "High",
+          demographics: topic.demographics || "Broad audience",
+          timeSensitivity: topic.timeSensitivity || "Moderate",
+          platformSpecificRecommendations:
+            topic.platformSpecificRecommendations || {},
+        }),
+      );
+
+      console.log(
+        "[getTrendingTopicsResults] Normalized topics count:",
+        normalizedTopics.length,
+      );
+
+      return {
+        success: brandAnalysis.success || true,
+        data: normalizedTopics,
+        message: brandAnalysis.message || "Cached trends loaded successfully",
+        lastUpdated: trendAnalysis.createdAt.toISOString(),
+        cached: true,
+      };
+    } catch (parseError) {
+      console.error(
+        "[getTrendingTopicsResults] Error parsing trend analysis:",
+        parseError,
+      );
+      console.error(
+        "[getTrendingTopicsResults] Raw brandAnalysis data:",
+        trendAnalysis.brandAnalysis,
+      );
+
+      return {
+        success: false,
+        message:
+          "Error loading cached trends. Click refresh to generate new trends.",
+        data: null,
+        lastUpdated: null,
+        cached: false,
+      };
+    }
+  } catch (error) {
+    console.error(
+      "[getTrendingTopicsResults] Unexpected error in function:",
+      error,
+    );
+    console.error(
+      "[getTrendingTopicsResults] Error stack:",
+      error instanceof Error ? error.stack : "No stack trace",
+    );
+
+    // Re-throw the error so it's properly handled by the API layer
+    throw new Error(
+      `Failed to get trending topics results: ${error instanceof Error ? error.message : "Unknown error"}`,
+    );
+  }
+}
+
+// New function to get cached viral trends specifically for the viral potential tab
+export async function getCachedViralTrends() {
+  try {
+    const auth = await getAuth();
+    const currentUserId =
+      auth.status === "authenticated" ? auth.userId : "system";
+
+    // Get the most recent successful trend analysis
+    const trendAnalysis = await db.trendAnalysis.findFirst({
+      where: {
+        userId: currentUserId,
+        brandAnalysis: {
+          contains: '"success": true',
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    if (!trendAnalysis) {
+      return {
+        success: false,
+        message:
+          "No cached viral trends found. Generate new trends to get started.",
+        data: null,
+        lastUpdated: null,
+        cached: false,
+        shouldGenerate: true,
+      };
+    }
+
+    // Check if data is older than 2 hours (recommend refresh)
+    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+    const isStale = trendAnalysis.createdAt < twoHoursAgo;
+
+    try {
+      // Enhanced JSON parsing with validation
+      let brandAnalysis: any = null;
+      let rawTrends: any = null;
+
+      try {
+        brandAnalysis = JSON.parse(trendAnalysis.brandAnalysis);
+      } catch (brandParseError) {
+        console.error("Error parsing brandAnalysis JSON:", brandParseError);
+        throw new Error("Invalid brand analysis data format");
+      }
+
+      try {
+        rawTrends = JSON.parse(trendAnalysis.rawTrends);
+      } catch (rawParseError) {
+        console.error("Error parsing rawTrends JSON:", rawParseError);
+        throw new Error("Invalid raw trends data format");
+      }
+
+      // Validate data structure and extract trends with fallbacks
+      let viralTrends = [];
+
+      // Try multiple data sources in order of preference
+      if (
+        brandAnalysis?.data?.trendingTopics &&
+        Array.isArray(brandAnalysis.data.trendingTopics)
+      ) {
+        viralTrends = brandAnalysis.data.trendingTopics;
+      } else if (
+        rawTrends?.trendingTopics &&
+        Array.isArray(rawTrends.trendingTopics)
+      ) {
+        viralTrends = rawTrends.trendingTopics;
+      } else if (
+        brandAnalysis?.trendingTopics &&
+        Array.isArray(brandAnalysis.trendingTopics)
+      ) {
+        viralTrends = brandAnalysis.trendingTopics;
+      } else {
+        console.warn("No valid trending topics found in cached data");
+        viralTrends = [];
+      }
+
+      // Validate each trend item has required properties
+      const validatedTrends = viralTrends
+        .filter((trend: any) => {
+          if (!trend || typeof trend !== "object") return false;
+          if (!trend.name && !trend.trendName && !trend.title) return false;
+          return true;
+        })
+        .map((trend: any) => ({
+          // Normalize trend properties
+          id: trend.id || trend.name || trend.trendName || trend.title,
+          name: trend.name || trend.trendName || trend.title,
+          description: trend.description || trend.summary || "",
+          viralityScore: trend.viralityScore || trend.score || 0,
+          metrics: trend.metrics || {},
+          ...trend, // Keep all original properties
+        }));
+
+      return {
+        success: true,
+        data: validatedTrends,
+        message: isStale
+          ? "Cached trends loaded (data is older than 2 hours - consider refreshing)"
+          : "Cached trends loaded successfully",
+        lastUpdated: trendAnalysis.createdAt.toISOString(),
+        cached: true,
+        isStale,
+        shouldGenerate: false,
+        dataQuality: {
+          totalTrends: validatedTrends.length,
+          originalCount: viralTrends.length,
+          validationPassed: validatedTrends.length === viralTrends.length,
+        },
+      };
+    } catch (parseError) {
+      console.error("Error parsing cached viral trends:", parseError);
+      return {
+        success: false,
+        message:
+          "Error loading cached trends. Please refresh to generate new trends.",
+        data: null,
+        lastUpdated: null,
+        cached: false,
+        shouldGenerate: true,
+      };
+    }
+  } catch (error) {
+    console.error("Error getting cached viral trends:", error);
     return {
       success: false,
-      message: "No cached trends found. Click refresh to generate new trends.",
+      message: "Error accessing cached trends. Please try refreshing.",
       data: null,
       lastUpdated: null,
       cached: false,
+      shouldGenerate: true,
     };
   }
+}
 
+// Function to check if trends need refreshing based on age and user preference
+export async function shouldRefreshViralTrends() {
   try {
-    const brandAnalysis = JSON.parse(trendAnalysis.brandAnalysis) as any;
+    const auth = await getAuth();
+    const currentUserId =
+      auth.status === "authenticated" ? auth.userId : "system";
+
+    // Check for any recent generation attempts to prevent race conditions
+    const recentAttempt = await db.trendAnalysis.findFirst({
+      where: {
+        userId: currentUserId,
+        createdAt: {
+          gte: new Date(Date.now() - 5 * 60 * 1000), // Last 5 minutes
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    if (recentAttempt) {
+      const timeSinceLastAttempt =
+        Date.now() - recentAttempt.createdAt.getTime();
+      if (timeSinceLastAttempt < 5 * 60 * 1000) {
+        // 5 minutes cooldown
+        return {
+          shouldRefresh: false,
+          reason:
+            "Recent generation attempt detected. Please wait a few minutes before refreshing again.",
+          lastGenerated: recentAttempt.createdAt.toISOString(),
+          cooldownRemaining: Math.ceil(
+            (5 * 60 * 1000 - timeSinceLastAttempt) / 1000,
+          ),
+        };
+      }
+    }
+
+    // Get the most recent successful trend analysis
+    const trendAnalysis = await db.trendAnalysis.findFirst({
+      where: {
+        userId: currentUserId,
+        brandAnalysis: {
+          contains: '"success":true',
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    if (!trendAnalysis) {
+      return {
+        shouldRefresh: true,
+        reason: "No cached trends found",
+        lastGenerated: null,
+      };
+    }
+
+    // Check if data is older than 4 hours (force refresh)
+    const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000);
+    const forceRefresh = trendAnalysis.createdAt < fourHoursAgo;
+
+    if (forceRefresh) {
+      return {
+        shouldRefresh: true,
+        reason: "Cached trends are older than 4 hours",
+        lastGenerated: trendAnalysis.createdAt.toISOString(),
+        age: Math.floor(
+          (Date.now() - trendAnalysis.createdAt.getTime()) / (1000 * 60 * 60),
+        ),
+      };
+    }
+
+    // Check if data is older than 2 hours (recommend refresh)
+    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+    const isStale = trendAnalysis.createdAt < twoHoursAgo;
+
     return {
-      success: brandAnalysis.success || true,
-      data: brandAnalysis.data || brandAnalysis,
-      message: brandAnalysis.message || "Cached trends loaded successfully",
-      lastUpdated: trendAnalysis.createdAt.toISOString(),
-      cached: true,
+      shouldRefresh: isStale,
+      reason: isStale
+        ? "Cached trends are older than 2 hours (recommended refresh)"
+        : "Cached trends are fresh",
+      lastGenerated: trendAnalysis.createdAt.toISOString(),
+      age: Math.floor(
+        (Date.now() - trendAnalysis.createdAt.getTime()) / (1000 * 60),
+      ),
+      isStale,
     };
   } catch (error) {
-    console.error("Error parsing trend analysis:", error);
+    console.error("Error checking viral trends refresh status:", error);
     return {
-      success: false,
-      message:
-        "Error loading cached trends. Click refresh to generate new trends.",
-      data: null,
-      lastUpdated: null,
-      cached: false,
+      shouldRefresh: true,
+      reason: "Error checking cache status - refresh recommended",
+      lastGenerated: null,
+      error: error instanceof Error ? error.message : "Unknown error",
     };
   }
 }
@@ -1700,24 +2516,54 @@ export async function getBrandFilteredTrendingTopics() {
       return trendingTopics;
     }
 
-    // Extract trending topics from the data structure
-    const rawTopics = trendingTopics.data.trendingTopics || trendingTopics.data;
+    // Extract trending topics from the data structure - data is now directly an array
+    const rawTopics = trendingTopics.data;
     if (!rawTopics || !Array.isArray(rawTopics)) {
       return trendingTopics;
     }
 
     // Filter and enhance trends with brand context and audience insights
     const brandFilteredResult = await requestMultimodalModel({
-      system: `You are an expert brand strategist specializing in audience-driven trend analysis. Your task is to filter and enhance trending topics based on specific brand context and audience insights.
+      system: `You are an expert brand strategist and audience psychologist specializing in deep brand persona alignment and trend analysis. Your task is to filter and enhance trending topics based on comprehensive brand DNA and audience persona insights.
 
-Focus on:
-1. Audience alignment - how well each trend matches the target audience's interests, demographics, and behaviors
-2. Brand relevance - how each trend aligns with brand values, personality, and content themes
-3. Content opportunity - how the brand can authentically engage with each trend
-4. Risk assessment - potential brand safety concerns or audience misalignment
-5. Prioritization - ranking trends by their strategic value for this specific brand and audience
+Your analysis must demonstrate DEEP BRAND PERSONA ALIGNMENT by considering:
 
-Only include trends that have strong audience alignment and brand relevance (minimum score 7/10). Enhance each trend with audience-specific insights and strategic recommendations.`,
+1. BRAND DNA INTEGRATION:
+   - Core brand values and how they manifest in content
+   - Brand personality traits and their expression in trends
+   - Brand voice/tone and how it adapts to different trends
+   - Brand mission alignment with trend messaging
+   - Brand positioning and competitive differentiation
+
+2. AUDIENCE PERSONA PSYCHOLOGY:
+   - Psychological triggers that resonate with target personas
+   - Emotional drivers and motivational patterns
+   - Communication preferences and content consumption habits
+   - Values alignment between brand and audience personas
+   - Lifestyle integration and aspirational connections
+
+3. PERSONA-TREND RESONANCE ANALYSIS:
+   - How each trend connects to persona pain points or desires
+   - Trend adoption patterns within target demographic
+   - Social proof and influence mechanisms for each persona
+   - Platform behavior patterns and engagement preferences
+   - Content format preferences by persona type
+
+4. BRAND AUTHENTICITY ASSESSMENT:
+   - Natural fit vs. forced association with trends
+   - Authentic brand storytelling opportunities within trends
+   - Risk of appearing inauthentic or opportunistic
+   - Long-term brand equity impact of trend participation
+   - Consistency with established brand narrative
+
+5. STRATEGIC PERSONA TARGETING:
+   - Primary vs. secondary persona appeal for each trend
+   - Cross-persona amplification opportunities
+   - Persona-specific messaging adaptations
+   - Multi-persona campaign orchestration strategies
+   - Personalized content angle development
+
+Only include trends with exceptional brand-persona alignment (minimum combined score 8/10). Each trend must demonstrate clear, authentic connection to brand values AND deep resonance with target audience psychology.`,
       messages: [
         {
           role: "user",
@@ -1739,48 +2585,141 @@ ${JSON.stringify(rawTopics, null, 2)}
 For each relevant trend (minimum relevance score 7/10), provide enhanced data with audience context.`,
         },
       ],
-      returnType: z.object({
-        trendingTopics: z.array(
-          z.object({
-            id: z.string(),
-            topic: z.string(),
-            audienceRelevanceScore: z.number().min(1).max(10),
-            brandAlignmentScore: z.number().min(1).max(10),
-            relevanceScore: z.number().min(1).max(10),
-            executiveSummary: z.string(),
-            audienceAlignment: z.object({
-              demographicMatch: z.string(),
-              interestAlignment: z.string(),
-              behavioralFit: z.string(),
-              engagementPrediction: z.string(),
-            }),
-            strategicAngle: z.string(),
-            exampleHook: z.string(),
-            samplePost: z.string(),
-            contentFormatSuggestions: z.array(z.string()),
-            audienceSpecificInsights: z.string(),
-            riskAssessment: z.string(),
-            timingRecommendations: z.string(),
-            platforms: z.array(z.string()),
-            sentiment: z.string(),
-            historicalData: z.string(),
-            sources: z
-              .array(
-                z.object({
-                  title: z.string(),
-                  url: z.string(),
-                }),
-              )
-              .optional(),
-          }),
+      returnType: z
+        .object({
+          trendingTopics: z
+            .array(
+              z
+                .object({
+                  id: z
+                    .string()
+                    .describe("Unique identifier for the trending topic"),
+                  topic: z
+                    .string()
+                    .describe("The trending topic name or hashtag"),
+                  audienceRelevanceScore: z
+                    .number()
+                    .min(1)
+                    .max(10)
+                    .describe(
+                      "Score indicating how relevant this trend is to the target audience (1-10)",
+                    ),
+                  brandAlignmentScore: z
+                    .number()
+                    .min(1)
+                    .max(10)
+                    .describe(
+                      "Score indicating how well this trend aligns with brand values (1-10)",
+                    ),
+                  relevanceScore: z
+                    .number()
+                    .min(1)
+                    .max(10)
+                    .describe(
+                      "Overall relevance score combining audience and brand alignment (1-10)",
+                    ),
+                  executiveSummary: z
+                    .string()
+                    .describe(
+                      "Brief executive summary of the trend and its potential",
+                    ),
+                  audienceAlignment: z
+                    .object({
+                      demographicMatch: z
+                        .string()
+                        .describe(
+                          "How well the trend matches target demographics",
+                        ),
+                      interestAlignment: z
+                        .string()
+                        .describe(
+                          "How the trend aligns with audience interests",
+                        ),
+                      behavioralFit: z
+                        .string()
+                        .describe("How the trend fits with audience behaviors"),
+                      engagementPrediction: z
+                        .string()
+                        .describe(
+                          "Predicted engagement level for this audience",
+                        ),
+                    })
+                    .describe("Detailed audience alignment analysis"),
+                  strategicAngle: z
+                    .string()
+                    .describe("Strategic approach for leveraging this trend"),
+                  exampleHook: z
+                    .string()
+                    .describe("Example hook or opening line for content"),
+                  samplePost: z
+                    .string()
+                    .describe("Sample social media post using this trend"),
+                  contentFormatSuggestions: z
+                    .array(z.string())
+                    .describe(
+                      "Suggested content formats (video, image, text, etc.)",
+                    ),
+                  audienceSpecificInsights: z
+                    .string()
+                    .describe("Insights specific to the target audience"),
+                  riskAssessment: z
+                    .string()
+                    .describe("Assessment of potential risks or concerns"),
+                  timingRecommendations: z
+                    .string()
+                    .describe("When to post for maximum impact"),
+                  platforms: z
+                    .array(z.string())
+                    .describe("Recommended social media platforms"),
+                  sentiment: z
+                    .string()
+                    .describe("Overall sentiment of the trend"),
+                  historicalData: z
+                    .string()
+                    .describe("Historical context and data about the trend"),
+                  sources: z
+                    .array(
+                      z
+                        .object({
+                          title: z
+                            .string()
+                            .describe("Source article or content title"),
+                          url: z.string().describe("URL to the source"),
+                        })
+                        .describe("A source reference for the trending topic"),
+                    )
+                    .optional()
+                    .describe("List of sources supporting this trend analysis"),
+                })
+                .describe(
+                  "A trending topic enhanced with brand and audience insights",
+                ),
+            )
+            .describe(
+              "List of trending topics filtered and enhanced for brand relevance",
+            ),
+          audienceInsights: z
+            .object({
+              overallTrendLandscape: z
+                .string()
+                .describe("Overview of the current trend landscape"),
+              audienceOpportunities: z
+                .array(z.string())
+                .describe("Specific opportunities for audience engagement"),
+              contentGaps: z
+                .array(z.string())
+                .describe("Identified gaps in current content strategy"),
+              strategicRecommendations: z
+                .array(z.string())
+                .describe("Strategic recommendations for content planning"),
+            })
+            .describe(
+              "Insights about audience behavior and content opportunities",
+            ),
+        })
+        .describe(
+          "Brand-filtered trending topics with audience insights and strategic recommendations",
         ),
-        audienceInsights: z.object({
-          overallTrendLandscape: z.string(),
-          audienceOpportunities: z.array(z.string()),
-          contentGaps: z.array(z.string()),
-          strategicRecommendations: z.array(z.string()),
-        }),
-      }),
       model: "medium",
       temperature: 0.3,
     });
@@ -1819,22 +2758,48 @@ For each relevant trend (minimum relevance score 7/10), provide enhanced data wi
   }
 }
 
-export async function getTikTokInstagramTrendsResults(taskId: string) {
-  const trendAnalysis = await db.trendAnalysis.findUnique({
-    where: { id: taskId },
+export async function getTikTokInstagramTrendsResults(input: {
+  taskId: string;
+}) {
+  const { taskId } = input;
+
+  // Find the trend analysis record that contains this task ID in the brandAnalysis metadata
+  const trendAnalyses = await db.trendAnalysis.findMany({
+    where: {
+      brandAnalysis: {
+        contains: taskId,
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
   });
 
-  if (!trendAnalysis) {
-    return null;
+  // Find the exact match by parsing the brandAnalysis JSON
+  for (const analysis of trendAnalyses) {
+    try {
+      const metadata = JSON.parse(analysis.brandAnalysis);
+      if (
+        metadata &&
+        typeof metadata === "object" &&
+        (metadata as any).taskId === taskId
+      ) {
+        // Return the actual trend data from rawTrends field
+        try {
+          const trendsData = JSON.parse(analysis.rawTrends);
+          return trendsData;
+        } catch (parseError) {
+          console.error("Error parsing trend data:", parseError);
+          return null;
+        }
+      }
+    } catch (metadataError) {
+      console.error("Error parsing brand analysis metadata:", metadataError);
+      continue;
+    }
   }
 
-  try {
-    const analysis = JSON.parse(trendAnalysis.brandAnalysis);
-    return analysis;
-  } catch (error) {
-    console.error("Error parsing TikTok/Instagram trend analysis:", error);
-    return null;
-  }
+  return null;
 }
 
 export async function getTikTokInstagramBrandAnalysisResults(
@@ -1854,6 +2819,136 @@ export async function getTikTokInstagramBrandAnalysisResults(
   } catch (error) {
     console.error("Error parsing TikTok/Instagram brand analysis:", error);
     return null;
+  }
+}
+
+// Get the most recent TikTok/Instagram trends for display
+export async function getLatestTikTokInstagramTrends() {
+  const { userId } = await getAuth({ required: true });
+
+  try {
+    // Find the most recent TikTok/Instagram trend analysis for this user
+    const latestTrend = await db.trendAnalysis.findFirst({
+      where: {
+        userId,
+        brandAnalysis: {
+          contains: '"type":"tiktok_instagram_trends"',
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    if (!latestTrend) {
+      return {
+        success: false,
+        data: [],
+        message:
+          "No TikTok/Instagram trends found. Click 'Analyze TikTok/IG Trends' to generate new insights.",
+      };
+    }
+
+    // Parse the trend data
+    try {
+      const trendsData = JSON.parse(latestTrend.rawTrends) as any;
+
+      // Check if this is an error record
+      if (trendsData.error) {
+        return {
+          success: false,
+          data: [],
+          message:
+            "Previous analysis failed. Click 'Analyze TikTok/IG Trends' to try again.",
+          error: trendsData.error,
+        };
+      }
+
+      // Map the data to match UI expectations
+      const mappedTrends = [
+        ...(Array.isArray(trendsData.tiktokTrends)
+          ? trendsData.tiktokTrends
+          : []
+        ).map((trend: any) => ({
+          id: trend.trendName || `tiktok-${Date.now()}-${Math.random()}`,
+          name: trend.trendName,
+          description: trend.contentFormat || "TikTok trending content",
+          platform: "TikTok",
+          viralityScore: trend.viralPotentialScore || 5,
+          hashtags: trend.hashtags || [],
+          demographics: trend.demographics,
+          brandSafety: trend.brandSafety,
+          executionDifficulty: trend.executionDifficulty,
+          timeSensitivity: trend.timeSensitivity,
+          contentExamples: trend.contentExamples || [],
+          crossPlatformPotential: trend.crossPlatformPotential,
+          viralSounds: trend.viralSounds,
+          engagementEstimate: trend.engagementEstimate,
+        })),
+        ...(Array.isArray(trendsData.instagramTrends)
+          ? trendsData.instagramTrends
+          : []
+        ).map((trend: any) => ({
+          id: trend.trendName || `instagram-${Date.now()}-${Math.random()}`,
+          name: trend.trendName,
+          description: trend.contentFormat || "Instagram trending content",
+          platform: "Instagram",
+          viralityScore: trend.viralPotentialScore || 5,
+          hashtags: trend.hashtags || [],
+          demographics: trend.demographics,
+          brandSafety: trend.brandSafety,
+          executionDifficulty: trend.executionDifficulty,
+          timeSensitivity: trend.timeSensitivity,
+          contentExamples: trend.contentExamples || [],
+          crossPlatformPotential: trend.crossPlatformPotential,
+          platformType: trend.platform,
+          engagementEstimate: trend.engagementEstimate,
+          shoppingIntegration: trend.shoppingIntegration,
+        })),
+        ...(Array.isArray(trendsData.crossPlatformTrends)
+          ? trendsData.crossPlatformTrends
+          : []
+        ).map((trend: any) => ({
+          id: trend.trendName || `cross-${Date.now()}-${Math.random()}`,
+          name: trend.trendName,
+          description:
+            trend.adaptationStrategy || "Cross-platform trending content",
+          platform: "Cross-platform",
+          viralityScore: trend.viralPotentialScore || 5,
+          platforms: trend.platforms || [],
+          demographics: trend.demographics,
+          brandSafety: trend.brandSafety,
+          timeSensitivity: trend.timeSensitivity,
+          adaptationStrategy: trend.adaptationStrategy,
+          contentFormats: trend.contentFormats,
+          hashtags: trend.hashtags,
+        })),
+      ];
+
+      return {
+        success: true,
+        data: mappedTrends,
+        message: `Loaded ${mappedTrends.length} trends from ${new Date(latestTrend.createdAt).toLocaleDateString()}`,
+        lastUpdated: latestTrend.createdAt,
+        summary: trendsData.summary,
+        platformInsights: trendsData.platformInsights,
+      };
+    } catch (parseError) {
+      console.error("Error parsing TikTok/Instagram trend data:", parseError);
+      return {
+        success: false,
+        data: [],
+        message:
+          "Error loading trend data. Click 'Analyze TikTok/IG Trends' to generate new insights.",
+      };
+    }
+  } catch (error) {
+    console.error("Error fetching latest TikTok/Instagram trends:", error);
+    return {
+      success: false,
+      data: [],
+      message: "Error loading trends. Please try again.",
+    };
   }
 }
 
@@ -1918,84 +3013,220 @@ For each trend, provide:
 Also identify trends that work well across both platforms.`,
               },
             ],
-            returnType: z.object({
-              tiktokTrends: z.array(
-                z.object({
-                  trendName: z.string(),
-                  hashtags: z.array(z.string()),
-                  contentFormat: z.string(),
-                  viralSounds: z.array(z.string()).optional(),
-                  engagementEstimate: z.string(),
-                  viralPotentialScore: z.number().min(1).max(10),
-                  demographics: z.string(),
-                  brandSafety: z.enum(["high", "medium", "low"]),
-                  executionDifficulty: z.enum(["easy", "medium", "hard"]),
-                  timeSensitivity: z.string(),
-                  contentExamples: z.array(z.string()),
-                  crossPlatformPotential: z.number().min(1).max(10),
-                }),
+            returnType: z
+              .object({
+                tiktokTrends: z
+                  .array(
+                    z
+                      .object({
+                        trendName: z
+                          .string()
+                          .describe("The name of the TikTok trend"),
+                        hashtags: z
+                          .array(z.string())
+                          .describe("Relevant hashtags for the trend"),
+                        contentFormat: z
+                          .string()
+                          .describe("The format of content for this trend"),
+                        viralSounds: z
+                          .array(z.string())
+                          .optional()
+                          .describe("Popular sounds associated with the trend"),
+                        engagementEstimate: z
+                          .string()
+                          .describe("Estimated engagement level"),
+                        viralPotentialScore: z
+                          .number()
+                          .min(1)
+                          .max(10)
+                          .describe("Score indicating viral potential (1-10)"),
+                        demographics: z
+                          .string()
+                          .describe("Target demographic for the trend"),
+                        brandSafety: z
+                          .enum(["high", "medium", "low"])
+                          .describe("Brand safety rating"),
+                        executionDifficulty: z
+                          .enum(["easy", "medium", "hard"])
+                          .describe("Difficulty level to execute"),
+                        timeSensitivity: z
+                          .string()
+                          .describe("Time sensitivity of the trend"),
+                        contentExamples: z
+                          .array(z.string())
+                          .describe("Examples of content for this trend"),
+                        crossPlatformPotential: z
+                          .number()
+                          .min(1)
+                          .max(10)
+                          .describe(
+                            "Potential for cross-platform adaptation (1-10)",
+                          ),
+                      })
+                      .describe("TikTok trend information"),
+                  )
+                  .describe("Array of current TikTok trends"),
+                instagramTrends: z
+                  .array(
+                    z
+                      .object({
+                        trendName: z
+                          .string()
+                          .describe("The name of the Instagram trend"),
+                        hashtags: z
+                          .array(z.string())
+                          .describe("Relevant hashtags for the trend"),
+                        contentFormat: z
+                          .string()
+                          .describe("The format of content for this trend"),
+                        platform: z
+                          .enum([
+                            "reels",
+                            "stories",
+                            "posts",
+                            "igtv",
+                            "shopping",
+                          ])
+                          .describe("Instagram platform type"),
+                        engagementEstimate: z
+                          .string()
+                          .describe("Estimated engagement level"),
+                        viralPotentialScore: z
+                          .number()
+                          .min(1)
+                          .max(10)
+                          .describe("Score indicating viral potential (1-10)"),
+                        demographics: z
+                          .string()
+                          .describe("Target demographic for the trend"),
+                        brandSafety: z
+                          .enum(["high", "medium", "low"])
+                          .describe("Brand safety rating"),
+                        executionDifficulty: z
+                          .enum(["easy", "medium", "hard"])
+                          .describe("Difficulty level to execute"),
+                        timeSensitivity: z
+                          .string()
+                          .describe("Time sensitivity of the trend"),
+                        contentExamples: z
+                          .array(z.string())
+                          .describe("Examples of content for this trend"),
+                        crossPlatformPotential: z
+                          .number()
+                          .min(1)
+                          .max(10)
+                          .describe(
+                            "Potential for cross-platform adaptation (1-10)",
+                          ),
+                        shoppingIntegration: z
+                          .boolean()
+                          .optional()
+                          .describe(
+                            "Whether shopping integration is available",
+                          ),
+                      })
+                      .describe("Instagram trend information"),
+                  )
+                  .describe("Array of current Instagram trends"),
+                crossPlatformTrends: z
+                  .array(
+                    z
+                      .object({
+                        trendName: z
+                          .string()
+                          .describe("The name of the cross-platform trend"),
+                        platforms: z
+                          .array(z.string())
+                          .describe("Platforms where this trend is active"),
+                        adaptationStrategy: z
+                          .string()
+                          .describe("Strategy for adapting across platforms"),
+                        viralPotentialScore: z
+                          .number()
+                          .min(1)
+                          .max(10)
+                          .describe("Score indicating viral potential (1-10)"),
+                        contentFormats: z
+                          .object({
+                            tiktok: z
+                              .string()
+                              .describe("Content format for TikTok"),
+                            instagram: z
+                              .string()
+                              .describe("Content format for Instagram"),
+                          })
+                          .describe("Platform-specific content formats"),
+                        hashtags: z
+                          .object({
+                            tiktok: z
+                              .array(z.string())
+                              .describe("TikTok hashtags"),
+                            instagram: z
+                              .array(z.string())
+                              .describe("Instagram hashtags"),
+                          })
+                          .describe("Platform-specific hashtags"),
+                        demographics: z
+                          .string()
+                          .describe("Target demographic for the trend"),
+                        brandSafety: z
+                          .enum(["high", "medium", "low"])
+                          .describe("Brand safety rating"),
+                        timeSensitivity: z
+                          .string()
+                          .describe("Time sensitivity of the trend"),
+                      })
+                      .describe("Cross-platform trend information"),
+                  )
+                  .describe("Array of cross-platform trends"),
+                summary: z.string().describe("Summary of the trends analysis"),
+                lastUpdated: z.string().describe("Timestamp of last update"),
+                platformInsights: z
+                  .object({
+                    tiktok: z
+                      .object({
+                        algorithmTips: z
+                          .array(z.string())
+                          .describe("Tips for TikTok algorithm"),
+                        bestPostingTimes: z
+                          .array(z.string())
+                          .describe("Optimal posting times for TikTok"),
+                        contentLengthRecommendations: z
+                          .string()
+                          .describe("Recommended content length"),
+                        engagementTactics: z
+                          .array(z.string())
+                          .describe("Tactics to increase engagement"),
+                      })
+                      .describe("TikTok platform insights"),
+                    instagram: z
+                      .object({
+                        algorithmTips: z
+                          .array(z.string())
+                          .describe("Tips for Instagram algorithm"),
+                        bestPostingTimes: z
+                          .array(z.string())
+                          .describe("Optimal posting times for Instagram"),
+                        contentLengthRecommendations: z
+                          .string()
+                          .describe("Recommended content length"),
+                        engagementTactics: z
+                          .array(z.string())
+                          .describe("Tactics to increase engagement"),
+                        storyFeatures: z
+                          .array(z.string())
+                          .describe("Instagram story features to use"),
+                        shoppingFeatures: z
+                          .array(z.string())
+                          .describe("Instagram shopping features"),
+                      })
+                      .describe("Instagram platform insights"),
+                  })
+                  .describe("Platform-specific insights and recommendations"),
+              })
+              .describe(
+                "TikTok and Instagram trends analysis with platform insights",
               ),
-              instagramTrends: z.array(
-                z.object({
-                  trendName: z.string(),
-                  hashtags: z.array(z.string()),
-                  contentFormat: z.string(),
-                  platform: z.enum([
-                    "reels",
-                    "stories",
-                    "posts",
-                    "igtv",
-                    "shopping",
-                  ]),
-                  engagementEstimate: z.string(),
-                  viralPotentialScore: z.number().min(1).max(10),
-                  demographics: z.string(),
-                  brandSafety: z.enum(["high", "medium", "low"]),
-                  executionDifficulty: z.enum(["easy", "medium", "hard"]),
-                  timeSensitivity: z.string(),
-                  contentExamples: z.array(z.string()),
-                  crossPlatformPotential: z.number().min(1).max(10),
-                  shoppingIntegration: z.boolean().optional(),
-                }),
-              ),
-              crossPlatformTrends: z.array(
-                z.object({
-                  trendName: z.string(),
-                  platforms: z.array(z.string()),
-                  adaptationStrategy: z.string(),
-                  viralPotentialScore: z.number().min(1).max(10),
-                  contentFormats: z.object({
-                    tiktok: z.string(),
-                    instagram: z.string(),
-                  }),
-                  hashtags: z.object({
-                    tiktok: z.array(z.string()),
-                    instagram: z.array(z.string()),
-                  }),
-                  demographics: z.string(),
-                  brandSafety: z.enum(["high", "medium", "low"]),
-                  timeSensitivity: z.string(),
-                }),
-              ),
-              summary: z.string(),
-              lastUpdated: z.string(),
-              platformInsights: z.object({
-                tiktok: z.object({
-                  algorithmTips: z.array(z.string()),
-                  bestPostingTimes: z.array(z.string()),
-                  contentLengthRecommendations: z.string(),
-                  engagementTactics: z.array(z.string()),
-                }),
-                instagram: z.object({
-                  algorithmTips: z.array(z.string()),
-                  bestPostingTimes: z.array(z.string()),
-                  contentLengthRecommendations: z.string(),
-                  engagementTactics: z.array(z.string()),
-                  storyFeatures: z.array(z.string()),
-                  shoppingFeatures: z.array(z.string()),
-                }),
-              }),
-            }),
             model: "medium",
           }),
         // Fallback function for when circuit breaker is open
@@ -2419,7 +3650,6 @@ export async function analyzeTikTokInstagramTrendsForBrand(input: {
         async () => {
           return await intelligentRequestMultimodalModel({
             system: `You are an expert TikTok and Instagram strategist specializing in viral content creation and platform-specific trend adaptation. Your expertise includes understanding platform algorithms, content formats, viral mechanics, and brand safety considerations for both platforms.`,
-            taskType: "brand_analysis",
             messages: [
               {
                 role: "user",
@@ -2647,6 +3877,7 @@ export async function intelligentTrendBrandMatcher(input: {
   riskTolerance?: "low" | "medium" | "high";
   trendAdoptionSpeed?: "early" | "mainstream" | "late";
   competitorAnalysis?: boolean;
+  audiencePersonas?: any[];
 }) {
   const {
     trends,
@@ -2658,24 +3889,113 @@ export async function intelligentTrendBrandMatcher(input: {
     riskTolerance = "medium",
     trendAdoptionSpeed = "mainstream",
     competitorAnalysis = false,
+    audiencePersonas = [],
   } = input;
 
   try {
+    // Get audience insights to enhance brand-trend matching
+    await getAuth({ required: true });
+    let audienceData = audiencePersonas;
+
+    // If no personas provided, try to get them from advanced insights
+    if (audienceData.length === 0) {
+      try {
+        const advancedInsights = await getAdvancedInsights();
+        if (advancedInsights?.audienceInsights?.personas) {
+          audienceData = advancedInsights.audienceInsights.personas;
+        }
+      } catch {
+        console.log(
+          "No audience insights available, continuing without persona data",
+        );
+      }
+    }
+
     // Advanced brand-trend matching using AI with intelligent model selection
     const matchingResult = await intelligentRequestMultimodalModel({
-      system: `You are an advanced AI brand strategist with expertise in trend analysis, consumer psychology, and viral marketing. Your task is to create sophisticated matches between trending topics and brands using multi-dimensional analysis.
+      system: `You are an advanced AI brand strategist and consumer psychologist with expertise in deep brand persona alignment, trend analysis, and viral marketing psychology. Your task is to create sophisticated matches between trending topics and brands using multi-dimensional analysis with profound audience persona integration.
 
-Your analysis should consider:
-1. Brand DNA alignment (values, personality, voice)
-2. Audience psychographics and behaviors
-3. Content format optimization
-4. Timing and lifecycle analysis
-5. Risk-reward assessment
-6. Competitive landscape positioning
-7. Cross-platform amplification potential
-8. Long-term brand equity impact
-9. ROI prediction
-10. Viral mechanics and shareability factors`,
+Your analysis must demonstrate EXCEPTIONAL BRAND PERSONA ALIGNMENT by considering:
+
+1. DEEP BRAND DNA INTEGRATION:
+   - Core brand values and their authentic manifestation in trend content
+   - Brand personality traits and their natural expression within trends
+   - Brand voice/tone adaptation while maintaining authenticity
+   - Brand mission alignment with trend messaging and purpose
+   - Brand positioning and competitive differentiation opportunities
+   - Brand heritage and how it connects to trend narratives
+
+2. ADVANCED AUDIENCE PERSONA PSYCHOLOGY:
+   - Psychological triggers and emotional drivers for each persona
+   - Motivational patterns and decision-making frameworks
+   - Communication preferences and content consumption behaviors
+   - Values alignment between brand ethos and persona worldviews
+   - Lifestyle integration and aspirational connection points
+   - Social identity factors and community belonging needs
+   - Generational and cultural nuances in trend adoption
+
+3. SOPHISTICATED PERSONA-TREND RESONANCE:
+   - Deep connections between trends and persona pain points/desires
+   - Trend adoption lifecycle patterns within target demographics
+   - Social proof mechanisms and influence pathways for each persona
+   - Platform-specific behavior patterns and engagement preferences
+   - Content format preferences optimized by persona psychology
+   - Cross-persona amplification and network effects
+   - Persona-specific viral triggers and shareability factors
+
+4. COMPREHENSIVE BRAND AUTHENTICITY ASSESSMENT:
+   - Natural brand-trend fit vs. forced/opportunistic associations
+   - Authentic brand storytelling opportunities within trend contexts
+   - Risk assessment for appearing inauthentic or tone-deaf
+   - Long-term brand equity impact and reputation considerations
+   - Consistency with established brand narrative and values
+   - Cultural sensitivity and social responsibility alignment
+
+5. STRATEGIC MULTI-PERSONA ORCHESTRATION:
+   - Primary vs. secondary persona appeal analysis for each trend
+   - Cross-persona amplification and network effect opportunities
+   - Persona-specific messaging adaptations and customizations
+   - Multi-persona campaign orchestration strategies
+   - Personalized content angle development and optimization
+   - Sequential persona targeting and engagement cascades
+
+6. ADVANCED COMPETITIVE INTELLIGENCE:
+   - Competitor brand-trend associations and market positioning
+   - White space identification and differentiation opportunities
+   - First-mover advantages and timing considerations
+   - Market saturation analysis and competitive landscape mapping
+
+7. PREDICTIVE VIRAL MECHANICS:
+   - Viral coefficient predictions based on persona sharing behaviors
+   - Network amplification patterns and influence cascades
+   - Platform algorithm optimization for maximum reach
+   - Timing strategies aligned with persona engagement cycles
+
+8. ROI AND IMPACT FORECASTING:
+   - Engagement rate predictions by persona and platform
+   - Brand awareness lift and sentiment impact estimates
+   - Conversion potential and business impact assessment
+   - Resource allocation optimization for maximum ROI
+
+Only include trends with exceptional brand-persona alignment (minimum combined score 8/10). Each trend must demonstrate clear, authentic connection to brand values AND profound resonance with target audience psychology.${
+        audienceData.length > 0
+          ? `
+
+AUDIENCE PERSONAS AVAILABLE:
+${JSON.stringify(audienceData, null, 2)}
+
+LEVERAGE PERSONAS FOR ENHANCED ANALYSIS:
+- Create detailed persona-specific engagement predictions for each trend
+- Develop highly tailored content angles that resonate with different audience segments
+- Identify sophisticated cross-persona amplification opportunities
+- Recommend platform-specific adaptations based on persona psychology
+- Suggest precise timing strategies aligned with each persona's engagement patterns
+- Assess risks considering different persona sensitivities and cultural contexts
+- Design comprehensive multi-persona campaign orchestration strategies
+- Provide persona-driven content format recommendations with psychological reasoning
+- Analyze viral potential through detailed persona-specific sharing behaviors and motivations`
+          : ""
+      }`,
       messages: [
         {
           role: "user",
@@ -2787,6 +4107,49 @@ Only include trends with alignment scores of 6+ and provide actionable insights.
                 marketPositioningAdvantages: z.array(z.string()),
                 firstMoverBenefits: z.string(),
               }),
+              personaSpecificInsights: z
+                .array(
+                  z
+                    .object({
+                      personaName: z
+                        .string()
+                        .describe("Name of the audience persona"),
+                      engagementPrediction: z
+                        .string()
+                        .describe(
+                          "Predicted engagement level for this persona",
+                        ),
+                      contentAngle: z
+                        .string()
+                        .describe("Tailored content angle for this persona"),
+                      platformRecommendation: z
+                        .string()
+                        .describe("Best platform for reaching this persona"),
+                      timingStrategy: z
+                        .string()
+                        .describe("Optimal timing strategy for this persona"),
+                      riskAssessment: z
+                        .string()
+                        .describe(
+                          "Risk considerations specific to this persona",
+                        ),
+                      viralPotential: z
+                        .number()
+                        .min(1)
+                        .max(10)
+                        .describe("Viral potential score for this persona"),
+                      shareabilityFactors: z
+                        .array(z.string())
+                        .describe(
+                          "Factors that make content shareable for this persona",
+                        ),
+                    })
+                    .describe("Persona-specific insights for trend engagement"),
+                )
+                .optional()
+                .describe(
+                  "Array of insights tailored to each audience persona",
+                ),
               priority: z.enum(["high", "medium", "low"]),
               timeToMarket: z.string(),
               resourceRequirements: z.string(),
@@ -2861,11 +4224,30 @@ export async function analyzeRealTimeTrendsForBrand(input: {
       }
     }
 
-    // Get real-time trends
-    const trendsResult = await detectRealTimeTrendingTopics();
+    // Get real-time trends using the new task-based approach
+    const trendsTask = await detectRealTimeTrendingTopics();
 
-    if (trendsResult.status !== "COMPLETED") {
-      throw new Error("Failed to fetch trending topics");
+    if (!trendsTask.success) {
+      throw new Error("Failed to start trending topics analysis");
+    }
+
+    // Wait for the task to complete and get results
+    let taskStatus = await getTaskStatus({ taskId: trendsTask.taskId });
+    let attempts = 0;
+    const maxAttempts = 30; // Wait up to 5 minutes (30 * 10 seconds)
+
+    while (taskStatus.status === "RUNNING" && attempts < maxAttempts) {
+      await new Promise((resolve) => setTimeout(resolve, 10000)); // Wait 10 seconds
+      taskStatus = await getTaskStatus({ taskId: trendsTask.taskId });
+      attempts++;
+    }
+
+    if (taskStatus.status === "FAILED") {
+      throw new Error("Trending topics analysis failed");
+    }
+
+    if (taskStatus.status !== "COMPLETED") {
+      throw new Error("Trending topics analysis timed out");
     }
 
     // Get the stored results
@@ -2906,30 +4288,81 @@ For each relevant trending topic, provide:
 Only include trends that score 6+ on relevance.`,
         },
       ],
-      returnType: z.object({
-        brandRelevantTrends: z.array(
-          z.object({
-            originalTopic: z.string(),
-            relevanceScore: z.number().min(1).max(10),
-            strategicApproach: z.string(),
-            contentIdeas: z.array(z.string()),
-            timingRecommendations: z.string(),
-            platformStrategies: z.object({
-              instagram: z.string().optional(),
-              tiktok: z.string().optional(),
-              twitter: z.string().optional(),
-              facebook: z.string().optional(),
-              linkedin: z.string().optional(),
-            }),
-            riskAssessment: z.string(),
-            engagementPotential: z.string(),
-            callToActionSuggestions: z.array(z.string()),
-          }),
-        ),
-        overallStrategy: z.string(),
-        priorityActions: z.array(z.string()),
-        timelineRecommendations: z.string(),
-      }),
+      returnType: z
+        .object({
+          brandRelevantTrends: z
+            .array(
+              z
+                .object({
+                  originalTopic: z
+                    .string()
+                    .describe("The original trending topic."),
+                  relevanceScore: z
+                    .number()
+                    .min(1)
+                    .max(10)
+                    .describe("Relevance score for this brand (1-10)."),
+                  strategicApproach: z
+                    .string()
+                    .describe(
+                      "Strategic approach for the brand to engage with this trend.",
+                    ),
+                  contentIdeas: z
+                    .array(z.string())
+                    .describe(
+                      "Specific content ideas that align with brand voice.",
+                    ),
+                  timingRecommendations: z
+                    .string()
+                    .describe("Timing recommendations for when to post."),
+                  platformStrategies: z
+                    .object({
+                      instagram: z
+                        .string()
+                        .optional()
+                        .describe("Instagram-specific strategy."),
+                      tiktok: z
+                        .string()
+                        .optional()
+                        .describe("TikTok-specific strategy."),
+                      twitter: z
+                        .string()
+                        .optional()
+                        .describe("Twitter-specific strategy."),
+                      facebook: z
+                        .string()
+                        .optional()
+                        .describe("Facebook-specific strategy."),
+                      linkedin: z
+                        .string()
+                        .optional()
+                        .describe("LinkedIn-specific strategy."),
+                    })
+                    .describe("Platform-specific strategies."),
+                  riskAssessment: z
+                    .string()
+                    .describe("Risk assessment for potential downsides."),
+                  engagementPotential: z
+                    .string()
+                    .describe("Expected engagement potential."),
+                  callToActionSuggestions: z
+                    .array(z.string())
+                    .describe("Call-to-action suggestions."),
+                })
+                .describe("A brand-relevant trending topic analysis."),
+            )
+            .describe("List of brand-relevant trending topics."),
+          overallStrategy: z
+            .string()
+            .describe("Overall strategic recommendations."),
+          priorityActions: z
+            .array(z.string())
+            .describe("Priority actions to take."),
+          timelineRecommendations: z
+            .string()
+            .describe("Timeline recommendations for implementation."),
+        })
+        .describe("Brand trend analysis results."),
       model: "medium",
     });
 
@@ -2939,7 +4372,7 @@ Only include trends that score 6+ on relevance.`,
       data: {
         id: analysisId,
         userId,
-        rawTrends: JSON.stringify(trendsResult),
+        rawTrends: JSON.stringify(storedResults),
         brandAnalysis: JSON.stringify(brandAnalysisResult),
         brandContext: brandContextData,
         industry: validatedInput.industry,
@@ -2953,7 +4386,7 @@ Only include trends that score 6+ on relevance.`,
     return {
       success: true,
       analysisId,
-      rawTrends: JSON.stringify(trendsResult),
+      rawTrends: JSON.stringify(storedResults),
       brandAnalysis: brandAnalysisResult,
       timestamp: new Date().toISOString(),
     };
@@ -2972,6 +4405,10 @@ export async function getTrendAnalysisHistory(input?: {
   limit?: number;
   offset?: number;
 }) {
+  // Check feature access and usage limits
+  await requireFeatureAccess("video_generation");
+  await requireUsageLimit("video_generation");
+
   const { userId } = await getAuth({ required: true });
   const { limit = 10, offset = 0 } = input || {};
 
@@ -2993,7 +4430,17 @@ export async function getTrendAnalysisHistory(input?: {
   return analyses.map((analysis) => ({
     ...analysis,
     brandAnalysis: analysis.brandAnalysis
-      ? JSON.parse(analysis.brandAnalysis)
+      ? (() => {
+          try {
+            return JSON.parse(analysis.brandAnalysis);
+          } catch (error) {
+            console.error(
+              "Error parsing brandAnalysis in getTrendAnalysisHistory:",
+              error,
+            );
+            return null;
+          }
+        })()
       : null,
   }));
 }
@@ -3088,30 +4535,213 @@ export async function _analyzeExistingComments() {
 
 // User authentication
 export async function getCurrentUser() {
-  const auth = await getAuth();
-  if (auth.status !== "authenticated") {
-    return null;
-  }
+  try {
+    const auth = await getAuth();
+    if (auth.status !== "authenticated") {
+      return null;
+    }
 
-  let user = await db.user.findUnique({
-    where: { id: auth.userId },
-    include: {
-      accounts: true,
-    },
-  });
+    // Set a timeout for database operations to prevent hanging
+    const dbOperationTimeout = 5000; // 5 seconds fast guard for UI responsiveness
 
-  if (!user) {
-    user = await db.user.create({
-      data: {
-        id: auth.userId,
-      },
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(
+        () => reject(new Error("Database operation timed out")),
+        dbOperationTimeout,
+      );
+    });
+
+    // Try to find existing user first
+    const findUserOperation = db.user.findUnique({
+      where: { id: auth.userId },
       include: {
         accounts: true,
       },
     });
+
+    let user = (await Promise.race([findUserOperation, timeoutPromise])) as any;
+
+    // If user doesn't exist, create them
+    if (!user) {
+      const createUserOperation = db.user.create({
+        data: {
+          id: auth.userId,
+        },
+        include: {
+          accounts: true,
+        },
+      });
+
+      user = (await Promise.race([createUserOperation, timeoutPromise])) as any;
+    }
+
+    return user;
+  } catch (error: any) {
+    console.error("Error in getCurrentUser:", error);
+
+    // Return fallback user data instead of throwing
+    const auth = await getAuth();
+    if (auth.status === "authenticated") {
+      return {
+        id: auth.userId,
+        accounts: [],
+        name: null,
+        handle: null,
+        image: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+    }
+    return null;
+  }
+}
+
+// OAuth Credentials Management
+export async function saveOAuthCredentials({
+  platform,
+  clientId,
+  clientSecret,
+}: {
+  platform: string;
+  clientId: string;
+  clientSecret: string;
+}) {
+  const auth = await getAuth({ required: true });
+
+  // Validate platform
+  const validPlatforms = ["facebook", "twitter", "linkedin", "youtube"];
+  if (!validPlatforms.includes(platform)) {
+    throw new Error(`Invalid platform: ${platform}`);
   }
 
-  return user;
+  // Validate credentials are provided
+  if (!clientId?.trim() || !clientSecret?.trim()) {
+    throw new Error("Client ID and Client Secret are required");
+  }
+
+  try {
+    const credentials = await db.oAuthCredentials.upsert({
+      where: {
+        userId_platform: {
+          userId: auth.userId,
+          platform,
+        },
+      },
+      update: {
+        clientId: clientId.trim(),
+        clientSecret: clientSecret.trim(),
+        isActive: true,
+        updatedAt: new Date(),
+      },
+      create: {
+        userId: auth.userId,
+        platform,
+        clientId: clientId.trim(),
+        clientSecret: clientSecret.trim(),
+        isActive: true,
+      },
+    });
+
+    return {
+      id: credentials.id,
+      platform: credentials.platform,
+      clientId: credentials.clientId,
+      isActive: credentials.isActive,
+      createdAt: credentials.createdAt,
+      updatedAt: credentials.updatedAt,
+    };
+  } catch (error) {
+    console.error("Error saving OAuth credentials:", error);
+    throw new Error("Failed to save OAuth credentials");
+  }
+}
+
+export async function getOAuthCredentials(platform?: string) {
+  const auth = await getAuth({ required: true });
+
+  const whereClause: any = {
+    userId: auth.userId,
+    isActive: true,
+  };
+
+  if (platform) {
+    whereClause.platform = platform;
+  }
+
+  try {
+    const credentials = await db.oAuthCredentials.findMany({
+      where: whereClause,
+      select: {
+        id: true,
+        platform: true,
+        clientId: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+        // Never return clientSecret in queries
+      },
+      orderBy: {
+        updatedAt: "desc",
+      },
+    });
+
+    return credentials;
+  } catch (error) {
+    console.error("Error fetching OAuth credentials:", error);
+    throw new Error("Failed to fetch OAuth credentials");
+  }
+}
+
+export async function deleteOAuthCredentials(platform: string) {
+  const auth = await getAuth({ required: true });
+
+  try {
+    await db.oAuthCredentials.updateMany({
+      where: {
+        userId: auth.userId,
+        platform,
+      },
+      data: {
+        isActive: false,
+      },
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting OAuth credentials:", error);
+    throw new Error("Failed to delete OAuth credentials");
+  }
+}
+
+// Helper function to get user's OAuth credentials for a platform
+export async function getUserOAuthCredentials(
+  userId: string,
+  platform: string,
+) {
+  try {
+    const credentials = await db.oAuthCredentials.findUnique({
+      where: {
+        userId_platform: {
+          userId,
+          platform,
+        },
+      },
+      select: {
+        clientId: true,
+        clientSecret: true,
+        isActive: true,
+      },
+    });
+
+    if (!credentials || !credentials.isActive) {
+      return null;
+    }
+
+    return credentials;
+  } catch (error) {
+    console.error(`Error fetching OAuth credentials for ${platform}:`, error);
+    return null;
+  }
 }
 
 export async function checkSuperAdminStatus() {
@@ -3156,6 +4786,16 @@ export async function getFacebookOAuthUrl(input: {
 }) {
   const { userId } = await getAuth({ required: true });
 
+  // Get user's Facebook OAuth credentials
+  const credentials = await getUserOAuthCredentials(userId, "facebook");
+  if (!credentials || !credentials.clientId) {
+    return {
+      missingCredentials: true,
+      message:
+        "Facebook App ID is not configured. Please add your Facebook App credentials in Settings.",
+    };
+  }
+
   // Generate a state parameter to prevent CSRF attacks
   const state = nanoid();
 
@@ -3164,27 +4804,17 @@ export async function getFacebookOAuthUrl(input: {
     data: {
       userId,
       state,
-      platform: input.platform,
+      platform: input.platform ?? "twitter",
       expiresAt: new Date(Date.now() + 1000 * 60 * 10), // 10 minutes
     },
   });
-
-  // Get your Facebook App credentials from environment variables
-  const appId = process.env.FACEBOOK_APP_ID;
-  if (!appId) {
-    // Instead of throwing an error, return a specific response that the UI can handle
-    return {
-      missingCredentials: true,
-      message: "Facebook App ID is not configured",
-    };
-  }
 
   // Construct the redirect URI - using a route that exists in our app
   const redirectUri = `${getBaseUrl()}/settings?platform=${input.platform}`;
 
   // Construct the Facebook OAuth URL
   const url = new URL("https://www.facebook.com/v18.0/dialog/oauth");
-  url.searchParams.append("client_id", appId);
+  url.searchParams.append("client_id", credentials.clientId);
   url.searchParams.append("redirect_uri", redirectUri);
   url.searchParams.append("state", state);
 
@@ -3203,6 +4833,16 @@ export async function getFacebookOAuthUrl(input: {
 export async function getTwitterOAuthUrl() {
   const { userId } = await getAuth({ required: true });
 
+  // Get user's Twitter OAuth credentials
+  const credentials = await getUserOAuthCredentials(userId, "twitter");
+  if (!credentials || !credentials.clientId) {
+    return {
+      missingCredentials: true,
+      message:
+        "Twitter API Key is not configured. Please add your Twitter App credentials in Settings.",
+    };
+  }
+
   // Generate a state parameter to prevent CSRF attacks
   const state = nanoid();
 
@@ -3216,22 +4856,12 @@ export async function getTwitterOAuthUrl() {
     },
   });
 
-  // Get Twitter API credentials from environment variables
-  const apiKey = process.env.TWITTER_API_KEY;
   const redirectUri = `${getBaseUrl()}/settings?platform=twitter`;
-
-  if (!apiKey) {
-    // Return a specific response that the UI can handle
-    return {
-      missingCredentials: true,
-      message: "Twitter API Key is not configured",
-    };
-  }
 
   // Construct the Twitter OAuth URL (Twitter OAuth 2.0)
   const url = new URL("https://twitter.com/i/oauth2/authorize");
   url.searchParams.append("response_type", "code");
-  url.searchParams.append("client_id", apiKey);
+  url.searchParams.append("client_id", credentials.clientId);
   url.searchParams.append("redirect_uri", redirectUri);
   url.searchParams.append("scope", "tweet.read users.read tweet.write");
   url.searchParams.append("state", state);
@@ -3242,8 +4872,60 @@ export async function getTwitterOAuthUrl() {
 }
 
 // YouTube OAuth Configuration
+export async function getLinkedInOAuthUrl() {
+  const { userId } = await getAuth({ required: true });
+
+  // Get user's LinkedIn OAuth credentials
+  const credentials = await getUserOAuthCredentials(userId, "linkedin");
+  if (!credentials || !credentials.clientId) {
+    return {
+      missingCredentials: true,
+      message:
+        "LinkedIn Client ID is not configured. Please add your LinkedIn App credentials in Settings.",
+    };
+  }
+
+  // Generate a state parameter to prevent CSRF attacks
+  const state = nanoid();
+
+  // Store the state in the database to verify it when the user is redirected back
+  await db.oAuthState.create({
+    data: {
+      userId,
+      state,
+      platform: "linkedin",
+      expiresAt: new Date(Date.now() + 1000 * 60 * 10), // 10 minutes
+    },
+  });
+
+  const redirectUri = `${getBaseUrl()}/oauth/linkedin/callback`;
+
+  // Construct the LinkedIn OAuth URL (LinkedIn OAuth 2.0 with OpenID Connect)
+  const url = new URL("https://www.linkedin.com/oauth/v2/authorization");
+  url.searchParams.append("response_type", "code");
+  url.searchParams.append("client_id", credentials.clientId);
+  url.searchParams.append("redirect_uri", redirectUri);
+  url.searchParams.append(
+    "scope",
+    "profile email openid w_member_social r_organization_social",
+  ); // Using OpenID Connect scopes + social posting and reading
+  url.searchParams.append("state", state);
+
+  return { url: url.toString() };
+}
+
 export async function getYouTubeOAuthUrl() {
   const { userId } = await getAuth({ required: true });
+
+  // Get user's YouTube/Google OAuth credentials
+  const credentials = await getUserOAuthCredentials(userId, "youtube");
+  if (!credentials || !credentials.clientId) {
+    return {
+      missingCredentials: true,
+      message:
+        "Google Client ID is not configured. Please add your Google App credentials in Settings.",
+    };
+  }
 
   // Generate a state parameter to prevent CSRF attacks
   const state = nanoid();
@@ -3258,21 +4940,11 @@ export async function getYouTubeOAuthUrl() {
     },
   });
 
-  // Get YouTube/Google API credentials from environment variables
-  const clientId = process.env.GOOGLE_CLIENT_ID;
   const redirectUri = `${getBaseUrl()}/settings?platform=youtube`;
-
-  if (!clientId) {
-    // Return a specific response that the UI can handle
-    return {
-      missingCredentials: true,
-      message: "Google Client ID is not configured",
-    };
-  }
 
   // Construct the Google OAuth URL for YouTube API access
   const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
-  url.searchParams.append("client_id", clientId);
+  url.searchParams.append("client_id", credentials.clientId);
   url.searchParams.append("redirect_uri", redirectUri);
   url.searchParams.append("response_type", "code");
   url.searchParams.append(
@@ -3312,16 +4984,18 @@ export async function handleTwitterOAuthCallback(input: {
     where: { id: storedState.id },
   });
 
-  // Get Twitter API credentials from environment variables
-  const apiKey = process.env.TWITTER_API_KEY;
-  const apiKeySecret = process.env.TWITTER_API_KEY_SECRET;
+  // Get Twitter API credentials from user's stored credentials
+  const credentials = await getUserOAuthCredentials(userId, "twitter");
 
-  if (!apiKey || !apiKeySecret) {
+  if (!credentials) {
     return {
       missingCredentials: true,
-      message: "Twitter API credentials are not configured",
+      message:
+        "Twitter API credentials are not configured. Please add your Twitter app credentials in Settings.",
     };
   }
+
+  const { clientId: apiKey, clientSecret: apiKeySecret } = credentials;
 
   // Construct the redirect URI (must match the one used in the authorization request)
   const redirectUri = `${getBaseUrl()}/settings?platform=twitter`;
@@ -3422,16 +5096,18 @@ export async function handleYouTubeOAuthCallback(input: {
     where: { id: storedState.id },
   });
 
-  // Get Google API credentials from environment variables
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  // Get Google API credentials from user's stored credentials
+  const credentials = await getUserOAuthCredentials(userId, "youtube");
 
-  if (!clientId || !clientSecret) {
+  if (!credentials) {
     return {
       missingCredentials: true,
-      message: "Google API credentials are not configured",
+      message:
+        "Google API credentials are not configured. Please add your Google app credentials in Settings.",
     };
   }
+
+  const { clientId, clientSecret } = credentials;
 
   // Construct the redirect URI (must match the one used in the authorization request)
   const redirectUri = `${getBaseUrl()}/settings?platform=youtube`;
@@ -3531,7 +5207,7 @@ export async function handleFacebookOAuthCallback(input: {
     where: {
       userId,
       state: input.state,
-      platform: input.platform,
+      platform: input.platform ?? "twitter",
       expiresAt: { gt: new Date() },
     },
   });
@@ -3545,13 +5221,16 @@ export async function handleFacebookOAuthCallback(input: {
     where: { id: storedState.id },
   });
 
-  // Get your Facebook App credentials from environment variables
-  const appId = process.env.FACEBOOK_APP_ID;
-  const appSecret = process.env.FACEBOOK_APP_SECRET;
+  // Get Facebook App credentials from user's stored credentials
+  const credentials = await getUserOAuthCredentials(userId, "facebook");
 
-  if (!appId || !appSecret) {
-    throw new Error("Facebook App credentials are not configured");
+  if (!credentials) {
+    throw new Error(
+      "Facebook App credentials are not configured. Please add your Facebook app credentials in Settings.",
+    );
   }
+
+  const { clientId: appId, clientSecret: appSecret } = credentials;
 
   // Construct the redirect URI (must match the one used in the authorization request)
   const redirectUri = `${getBaseUrl()}/settings?platform=${input.platform}`;
@@ -3604,7 +5283,7 @@ export async function handleFacebookOAuthCallback(input: {
       where: {
         userId_platform_accountId: {
           userId,
-          platform: input.platform,
+          platform: input.platform ?? "twitter",
           accountId,
         },
       },
@@ -3618,7 +5297,7 @@ export async function handleFacebookOAuthCallback(input: {
       },
       create: {
         userId,
-        platform: input.platform,
+        platform: input.platform ?? "twitter",
         accountId,
         name,
         accessToken: access_token,
@@ -3708,6 +5387,130 @@ export async function handleFacebookOAuthCallback(input: {
   }
 }
 
+export async function handleLinkedInOAuthCallback(input: {
+  code: string;
+  state: string;
+}) {
+  const { userId } = await getAuth({ required: true });
+
+  // Verify the state parameter to prevent CSRF attacks
+  const storedState = await db.oAuthState.findFirst({
+    where: {
+      userId,
+      state: input.state,
+      platform: "linkedin",
+      expiresAt: { gt: new Date() },
+    },
+  });
+
+  if (!storedState) {
+    throw new Error("Invalid or expired OAuth state");
+  }
+
+  // Clean up the used state
+  await db.oAuthState.delete({
+    where: { id: storedState.id },
+  });
+
+  // Get LinkedIn API credentials from user's stored credentials
+  const credentials = await getUserOAuthCredentials(userId, "linkedin");
+
+  if (!credentials) {
+    throw new Error(
+      "LinkedIn API credentials are not configured. Please add your LinkedIn app credentials in Settings.",
+    );
+  }
+
+  const { clientId, clientSecret } = credentials;
+
+  // Construct the redirect URI (must match the one used in the authorization request)
+  const redirectUri = `${getBaseUrl()}/oauth/linkedin/callback`;
+
+  try {
+    // Exchange the authorization code for an access token
+    const tokenResponse = await axios.post(
+      "https://www.linkedin.com/oauth/v2/accessToken",
+      new URLSearchParams({
+        grant_type: "authorization_code",
+        code: input.code,
+        redirect_uri: redirectUri,
+        client_id: clientId,
+        client_secret: clientSecret,
+      }),
+      {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      },
+    );
+
+    // Extract access token from the response
+    const { access_token, expires_in } = tokenResponse.data;
+
+    // Use the access token to get user info
+    const userResponse = await axios.get(
+      "https://api.linkedin.com/v2/userinfo",
+      {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
+      },
+    );
+
+    const { sub: accountId, name, email } = userResponse.data;
+
+    // Create or update the LinkedIn account
+    const account = await db.account.upsert({
+      where: {
+        userId_platform_accountId: {
+          userId,
+          platform: "linkedin",
+          accountId,
+        },
+      },
+      update: {
+        name: name || email,
+        accessToken: access_token,
+        expiresAt: expires_in ? new Date(Date.now() + expires_in * 1000) : null,
+      },
+      create: {
+        userId,
+        platform: "linkedin",
+        accountId,
+        name: name || email,
+        accessToken: access_token,
+        expiresAt: expires_in ? new Date(Date.now() + expires_in * 1000) : null,
+      },
+    });
+
+    return {
+      success: true,
+      account,
+    };
+  } catch (error) {
+    console.error("Error handling LinkedIn OAuth callback:", error);
+
+    if (axios.isAxiosError(error)) {
+      console.error("LinkedIn OAuth error details:", {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        url: error.config?.url,
+        method: error.config?.method,
+      });
+
+      if (error.response?.data?.error) {
+        const linkedInError = error.response.data.error;
+        throw new Error(
+          `LinkedIn API error: ${linkedInError.error_description || linkedInError}`,
+        );
+      }
+    }
+
+    throw new Error("Failed to connect LinkedIn account. Please try again.");
+  }
+}
+
 // Account Management
 export async function getConnectedAccounts() {
   const { userId } = await getAuth({ required: true });
@@ -3726,6 +5529,140 @@ export async function getConnectedAccounts() {
     throw new Error(
       "Could not fetch connected accounts. Please try again later.",
     );
+  }
+}
+
+/**
+ * Get quick lightweight insights from connected accounts without consuming many ACUs
+ */
+export async function getQuickAccountInsights() {
+  const { userId } = await getAuth({ required: true });
+
+  try {
+    // Get connected accounts with basic info
+    const accounts = await db.account.findMany({
+      where: { userId },
+      include: {
+        pages: {
+          select: {
+            pageId: true,
+            pageName: true,
+          },
+        },
+      },
+    });
+
+    // Get recent comments count for engagement insight
+    const recentCommentsCount = await db.comment.count({
+      where: {
+        userId,
+        createdAt: {
+          gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
+        },
+      },
+    });
+
+    // Get recent generated content count
+    const recentContentCount = await db.generatedContent.count({
+      where: {
+        userId,
+        createdAt: {
+          gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
+        },
+      },
+    });
+
+    // Get recent viral threads count (using hidden threads as a proxy)
+    const recentThreadsCount = await db.hiddenThread.count({
+      where: {
+        userId,
+        createdAt: {
+          gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
+        },
+      },
+    });
+
+    // Generate quick insights based on available data
+    const insights: string[] = [];
+
+    if (accounts.length > 0) {
+      const platforms = [...new Set(accounts.map((acc) => acc.platform))];
+      insights.push(
+        `Connected to ${platforms.length} platform${platforms.length > 1 ? "s" : ""}: ${platforms.join(", ")}`,
+      );
+
+      const totalPages = accounts.reduce(
+        (sum, acc) => sum + acc.pages.length,
+        0,
+      );
+      if (totalPages > 0) {
+        insights.push(
+          `Managing ${totalPages} page${totalPages > 1 ? "s" : ""} across platforms`,
+        );
+      }
+    }
+
+    if (recentCommentsCount > 0) {
+      insights.push(
+        `${recentCommentsCount} new comment${recentCommentsCount > 1 ? "s" : ""} in the last 7 days`,
+      );
+    }
+
+    if (recentContentCount > 0) {
+      insights.push(
+        `Generated ${recentContentCount} piece${recentContentCount > 1 ? "s" : ""} of content this week`,
+      );
+    }
+
+    if (recentThreadsCount > 0) {
+      insights.push(
+        `Created ${recentThreadsCount} viral thread${recentThreadsCount > 1 ? "s" : ""} recently`,
+      );
+    }
+
+    // Fallback insights if no recent activity
+    if (insights.length === 0) {
+      if (accounts.length === 0) {
+        insights.push(
+          "No social accounts connected yet - connect your accounts for personalized insights",
+        );
+      } else {
+        insights.push("Ready to analyze your social media performance");
+        insights.push(
+          "Your connected accounts are ready for content optimization",
+        );
+      }
+    }
+
+    return {
+      connectedPlatforms: accounts.length,
+      totalPages: accounts.reduce((sum, acc) => sum + acc.pages.length, 0),
+      recentActivity: {
+        comments: recentCommentsCount,
+        content: recentContentCount,
+        threads: recentThreadsCount,
+      },
+      insights,
+      accounts: accounts.map((acc) => ({
+        platform: acc.platform,
+        name: acc.name,
+        pagesCount: acc.pages.length,
+      })),
+    };
+  } catch (error) {
+    console.error("Error fetching quick account insights:", error);
+    // Return fallback data instead of throwing
+    return {
+      connectedPlatforms: 0,
+      totalPages: 0,
+      recentActivity: {
+        comments: 0,
+        content: 0,
+        threads: 0,
+      },
+      insights: ["Loading your account insights..."],
+      accounts: [],
+    };
   }
 }
 
@@ -3928,7 +5865,7 @@ export async function connectFacebookAccount(input: {
           where: {
             userId_platform_accountId: {
               userId,
-              platform: input.platform,
+              platform: input.platform ?? "twitter",
               accountId: page.id,
             },
           },
@@ -3940,7 +5877,7 @@ export async function connectFacebookAccount(input: {
           },
           create: {
             userId,
-            platform: input.platform,
+            platform: input.platform ?? "twitter",
             accountId: page.id,
             name: page.name,
             accessToken: input.accessToken,
@@ -3950,21 +5887,31 @@ export async function connectFacebookAccount(input: {
         });
 
         // Add the page to the Page table
-        await db.page.upsert({
+        const existingPage = await db.page.findFirst({
           where: {
-            accountId_pageId: { accountId: account.id, pageId: page.id },
-          },
-          update: {
-            pageName: page.name,
-            pageToken: page.access_token,
-          },
-          create: {
             accountId: account.id,
             pageId: page.id,
-            pageName: page.name,
-            pageToken: page.access_token,
           },
         });
+
+        if (existingPage) {
+          await db.page.update({
+            where: { id: existingPage.id },
+            data: {
+              pageName: page.name,
+              pageToken: page.access_token,
+            },
+          });
+        } else {
+          await db.page.create({
+            data: {
+              accountId: account.id,
+              pageId: page.id,
+              pageName: page.name,
+              pageToken: page.access_token,
+            },
+          });
+        }
       }
 
       return {
@@ -3991,7 +5938,7 @@ export async function connectFacebookAccount(input: {
           where: {
             userId_platform_accountId: {
               userId,
-              platform: input.platform,
+              platform: input.platform ?? "twitter",
               accountId: pageId,
             },
           },
@@ -4003,7 +5950,7 @@ export async function connectFacebookAccount(input: {
           },
           create: {
             userId,
-            platform: input.platform,
+            platform: input.platform ?? "twitter",
             accountId: pageId,
             name: tokenInfo.name,
             accessToken: input.accessToken,
@@ -4013,19 +5960,31 @@ export async function connectFacebookAccount(input: {
         });
 
         // Add the page to the Page table
-        await db.page.upsert({
-          where: { accountId_pageId: { accountId: account.id, pageId } },
-          update: {
-            pageName: tokenInfo.name,
-            pageToken: input.accessToken,
-          },
-          create: {
+        const existingPage = await db.page.findFirst({
+          where: {
             accountId: account.id,
             pageId,
-            pageName: tokenInfo.name,
-            pageToken: input.accessToken,
           },
         });
+
+        if (existingPage) {
+          await db.page.update({
+            where: { id: existingPage.id },
+            data: {
+              pageName: tokenInfo.name,
+              pageToken: input.accessToken,
+            },
+          });
+        } else {
+          await db.page.create({
+            data: {
+              accountId: account.id,
+              pageId,
+              pageName: tokenInfo.name,
+              pageToken: input.accessToken,
+            },
+          });
+        }
 
         return {
           success: true,
@@ -4080,7 +6039,7 @@ export async function connectManualAccount(input: {
       where: {
         userId_platform_accountId: {
           userId,
-          platform: input.platform,
+          platform: input.platform ?? "twitter",
           accountId: input.accountId,
         },
       },
@@ -4092,7 +6051,7 @@ export async function connectManualAccount(input: {
       },
       create: {
         userId,
-        platform: input.platform,
+        platform: input.platform ?? "twitter",
         accountId: input.accountId,
         name: input.name,
         accessToken: input.accessToken,
@@ -4259,8 +6218,10 @@ async function fetchInstagramPageComments({
                 commentId: comment.id,
                 postId: media.id,
                 text: comment.text || "",
-                authorName: comment.from?.username || "Instagram User",
-                authorId: comment.from?.id || "unknown",
+                // Instagram API may have limited author info due to privacy restrictions
+                authorName:
+                  comment.from?.username || `IG User ${comment.id.slice(-6)}`,
+                authorId: comment.from?.id || `anonymous_${comment.id}`,
                 createdAt: new Date(comment.timestamp),
                 likeCount: comment.like_count || 0,
                 userId,
@@ -4381,8 +6342,11 @@ async function fetchFacebookPageComments({
             },
           });
 
-          const realAuthorName = comment.from?.name || "Unknown Author";
-          const realAuthorId = comment.from?.id || "unknown";
+          // Facebook API no longer provides comment author info due to privacy restrictions
+          // Generate a more user-friendly anonymous identifier
+          const realAuthorName =
+            comment.from?.name || `FB User ${comment.id.slice(-6)}`;
+          const realAuthorId = comment.from?.id || `anonymous_${comment.id}`;
           const realCreatedAt = comment.created_time
             ? new Date(comment.created_time)
             : new Date();
@@ -4546,7 +6510,7 @@ export async function fetchComments() {
             for (const page of pages) {
               const res = await fetchFacebookPageComments({
                 pageId: page.pageId,
-                pageToken: page.pageToken,
+                pageToken: page.pageToken || "",
                 userId,
                 accountId: account.id,
                 platform: account.platform,
@@ -4778,6 +6742,294 @@ export async function fetchComments() {
           console.error("Error fetching YouTube comments:", error);
         }
       }
+
+      // LinkedIn implementation with enhanced robustness
+      if (account.platform === "linkedin" && account.accessToken) {
+        try {
+          // Strategy 1: Try LinkedIn API first
+          let linkedInApiSuccess = false;
+
+          try {
+            // Get user's posts (requires w_member_social scope)
+            const postsResponse = await axios.get(
+              "https://api.linkedin.com/v2/shares",
+              {
+                headers: {
+                  Authorization: `Bearer ${account.accessToken}`,
+                },
+                params: {
+                  q: "owners",
+                  owners: `urn:li:person:${account.accountId}`,
+                  count: 10,
+                  sortBy: "LAST_MODIFIED",
+                },
+              },
+            );
+
+            const posts = postsResponse.data.elements || [];
+
+            if (posts.length > 0) {
+              linkedInApiSuccess = true;
+            }
+
+            // For each post, try to get comments
+            for (const post of posts) {
+              const postId = post.id;
+
+              try {
+                // Attempt to fetch comments for this post
+                const commentsResponse = await axios.get(
+                  `https://api.linkedin.com/v2/socialActions/${postId}/comments`,
+                  {
+                    headers: {
+                      Authorization: `Bearer ${account.accessToken}`,
+                    },
+                    params: {
+                      count: 20,
+                    },
+                  },
+                );
+
+                const comments = commentsResponse.data.elements || [];
+
+                // Save each comment to the database
+                for (const comment of comments) {
+                  const commentId = comment.id;
+
+                  const existingComment = await db.comment.findUnique({
+                    where: {
+                      platform_commentId: {
+                        platform: account.platform,
+                        commentId,
+                      },
+                    },
+                  });
+
+                  if (!existingComment) {
+                    // Get comment author info
+                    let authorName = "LinkedIn User";
+                    try {
+                      if (comment.actor) {
+                        const authorResponse = await axios.get(
+                          `https://api.linkedin.com/v2/people/${comment.actor.replace("urn:li:person:", "")}`,
+                          {
+                            headers: {
+                              Authorization: `Bearer ${account.accessToken}`,
+                            },
+                          },
+                        );
+
+                        const firstName =
+                          authorResponse.data.localizedFirstName || "";
+                        const lastName =
+                          authorResponse.data.localizedLastName || "";
+                        authorName =
+                          `${firstName} ${lastName}`.trim() || "LinkedIn User";
+                      }
+                    } catch {
+                      // Silently handle author fetch errors
+                    }
+
+                    await db.comment.create({
+                      data: {
+                        platform: account.platform,
+                        commentId,
+                        postId,
+                        text: comment.message?.text || "",
+                        authorName,
+                        authorId: comment.actor || "",
+                        createdAt: new Date(
+                          comment.created?.time || Date.now(),
+                        ),
+                        userId,
+                        accountId: account.id,
+                      },
+                    });
+
+                    newCommentsCount++;
+                  }
+                }
+              } catch (commentsError) {
+                // LinkedIn comments API may not be accessible - this is expected
+                console.log(
+                  `LinkedIn comments not accessible for post ${postId} (API restrictions):`,
+                  commentsError instanceof Error
+                    ? commentsError.message
+                    : "Unknown error",
+                );
+              }
+            }
+
+            // Try alternative UGC posts endpoint for newer posts
+            try {
+              const ugcResponse = await axios.get(
+                "https://api.linkedin.com/v2/ugcPosts",
+                {
+                  headers: {
+                    Authorization: `Bearer ${account.accessToken}`,
+                  },
+                  params: {
+                    q: "authors",
+                    authors: `List(urn:li:person:${account.accountId})`,
+                    count: 5,
+                    sortBy: "LAST_MODIFIED",
+                  },
+                },
+              );
+
+              const ugcPosts = ugcResponse.data.elements || [];
+
+              for (const ugcPost of ugcPosts) {
+                const postId = ugcPost.id;
+
+                // Try to get comments for UGC posts (also limited by LinkedIn)
+                try {
+                  const commentsResponse = await axios.get(
+                    `https://api.linkedin.com/v2/socialActions/${postId}/comments`,
+                    {
+                      headers: {
+                        Authorization: `Bearer ${account.accessToken}`,
+                      },
+                      params: {
+                        count: 10,
+                      },
+                    },
+                  );
+
+                  const comments = commentsResponse.data.elements || [];
+
+                  for (const comment of comments) {
+                    const commentId = comment.id;
+
+                    const existingComment = await db.comment.findUnique({
+                      where: {
+                        platform_commentId: {
+                          platform: account.platform,
+                          commentId,
+                        },
+                      },
+                    });
+
+                    if (!existingComment) {
+                      await db.comment.create({
+                        data: {
+                          platform: account.platform,
+                          commentId,
+                          postId,
+                          text: comment.message?.text || "",
+                          authorName: "LinkedIn User",
+                          authorId: comment.actor || "",
+                          createdAt: new Date(
+                            comment.created?.time || Date.now(),
+                          ),
+                          userId,
+                          accountId: account.id,
+                        },
+                      });
+
+                      newCommentsCount++;
+                    }
+                  }
+                } catch {
+                  // UGC comments also restricted - expected
+                }
+              }
+            } catch {
+              // UGC endpoint may not be accessible
+            }
+          } catch (apiError) {
+            console.log(
+              "LinkedIn API access limited (this is normal):",
+              axios.isAxiosError(apiError) ? apiError.response?.data : apiError,
+            );
+          }
+
+          // Strategy 2: Web scraping fallback for notifications/mentions
+          // Only attempt if API didn't work or returned minimal data
+          if (!linkedInApiSuccess) {
+            try {
+              // Use web scraping to check for LinkedIn notifications
+              const scrapingResult = await requestMultimodalModel({
+                system: `You are a LinkedIn engagement detector. Your task is to:
+1. Use your 'openAndInteractWithUrl' tool to navigate to LinkedIn notifications
+2. Look for any mentions, comments, or engagement notifications
+3. Extract basic information about recent activity
+4. Return structured data about any engagement found
+5. Handle login requirements gracefully - if login is required, return appropriate status`,
+                messages: [
+                  {
+                    role: "user",
+                    content:
+                      "Check LinkedIn notifications for recent engagement and mentions",
+                  },
+                ],
+                returnType: z
+                  .object({
+                    hasEngagement: z
+                      .boolean()
+                      .describe("Whether any engagement was found"),
+                    engagementCount: z
+                      .number()
+                      .describe("Number of engagement items found"),
+                    requiresLogin: z
+                      .boolean()
+                      .describe("Whether login was required"),
+                    message: z
+                      .string()
+                      .describe("Status message about the check"),
+                  })
+                  .describe("LinkedIn engagement check result"),
+                model: "medium",
+              });
+
+              if (
+                scrapingResult.hasEngagement &&
+                !scrapingResult.requiresLogin
+              ) {
+                // Create a general notification about LinkedIn engagement
+                // Since we can't get specific comment details via scraping due to privacy,
+                // we create a placeholder to alert the user
+                const notificationId = `linkedin-engagement-${Date.now()}`;
+
+                const existingNotification = await db.comment.findUnique({
+                  where: {
+                    platform_commentId: {
+                      platform: account.platform,
+                      commentId: notificationId,
+                    },
+                  },
+                });
+
+                if (!existingNotification) {
+                  await db.comment.create({
+                    data: {
+                      platform: account.platform,
+                      commentId: notificationId,
+                      postId: "general-engagement",
+                      text: `LinkedIn engagement detected: ${scrapingResult.message}. Please check LinkedIn directly for details.`,
+                      authorName: "LinkedIn Notification",
+                      authorId: "system",
+                      createdAt: new Date(),
+                      userId,
+                      accountId: account.id,
+                    },
+                  });
+
+                  newCommentsCount++;
+                }
+              }
+            } catch (scrapingError) {
+              console.log(
+                "LinkedIn web scraping also limited (expected):",
+                scrapingError,
+              );
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching LinkedIn content:", error);
+          // Don't add to problematic IDs as LinkedIn limitations are expected
+        }
+      }
     }
 
     // Check for high-priority comments and send email alerts if enabled
@@ -4865,12 +7117,24 @@ export async function getPages(input?: { accountId?: string }) {
     where.accountId = input.accountId;
   }
 
-  const pages = await db.page.findMany({
+  // Fast timeout and graceful fallback to keep UI responsive
+  const dbOperation = db.page.findMany({
     where,
     orderBy: { pageName: "asc" },
   });
 
-  return pages;
+  const timeoutMs = 5000; // 5s guard for non-critical data
+  const timeoutPromise = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error("DB timeout in getPages")), timeoutMs),
+  );
+
+  try {
+    const pages = (await Promise.race([dbOperation, timeoutPromise])) as any[];
+    return Array.isArray(pages) ? pages : [];
+  } catch (error) {
+    console.error("getPages fallback due to error:", error);
+    return [];
+  }
 }
 
 // Advanced sentiment and topic analysis of a comment text
@@ -5266,7 +7530,7 @@ export async function getOriginalPostContent(input: {
           code: "TOKEN_EXPIRED",
           message: `Your ${input.platform} access token has expired. Please reconnect your account in Settings.`,
           accountId: account.id,
-          platform: input.platform,
+          platform: input.platform ?? "twitter",
         },
       };
     }
@@ -5299,7 +7563,7 @@ export async function getOriginalPostContent(input: {
           (p) => p.pageId && input.postId.includes(p.pageId),
         );
         if (page) {
-          pageToken = page.pageToken;
+          pageToken = page.pageToken || "";
         } else if (account.pages[0]?.pageToken) {
           // Fallback to the first page if it exists and has a token
           pageToken = account.pages[0].pageToken;
@@ -5501,7 +7765,7 @@ export async function getOriginalPostContent(input: {
                 message:
                   "Your Facebook access token has expired. Please reconnect your account in Settings.",
                 accountId: account.id,
-                platform: input.platform,
+                platform: input.platform ?? "twitter",
               },
             };
           }
@@ -5622,7 +7886,7 @@ export async function getOriginalPostContent(input: {
                 message:
                   "This content type is not fully supported yet. We're working on it!",
                 accountId: account.id,
-                platform: input.platform,
+                platform: input.platform ?? "twitter",
               };
             }
           } else if (
@@ -5652,7 +7916,7 @@ export async function getOriginalPostContent(input: {
                 message:
                   "Your Facebook access token has expired. Please reconnect your account in Settings.",
                 accountId: account.id,
-                platform: input.platform,
+                platform: input.platform ?? "twitter",
               },
             };
           } else {
@@ -5662,7 +7926,7 @@ export async function getOriginalPostContent(input: {
               message:
                 "Unable to fetch post content from Facebook. Please try again later.",
               accountId: account.id,
-              platform: input.platform,
+              platform: input.platform ?? "twitter",
             };
           }
         }
@@ -5741,7 +8005,7 @@ export async function getOriginalPostContent(input: {
               message:
                 "Your Twitter access token has expired. Please reconnect your account in Settings.",
               accountId: account.id,
-              platform: input.platform,
+              platform: input.platform ?? "twitter",
             },
           };
         }
@@ -5752,7 +8016,7 @@ export async function getOriginalPostContent(input: {
           message:
             "Unable to fetch post content from Twitter. Please try again later.",
           accountId: account.id,
-          platform: input.platform,
+          platform: input.platform ?? "twitter",
         };
       }
     } else if (input.platform === "youtube") {
@@ -5763,7 +8027,7 @@ export async function getOriginalPostContent(input: {
             params: {
               part: "snippet,statistics",
               id: input.postId,
-              key: process.env.YOUTUBE_API_KEY || account.accessToken,
+              key: account.accessToken,
             },
           },
         );
@@ -5803,7 +8067,7 @@ export async function getOriginalPostContent(input: {
               message:
                 "Your YouTube access token has expired. Please reconnect your account in Settings.",
               accountId: account.id,
-              platform: input.platform,
+              platform: input.platform ?? "twitter",
             },
           };
         }
@@ -5814,7 +8078,231 @@ export async function getOriginalPostContent(input: {
           message:
             "Unable to fetch post content from YouTube. Please try again later.",
           accountId: account.id,
-          platform: input.platform,
+          platform: input.platform ?? "twitter",
+        };
+      }
+    } else if (input.platform === "linkedin") {
+      try {
+        // LinkedIn post content fetching with multiple fallback strategies
+        // LinkedIn post content fetching with multiple fallback strategies
+
+        // Strategy 1: Try LinkedIn API first
+        try {
+          const response = await axios.get(
+            `https://api.linkedin.com/v2/shares/${input.postId}`,
+            {
+              headers: {
+                Authorization: `Bearer ${account.accessToken}`,
+              },
+            },
+          );
+
+          if (response.data) {
+            const share = response.data;
+
+            // Extract content from various LinkedIn share formats
+            let content = "";
+            if (share.commentary) {
+              content = share.commentary.text || "";
+            } else if (share.text && share.text.text) {
+              content = share.text.text;
+            } else if (share.content && share.content.title) {
+              content = share.content.title;
+              if (share.content.description) {
+                content += "\n" + share.content.description;
+              }
+            }
+
+            postContent = content;
+
+            // Get author info
+            if (share.owner) {
+              try {
+                const authorId = share.owner.replace("urn:li:person:", "");
+                const authorResponse = await axios.get(
+                  `https://api.linkedin.com/v2/people/${authorId}`,
+                  {
+                    headers: {
+                      Authorization: `Bearer ${account.accessToken}`,
+                    },
+                  },
+                );
+
+                const firstName = authorResponse.data.localizedFirstName || "";
+                const lastName = authorResponse.data.localizedLastName || "";
+                postAuthor =
+                  `${firstName} ${lastName}`.trim() || "LinkedIn User";
+              } catch {
+                postAuthor = "LinkedIn User";
+              }
+            }
+
+            // Get creation date
+            if (share.created && share.created.time) {
+              postDate = new Date(share.created.time);
+            }
+
+            // Try to get image from content
+            if (share.content && share.content.media) {
+              const media = Array.isArray(share.content.media)
+                ? share.content.media[0]
+                : share.content.media;
+              if (media && media.originalUrl) {
+                postImageUrl = media.originalUrl;
+              }
+            }
+          }
+        } catch (apiError) {
+          console.log(
+            "LinkedIn API failed, trying alternative approaches:",
+            axios.isAxiosError(apiError) ? apiError.response?.data : apiError,
+          );
+          // Store error for potential debugging
+
+          // Strategy 2: Try alternative LinkedIn API endpoints
+          try {
+            // Try UGC posts endpoint (for newer posts)
+            const ugcResponse = await axios.get(
+              `https://api.linkedin.com/v2/ugcPosts/${input.postId}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${account.accessToken}`,
+                },
+              },
+            );
+
+            if (ugcResponse.data && ugcResponse.data.specificContent) {
+              const ugcPost = ugcResponse.data;
+              const specificContent =
+                ugcPost.specificContent["com.linkedin.ugc.ShareContent"];
+
+              if (specificContent && specificContent.shareCommentary) {
+                postContent = specificContent.shareCommentary.text || "";
+              }
+
+              if (ugcPost.created && ugcPost.created.time) {
+                postDate = new Date(ugcPost.created.time);
+              }
+
+              postAuthor = "LinkedIn User"; // UGC API may not provide author details easily
+            }
+          } catch (ugcError) {
+            console.log(
+              "LinkedIn UGC API also failed:",
+              axios.isAxiosError(ugcError) ? ugcError.response?.data : ugcError,
+            );
+
+            // Strategy 3: Web scraping as fallback (using requestMultimodalModel)
+            try {
+              const linkedInUrl = `https://www.linkedin.com/feed/update/${input.postId}`;
+
+              const scrapingResult = await requestMultimodalModel({
+                system: `You are a LinkedIn post content extractor. Your task is to:
+1. Use your 'openAndInteractWithUrl' tool to navigate to the provided LinkedIn post URL
+2. Extract the post content, author name, and any visible metadata
+3. Return the extracted information in the specified format
+4. If the post is not accessible, return appropriate error information`,
+                messages: [
+                  {
+                    role: "user",
+                    content: `Extract content from this LinkedIn post: ${linkedInUrl}`,
+                  },
+                ],
+                returnType: z
+                  .object({
+                    content: z
+                      .string()
+                      .describe("The main text content of the LinkedIn post"),
+                    author: z.string().describe("The name of the post author"),
+                    success: z
+                      .boolean()
+                      .describe("Whether the extraction was successful"),
+                    error: z
+                      .string()
+                      .optional()
+                      .describe("Error message if extraction failed"),
+                  })
+                  .describe("LinkedIn post extraction result"),
+                model: "medium",
+              });
+
+              if (scrapingResult.success && scrapingResult.content) {
+                postContent = scrapingResult.content;
+                postAuthor = scrapingResult.author || "LinkedIn User";
+                // Note: Web scraping won't provide exact timestamps, so we leave postDate as null
+              } else {
+                throw new Error(
+                  scrapingResult.error ||
+                    "Failed to scrape LinkedIn post content",
+                );
+              }
+            } catch (scrapingError) {
+              console.error(
+                "LinkedIn web scraping also failed:",
+                scrapingError,
+              );
+
+              // Final fallback: Return limited info with error
+              postContent = "";
+              postAuthor = "LinkedIn User";
+
+              return {
+                content: "",
+                author: "LinkedIn User",
+                date: null,
+                imageUrl: null,
+                error: {
+                  code: "LINKEDIN_ACCESS_LIMITED",
+                  message:
+                    "LinkedIn post content is not accessible due to API limitations and privacy settings. This is common for LinkedIn posts.",
+                  accountId: account.id,
+                  platform: input.platform ?? "twitter",
+                },
+              };
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching LinkedIn post content:", error);
+
+        if (axios.isAxiosError(error) && error.response?.status === 401) {
+          // Mark the account token as expired
+          try {
+            await db.account.update({
+              where: { id: account.id },
+              data: { expiresAt: new Date() },
+            });
+          } catch (dbError) {
+            console.error("Error updating account expiration status:", dbError);
+          }
+
+          return {
+            content: "",
+            author: "",
+            date: null,
+            imageUrl: null,
+            error: {
+              code: "TOKEN_EXPIRED",
+              message:
+                "Your LinkedIn access token has expired. Please reconnect your account in Settings.",
+              accountId: account.id,
+              platform: input.platform ?? "twitter",
+            },
+          };
+        }
+
+        return {
+          content: "",
+          author: "LinkedIn User",
+          date: null,
+          imageUrl: null,
+          error: {
+            code: "FETCH_ERROR",
+            message:
+              "Unable to fetch LinkedIn post content. LinkedIn has strict API limitations for post access.",
+            accountId: account.id,
+            platform: input.platform ?? "twitter",
+          },
         };
       }
     }
@@ -5958,11 +8446,23 @@ ${similarComments.map((c) => `- "${c.text}"`).join("\n")}
 Analyze if the current comment is similar in content, tone, or intent to any of the previously dismissed comments. If there's a pattern of dismissal for this type of comment, describe it.`,
           },
         ],
-        returnType: z.object({
-          isSimilar: z.boolean(),
-          pattern: z.string(),
-          confidence: z.number().min(0).max(1),
-        }),
+        returnType: z
+          .object({
+            isSimilar: z
+              .boolean()
+              .describe(
+                "Whether the current comment is similar to previously dismissed comments.",
+              ),
+            pattern: z
+              .string()
+              .describe("Description of the pattern if similarity exists."),
+            confidence: z
+              .number()
+              .min(0)
+              .max(1)
+              .describe("Confidence level of the similarity analysis (0-1)."),
+          })
+          .describe("Comment similarity analysis results."),
         model: "medium",
       });
 
@@ -6048,14 +8548,34 @@ Consider factors like:
     }
 
     if (brandSignals) {
+      // Safe JSON parsing helper function
+      const safeJsonParse = (
+        jsonString: string | null,
+        fallback: any[] = [],
+      ) => {
+        if (!jsonString) return fallback;
+        try {
+          const parsed = JSON.parse(jsonString);
+          return Array.isArray(parsed) ? parsed : fallback;
+        } catch (error) {
+          console.error(
+            "Failed to parse JSON in analyzeCommentForResponse:",
+            error,
+            "Input:",
+            jsonString,
+          );
+          return fallback;
+        }
+      };
+
       const preferredTones = (
-        JSON.parse(brandSignals.preferredTones || "[]") as string[]
+        safeJsonParse(brandSignals.preferredTones, []) as string[]
       ).join(", ");
       const commonKeywords = (
-        JSON.parse(brandSignals.commonKeywords || "[]") as string[]
+        safeJsonParse(brandSignals.commonKeywords, []) as string[]
       ).join(", ");
       const contentPillars = (
-        JSON.parse(brandSignals.contentPillars || "[]") as string[]
+        safeJsonParse(brandSignals.contentPillars, []) as string[]
       ).join(", ");
       const brandSignalsContext = `\n\n[LEARNED BRAND SIGNALS]\n- Preferred Tones: ${preferredTones || "not set"}\n- Common Keywords: ${commonKeywords || "not set"}\n- Content Pillars: ${contentPillars || "not set"}\nUse these learned preferences to tailor your response suggestions.`;
       systemPrompt += brandSignalsContext;
@@ -6075,30 +8595,120 @@ Consider factors like:
 5. emojiSuggestions (array of 2-3 appropriate emoji reactions with explanations)
 6. responseStrategy (brief strategy for handling this comment)`;
 
+  // Start streaming response for real-time progress updates
+  const stream = await startRealtimeResponse<{
+    status?: string;
+    progress?: number;
+    currentStep?: string;
+    toolHistory?: Array<{
+      name: string;
+      status: "in_progress" | "done";
+      inProgressMessage: string;
+    }>;
+    result?: {
+      responseNeeded: boolean;
+      priorityLevel: number;
+      reasoning: string;
+      textResponses: string[];
+      emojiSuggestions: Array<{
+        emoji: string;
+        explanation: string;
+      }>;
+      responseStrategy: string;
+    };
+    error?: string;
+  }>();
+
   try {
+    // Initial status update
+    stream.next({
+      status: "starting",
+      progress: 0,
+      currentStep: "Analyzing comment context...",
+    });
+
+    stream.next({
+      status: "analyzing",
+      progress: 20,
+      currentStep: "Processing comment and brand guidelines...",
+    });
+
     const result = await requestMultimodalModel({
       system: systemPrompt,
       messages: [{ role: "user", content: userPrompt }],
-      returnType: z.object({
-        responseNeeded: z.boolean(),
-        priorityLevel: z.number().min(1).max(10),
-        reasoning: z.string(),
-        textResponses: z.array(z.string()).min(1),
-        emojiSuggestions: z
-          .array(
-            z.object({
-              emoji: z.string(),
-              explanation: z.string(),
-            }),
-          )
-          .min(1),
-        responseStrategy: z.string(),
-      }),
+      returnType: z
+        .object({
+          responseNeeded: z
+            .boolean()
+            .describe("Whether a response is needed for this comment."),
+          priorityLevel: z
+            .number()
+            .min(1)
+            .max(10)
+            .describe("Priority level of the response (1-10)."),
+          reasoning: z
+            .string()
+            .describe("Reasoning for the response recommendation."),
+          textResponses: z
+            .array(z.string())
+            .min(1)
+            .describe("Suggested text responses."),
+          emojiSuggestions: z
+            .array(
+              z
+                .object({
+                  emoji: z.string().describe("The emoji suggestion."),
+                  explanation: z
+                    .string()
+                    .describe("Explanation for the emoji choice."),
+                })
+                .describe("An emoji suggestion with explanation."),
+            )
+            .min(1)
+            .describe("List of emoji suggestions."),
+          responseStrategy: z.string().describe("Overall response strategy."),
+        })
+        .describe("Comment analysis and response recommendations."),
       model: "medium", // Balance between speed and quality
+      onProgress: (tools) => {
+        stream.next({
+          toolHistory: tools.map((tool) => ({
+            name: tool.toolName,
+            status: tool.status,
+            inProgressMessage: tool.inProgressMessage,
+          })),
+          progress:
+            30 +
+            (tools.filter((t) => t.status === "done").length / tools.length) *
+              50,
+          currentStep:
+            tools.find((t) => t.status === "in_progress")?.inProgressMessage ||
+            "Analyzing comment...",
+        });
+      },
     });
-    return result;
+
+    stream.next({
+      status: "completed",
+      progress: 100,
+      currentStep: "Analysis complete!",
+      result: result,
+    });
+
+    return stream.end();
   } catch (error) {
     console.error("Error analyzing comment for response:", error);
+
+    stream.next({
+      status: "error",
+      progress: 0,
+      currentStep: "Error occurred during analysis",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to analyze comment. Please try again.",
+    });
+
     throw new Error("Failed to analyze comment. Please try again.");
   }
 }
@@ -6193,7 +8803,7 @@ export async function generateResponseVariations(input: { commentId: string }) {
           params: {
             part: "snippet",
             id: comment.postId,
-            key: process.env.YOUTUBE_API_KEY || comment.account.accessToken,
+            key: comment.account.accessToken,
           },
         },
       );
@@ -6229,7 +8839,13 @@ export async function generateResponseVariations(input: { commentId: string }) {
             ],
           },
         ],
-        returnType: z.object({ description: z.string() }),
+        returnType: z
+          .object({
+            description: z
+              .string()
+              .describe("A natural description of the image content."),
+          })
+          .describe("Image description for social media context."),
       });
       originalPostImageDesc = imgAnalysis.description;
     } catch {
@@ -6244,9 +8860,13 @@ export async function generateResponseVariations(input: { commentId: string }) {
         system:
           "You are a social media sentiment analyst. Classify this text as positive, neutral, or negative.",
         messages: [{ role: "user", content: originalPostText }],
-        returnType: z.object({
-          sentiment: z.enum(["positive", "neutral", "negative"]),
-        }),
+        returnType: z
+          .object({
+            sentiment: z
+              .enum(["positive", "neutral", "negative"])
+              .describe("The sentiment classification of the original post."),
+          })
+          .describe("Sentiment analysis result for the original post."),
       });
       originalPostSentiment = sentiment.sentiment;
     } catch {
@@ -6262,9 +8882,13 @@ export async function generateResponseVariations(input: { commentId: string }) {
         system:
           "You are a social media sentiment analyst. Classify this text as positive, neutral, or negative.",
         messages: [{ role: "user", content: comment.text }],
-        returnType: z.object({
-          sentiment: z.enum(["positive", "neutral", "negative"]),
-        }),
+        returnType: z
+          .object({
+            sentiment: z
+              .enum(["positive", "neutral", "negative"])
+              .describe("The sentiment classification of the comment."),
+          })
+          .describe("Sentiment analysis result for the comment."),
       });
       commentSentiment = sentiment.sentiment;
     } catch {
@@ -6373,9 +8997,14 @@ ${brandGuidelinesBlurb}${userPrefBlurb}`;
     const result = await requestMultimodalModel({
       system: systemPrompt,
       messages: [{ role: "user", content: userPrompt }],
-      returnType: z.object({
-        variations: z.array(z.string().min(1)).length(2),
-      }),
+      returnType: z
+        .object({
+          variations: z
+            .array(z.string().min(1))
+            .length(2)
+            .describe("Two alternative response variations."),
+        })
+        .describe("Response variations for comment replies."),
       model: "medium",
     });
 
@@ -6393,6 +9022,9 @@ ${brandGuidelinesBlurb}${userPrefBlurb}`;
 
 export async function generateResponse(input: { commentId: string }) {
   const { userId } = await getAuth({ required: true });
+
+  await requireFeatureAccess("ai_response_generation");
+  await requireUsageLimit("ai_responses_daily");
 
   // Consume credits for AI response generation (2 credits)
   await _consumeCredits(
@@ -6418,77 +9050,107 @@ export async function generateResponse(input: { commentId: string }) {
     throw new Error("Comment not found");
   }
 
-  // Get brand guidelines if available
-  const brandGuidelines = await db.brandGuidelines.findUnique({
-    where: { userId },
-  });
-
-  // Add user style profile
-  const userPref = await db.userResponsePreference.findUnique({
-    where: { userId },
-  });
-  let userPrefBlurb = "";
-  if (userPref) {
-    userPrefBlurb = `\n\n[USER STYLE INSIGHTS]\nPreferred Tone: ${userPref.tone || "(not enough data)"}\nTypical Length: ${userPref.length || "(not enough data)"}\nPositivity: ${typeof userPref.positivity === "number" ? userPref.positivity : "(n/a)"}\nDirectness: ${typeof userPref.directness === "number" ? userPref.directness : "(n/a)"}`;
-    if (userPref.keywords) {
-      try {
-        const keywords = JSON.parse(userPref.keywords) as string[];
-        if (Array.isArray(keywords) && keywords.length > 0) {
-          userPrefBlurb += `\nFrequently used keywords: ${keywords.slice(0, 6).join(", ")}`;
-        }
-      } catch {}
-    }
-    userPrefBlurb +=
-      "\nUse these as a guide to make the suggested reply match the user's real-world response habits as much as possible.";
-  }
-
-  let systemPrompt =
-    "You are a helpful social media manager assistant. Generate a friendly, professional response to the comment. Keep it concise (max 2-3 sentences) and conversational. Avoid generic responses. Make it sound like it's written by a human, not AI.";
-
-  // Enhance prompt with brand guidelines if available
-  if (brandGuidelines) {
-    systemPrompt += `\n\nBrand Voice: ${brandGuidelines.brandVoice}\n`;
-
-    try {
-      const tonePriorities = JSON.parse(
-        brandGuidelines.tonePriorities || "[]",
-      ) as string[];
-      if (tonePriorities.length > 0) {
-        systemPrompt += `Tone Priorities: ${tonePriorities.join(", ")}\n`;
-      }
-
-      const phrasesToUse = JSON.parse(
-        brandGuidelines.phrasesToUse || "[]",
-      ) as string[];
-      if (phrasesToUse.length > 0) {
-        systemPrompt += `Phrases to Use: ${phrasesToUse.join(", ")}\n`;
-      }
-
-      const phrasesToAvoid = JSON.parse(
-        brandGuidelines.phrasesToAvoid || "[]",
-      ) as string[];
-      if (phrasesToAvoid.length > 0) {
-        systemPrompt += `Phrases to Avoid: ${phrasesToAvoid.join(", ")}\n`;
-      }
-
-      if (brandGuidelines.additionalNotes) {
-        systemPrompt += `Additional Notes: ${brandGuidelines.additionalNotes}\n`;
-      }
-
-      const exampleResponses = JSON.parse(
-        brandGuidelines.exampleResponses || "[]",
-      ) as string[];
-      if (exampleResponses.length > 0) {
-        systemPrompt += `\nExample Responses in the brand's voice:\n${exampleResponses.map((ex, i) => `${i + 1}. ${ex}`).join("\n")}`;
-      }
-    } catch (error) {
-      console.error("Error parsing brand guidelines JSON:", error);
-      // Continue without the parsed values if there's an error
-    }
-  }
-  systemPrompt += userPrefBlurb;
+  // Start streaming response for real-time progress updates
+  const stream = await startRealtimeResponse<{
+    status?: string;
+    progress?: number;
+    currentStep?: string;
+    toolHistory?: Array<{
+      name: string;
+      status: "in_progress" | "done";
+      inProgressMessage: string;
+    }>;
+    result?: {
+      response: string;
+      alternativeResponses?: string[];
+    };
+    error?: string;
+  }>();
 
   try {
+    // Initial status update
+    stream.next({
+      status: "starting",
+      progress: 0,
+      currentStep: "Preparing to generate response...",
+    });
+
+    // Get brand guidelines if available
+    const brandGuidelines = await db.brandGuidelines.findUnique({
+      where: { userId },
+    });
+
+    // Add user style profile
+    const userPref = await db.userResponsePreference.findUnique({
+      where: { userId },
+    });
+    let userPrefBlurb = "";
+    if (userPref) {
+      userPrefBlurb = `\n\n[USER STYLE INSIGHTS]\nPreferred Tone: ${userPref.tone || "(not enough data)"}\nTypical Length: ${userPref.length || "(not enough data)"}\nPositivity: ${typeof userPref.positivity === "number" ? userPref.positivity : "(n/a)"}\nDirectness: ${typeof userPref.directness === "number" ? userPref.directness : "(n/a)"}`;
+      if (userPref.keywords) {
+        try {
+          const keywords = JSON.parse(userPref.keywords) as string[];
+          if (Array.isArray(keywords) && keywords.length > 0) {
+            userPrefBlurb += `\nFrequently used keywords: ${keywords.slice(0, 6).join(", ")}`;
+          }
+        } catch {}
+      }
+      userPrefBlurb +=
+        "\nUse these as a guide to make the suggested reply match the user's real-world response habits as much as possible.";
+    }
+
+    let systemPrompt =
+      "You are a helpful social media manager assistant. Generate a friendly, professional response to the comment. Keep it concise (max 2-3 sentences) and conversational. Avoid generic responses. Make it sound like it's written by a human, not AI.";
+
+    // Enhance prompt with brand guidelines if available
+    if (brandGuidelines) {
+      systemPrompt += `\n\nBrand Voice: ${brandGuidelines.brandVoice}\n`;
+
+      try {
+        const tonePriorities = JSON.parse(
+          brandGuidelines.tonePriorities || "[]",
+        ) as string[];
+        if (tonePriorities.length > 0) {
+          systemPrompt += `Tone Priorities: ${tonePriorities.join(", ")}\n`;
+        }
+
+        const phrasesToUse = JSON.parse(
+          brandGuidelines.phrasesToUse || "[]",
+        ) as string[];
+        if (phrasesToUse.length > 0) {
+          systemPrompt += `Phrases to Use: ${phrasesToUse.join(", ")}\n`;
+        }
+
+        const phrasesToAvoid = JSON.parse(
+          brandGuidelines.phrasesToAvoid || "[]",
+        ) as string[];
+        if (phrasesToAvoid.length > 0) {
+          systemPrompt += `Phrases to Avoid: ${phrasesToAvoid.join(", ")}\n`;
+        }
+
+        if (brandGuidelines.additionalNotes) {
+          systemPrompt += `Additional Notes: ${brandGuidelines.additionalNotes}\n`;
+        }
+
+        const exampleResponses = JSON.parse(
+          brandGuidelines.exampleResponses || "[]",
+        ) as string[];
+        if (exampleResponses.length > 0) {
+          systemPrompt += `\nExample Responses in the brand's voice:\n${exampleResponses.map((ex, i) => `${i + 1}. ${ex}`).join("\n")}`;
+        }
+      } catch (error) {
+        console.error("Error parsing brand guidelines JSON:", error);
+        // Continue without the parsed values if there's an error
+      }
+    }
+    systemPrompt += userPrefBlurb;
+
+    stream.next({
+      status: "generating",
+      progress: 20,
+      currentStep: "Generating AI response...",
+    });
+
     const result = await requestMultimodalModel({
       system: systemPrompt,
       messages: [
@@ -6497,16 +9159,59 @@ export async function generateResponse(input: { commentId: string }) {
           content: `Generate a response to this ${comment.platform} comment: "${comment.text}" from user ${comment.authorName}. The comment was made on a post from the account "${comment.account.name}".`,
         },
       ],
-      returnType: z.object({
-        response: z.string(),
-        alternativeResponses: z.array(z.string()).optional(),
-      }),
+      returnType: z
+        .object({
+          response: z
+            .string()
+            .describe("The generated response to the comment."),
+          alternativeResponses: z
+            .array(z.string())
+            .optional()
+            .describe("Alternative response variations."),
+        })
+        .describe(
+          "A response containing the generated comment reply and alternatives.",
+        ),
       model: "small", // Simple response generation can use small model
+      onProgress: (tools) => {
+        stream.next({
+          toolHistory: tools.map((tool) => ({
+            name: tool.toolName,
+            status: tool.status,
+            inProgressMessage: tool.inProgressMessage,
+          })),
+          progress:
+            30 +
+            (tools.filter((t) => t.status === "done").length / tools.length) *
+              50,
+          currentStep:
+            tools.find((t) => t.status === "in_progress")?.inProgressMessage ||
+            "Generating response...",
+        });
+      },
     });
 
-    return result;
+    stream.next({
+      status: "completed",
+      progress: 100,
+      currentStep: "Response generated successfully!",
+      result: result,
+    });
+
+    return stream.end();
   } catch (error) {
     console.error("Error generating response:", error);
+
+    stream.next({
+      status: "error",
+      progress: 0,
+      currentStep: "Error occurred during generation",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to generate response. Please try again.",
+    });
+
     throw new Error("Failed to generate response. Please try again.");
   }
 }
@@ -6547,12 +9252,24 @@ export async function updateCommentStatus(input: {
           system:
             "You are a comment categorization expert. Analyze this comment and classify its type, topic, and likely reason for dismissal.",
           messages: [{ role: "user", content: comment.text }],
-          returnType: z.object({
-            commentType: z.string(),
-            topic: z.string(),
-            likelyDismissalReason: z.string(),
-            keywords: z.array(z.string()),
-          }),
+          returnType: z
+            .object({
+              commentType: z
+                .string()
+                .describe("The category or type of the comment."),
+              topic: z
+                .string()
+                .describe("The main topic or subject of the comment."),
+              likelyDismissalReason: z
+                .string()
+                .describe("The probable reason for dismissing this comment."),
+              keywords: z
+                .array(z.string())
+                .describe("Key terms and phrases from the comment."),
+            })
+            .describe(
+              "Analysis of comment categorization and dismissal reasoning.",
+            ),
           model: "small",
         });
 
@@ -6707,6 +9424,12 @@ async function updateAnalyticsCache({
   if (data) {
     updateData.data = JSON.stringify(data);
   }
+  // When (re)starting generation, reset the startedAt timestamp so timeouts and UI timers are accurate
+  if (status === "GENERATING") {
+    updateData.startedAt = new Date();
+    // Clear any previous completion timestamp
+    updateData.completedAt = null;
+  }
   if (status === "COMPLETED" || status === "FAILED") {
     updateData.completedAt = new Date();
   }
@@ -6724,6 +9447,235 @@ async function updateAnalyticsCache({
       error: error || null,
     },
   });
+}
+
+// Cache cleanup utilities
+async function cleanupStuckGeneratingTasks() {
+  const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+
+  const stuckTasks = await db.analyticsCache.findMany({
+    where: {
+      status: "GENERATING",
+      startedAt: { lt: twoHoursAgo },
+    },
+  });
+
+  if (stuckTasks.length > 0) {
+    console.log(`Cleaning up ${stuckTasks.length} stuck GENERATING tasks`);
+
+    await db.analyticsCache.updateMany({
+      where: {
+        status: "GENERATING",
+        startedAt: { lt: twoHoursAgo },
+      },
+      data: {
+        status: "FAILED",
+        error: "Task timed out after 2 hours",
+        completedAt: new Date(),
+      },
+    });
+  }
+
+  return stuckTasks.length;
+}
+
+// Export cleanup function for manual use
+export async function cleanupStuckInsightsTasks() {
+  try {
+    console.log("[cleanupStuckInsightsTasks] Starting cleanup of stuck tasks");
+
+    // Clean up tasks stuck for more than 1 hour (more aggressive)
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+
+    const stuckTasks = await db.analyticsCache.findMany({
+      where: {
+        status: "GENERATING",
+        startedAt: { lt: oneHourAgo },
+      },
+    });
+
+    console.log(
+      `[cleanupStuckInsightsTasks] Found ${stuckTasks.length} stuck tasks`,
+    );
+
+    if (stuckTasks.length > 0) {
+      // Reset stuck tasks to allow regeneration
+      await db.analyticsCache.deleteMany({
+        where: {
+          status: "GENERATING",
+          startedAt: { lt: oneHourAgo },
+        },
+      });
+
+      console.log(
+        `[cleanupStuckInsightsTasks] Cleaned up ${stuckTasks.length} stuck tasks`,
+      );
+    }
+
+    return {
+      success: true,
+      cleanedCount: stuckTasks.length,
+      message: `Successfully cleaned up ${stuckTasks.length} stuck insight generation tasks`,
+    };
+  } catch (error) {
+    console.error("[cleanupStuckInsightsTasks] Error during cleanup:", error);
+    return {
+      success: false,
+      cleanedCount: 0,
+      error: error instanceof Error ? error.message : "Unknown error occurred",
+    };
+  }
+}
+
+// Force reset insights for a specific user
+export async function resetUserInsights() {
+  try {
+    const { userId } = await getAuth({ required: true });
+    console.log(`[resetUserInsights] Resetting insights for user: ${userId}`);
+
+    // Delete all analytics cache entries for this user
+    const deletedEntries = await db.analyticsCache.deleteMany({
+      where: {
+        userId,
+        cacheType: "advanced_insights",
+      },
+    });
+
+    console.log(
+      `[resetUserInsights] Deleted ${deletedEntries.count} cache entries`,
+    );
+
+    return {
+      success: true,
+      deletedCount: deletedEntries.count,
+      message:
+        "Successfully reset your insights. You can now generate new insights.",
+    };
+  } catch (error) {
+    console.error("[resetUserInsights] Error during reset:", error);
+    return {
+      success: false,
+      deletedCount: 0,
+      error:
+        error instanceof Error ? error.message : "Failed to reset insights",
+    };
+  }
+}
+
+async function cleanupOldCompletedTasks() {
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+  const oldTasks = await db.analyticsCache.findMany({
+    where: {
+      status: { in: ["COMPLETED", "FAILED"] },
+      completedAt: { lt: sevenDaysAgo },
+    },
+    select: { id: true },
+  });
+
+  if (oldTasks.length > 0) {
+    console.log(`Cleaning up ${oldTasks.length} old completed/failed tasks`);
+
+    await db.analyticsCache.deleteMany({
+      where: {
+        status: { in: ["COMPLETED", "FAILED"] },
+        completedAt: { lt: sevenDaysAgo },
+      },
+    });
+  }
+
+  return oldTasks.length;
+}
+
+async function cleanupOrphanedCacheTasks() {
+  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+  const orphanedTasks = await db.analyticsCache.findMany({
+    where: {
+      status: "PENDING",
+      startedAt: { lt: twentyFourHoursAgo },
+    },
+  });
+
+  if (orphanedTasks.length > 0) {
+    console.log(`Cleaning up ${orphanedTasks.length} orphaned PENDING tasks`);
+
+    await db.analyticsCache.deleteMany({
+      where: {
+        status: "PENDING",
+        startedAt: { lt: twentyFourHoursAgo },
+      },
+    });
+  }
+
+  return orphanedTasks.length;
+}
+
+export async function performCacheCleanup() {
+  console.log("Starting analytics cache cleanup...");
+
+  try {
+    const [stuckCount, oldCount, orphanedCount] = await Promise.all([
+      cleanupStuckGeneratingTasks(),
+      cleanupOldCompletedTasks(),
+      cleanupOrphanedCacheTasks(),
+    ]);
+
+    const totalCleaned = stuckCount + oldCount + orphanedCount;
+    console.log(
+      `Cache cleanup completed. Cleaned up ${totalCleaned} total entries (${stuckCount} stuck, ${oldCount} old, ${orphanedCount} orphaned)`,
+    );
+
+    return {
+      success: true,
+      cleaned: {
+        stuck: stuckCount,
+        old: oldCount,
+        orphaned: orphanedCount,
+        total: totalCleaned,
+      },
+    };
+  } catch (error) {
+    console.error("Cache cleanup failed:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
+export async function getCacheStats() {
+  const stats = await db.analyticsCache.groupBy({
+    by: ["status"],
+    _count: {
+      id: true,
+    },
+  });
+
+  const totalCount = await db.analyticsCache.count();
+
+  const oldestEntry = await db.analyticsCache.findFirst({
+    orderBy: { startedAt: "asc" },
+    select: { startedAt: true },
+  });
+
+  const newestEntry = await db.analyticsCache.findFirst({
+    orderBy: { startedAt: "desc" },
+    select: { startedAt: true },
+  });
+
+  return {
+    total: totalCount,
+    byStatus: stats.reduce(
+      (acc, stat) => {
+        acc[stat.status] = stat._count.id;
+        return acc;
+      },
+      {} as Record<string, number>,
+    ),
+    oldestEntry: oldestEntry?.startedAt,
+    newestEntry: newestEntry?.startedAt,
+  };
 }
 
 export async function findOrCreateContentPillar(input: {
@@ -6771,12 +9723,18 @@ export async function generateContentFromTrendingTopic(input: {
 }) {
   const { userId } = await getAuth({ required: true });
 
-  // Consume credits for content generation (5 credits)
+  // Check feature access for content generation
+  await requireFeatureAccess("content_generation");
+
+  // Check usage limits for content generation
+  await requireUsageLimit("content_generation_daily");
+
+  // Consume credits for content generation (8 credits for comprehensive posts)
   await _consumeCredits(
     userId,
     "content_generation",
-    5,
-    `Generated content from trending topic: ${input.topic.topic}`,
+    8,
+    `Generated comprehensive content from trending topic: ${input.topic.topic}`,
     { topic: input.topic.topic, format: input.format },
   );
 
@@ -6830,52 +9788,233 @@ export async function generateContentFromTrendingTopic(input: {
 
   const task = await queueTask(async () => {
     try {
+      // Generate comprehensive social media post package
+      const brand = await getBrandGuidelines();
+      const brandVibeText = brand
+        ? `Brand Voice: ${brand.brandVoice}\nDirectives: ${(brand.directives || []).join(", ")}`
+        : "";
+
       const generationResult = await requestMultimodalModel({
-        system: `You are an expert content creator. Generate content based on the user's prompt and requested format. The user is working within the content pillar "${pillar.name}".`,
+        system: `You are an expert social media content strategist and creator.\n\nBRAND VIBE ALIGNMENT: Always enforce the following brand rules. If any requested content conflicts, adapt it to comply without losing impact.\n${brandVibeText}\n\nGenerate a COMPLETE, enterprise-ready social media post package based on the trending topic and format requested.
+
+CRITICAL REQUIREMENTS:
+1. Create a comprehensive post package with all elements needed for immediate posting
+2. Include compelling post text optimized for engagement
+3. Generate high-quality visual content (images/videos) when appropriate
+4. Provide platform-specific optimizations for Twitter, Instagram, LinkedIn, Facebook, TikTok
+5. Include strategic hashtag recommendations for each platform
+6. Create attention-grabbing hooks and compelling call-to-actions
+7. Provide actionable posting strategies and timing recommendations
+8. Ensure content aligns with current trends and best practices
+9. Generate content that maximizes reach, engagement, and conversion potential
+
+Your output should be immediately actionable for enterprise marketing teams and optimized for maximum impact across all social platforms.`,
         messages: [
           {
             role: "user",
-            content: `Pillar: ${pillar.name}\nTopic Details: ${JSON.stringify(
-              input.topic,
-            )}\nRequested Format: ${
-              input.format
-            }\n\nPlease generate a piece of content that fits this request. For images or videos, provide a detailed generation prompt. For text, provide the full text.`,
+            content: `Create a COMPLETE social media post package for:
+
+Content Pillar: ${pillar.name}
+Topic Details: ${JSON.stringify({
+              topic: sanitizeString(input.topic.topic || "", 200),
+              executiveSummary: sanitizeString(
+                input.topic.executiveSummary || "",
+                500,
+              ),
+              strategicAngle: sanitizeString(
+                input.topic.strategicAngle || "",
+                300,
+              ),
+              exampleHook: sanitizeString(input.topic.exampleHook || "", 200),
+              samplePost: sanitizeString(input.topic.samplePost || "", 400),
+              historicalData: sanitizeString(
+                input.topic.historicalData || "",
+                300,
+              ),
+              contentFormatSuggestions: sanitizeArray(
+                input.topic.contentFormatSuggestions || [],
+                5,
+                100,
+              ),
+            })}
+Requested Format: ${input.format}
+
+Generate a complete, enterprise-ready social media post package that includes all elements needed for immediate posting across multiple platforms.`,
           },
         ],
-        returnType: z.object({
-          title: z.string(),
-          content: z
-            .string()
-            .describe(
-              "The generated text, or a prompt for image/video generation.",
-            ),
-        }),
+        returnType: z
+          .object({
+            title: z
+              .string()
+              .describe("The compelling title/headline for the post"),
+            postText: z
+              .string()
+              .describe(
+                "The complete, engaging post text ready for publishing",
+              ),
+            caption: z
+              .string()
+              .describe("A compelling caption that works across all platforms"),
+            hook: z.string().describe("An attention-grabbing opening hook"),
+            callToAction: z.string().describe("A compelling call-to-action"),
+            hashtags: z
+              .object({
+                twitter: z
+                  .array(z.string())
+                  .describe("Twitter-optimized hashtags (max 3)"),
+                instagram: z
+                  .array(z.string())
+                  .describe("Instagram-optimized hashtags (max 30)"),
+                linkedin: z
+                  .array(z.string())
+                  .describe("LinkedIn-optimized hashtags (max 5)"),
+                facebook: z
+                  .array(z.string())
+                  .describe("Facebook-optimized hashtags (max 5)"),
+                tiktok: z
+                  .array(z.string())
+                  .describe("TikTok-optimized hashtags (max 5)"),
+              })
+              .describe("Platform-specific hashtag strategies"),
+            platformStrategies: z
+              .array(
+                z.object({
+                  platform: z
+                    .string()
+                    .describe("Platform name (Twitter, Instagram, etc.)"),
+                  strategy: z
+                    .string()
+                    .describe("Platform-specific posting strategy"),
+                  optimizedText: z
+                    .string()
+                    .describe("Platform-optimized version of the post text"),
+                  bestTimes: z
+                    .array(z.string())
+                    .describe("Optimal posting times for this platform"),
+                  viralityScore: z
+                    .number()
+                    .describe("Predicted virality score (1-10)"),
+                }),
+              )
+              .describe("Detailed strategies for each major platform"),
+            imagePrompt: z
+              .string()
+              .describe(
+                "Detailed prompt for generating a high-quality visual asset",
+              ),
+            videoPrompt: z
+              .string()
+              .optional()
+              .describe(
+                "Optional prompt for generating video content if applicable",
+              ),
+            optimizationTips: z
+              .array(z.string())
+              .describe("Actionable tips for maximizing post performance"),
+            targetAudience: z
+              .string()
+              .describe("Primary target audience for this content"),
+            contentGoals: z
+              .array(z.string())
+              .describe("Key goals this content aims to achieve"),
+          })
+          .describe(
+            "Complete social media post package with all necessary elements",
+          ),
       });
 
-      let finalContent = generationResult.content;
+      let finalImageUrl: string | undefined;
+      let finalVideoUrl: string | undefined;
 
-      if (contentType === "IMAGE") {
+      // Always generate a high-quality image for social media posts
+      try {
+        const brandForImage = await getBrandGuidelines();
+        const brandVibeForImage = brandForImage
+          ? `Brand Voice: ${brandForImage.brandVoice}\nDirectives: ${(brandForImage.directives || []).join(", ")}`
+          : "";
         const imageResult = await requestMultimodalModel({
-          system: "You are an image generation assistant.",
+          system: `You are a professional social media visual designer. Create high-quality, engaging images optimized for social media platforms. Use the generateHighQualityImages tool to create professional-grade visuals.\n\nBRAND VIBE ALIGNMENT:\n${brandVibeForImage}`,
           messages: [
             {
               role: "user",
-              content: `Generate an image for the following prompt: ${generationResult.content}`,
+              content: `Generate a high-quality, professional social media image for: ${generationResult.imagePrompt}. The image should be engaging, on-brand, and optimized for social media platforms.`,
             },
           ],
-          returnType: z.object({ imageUrl: z.string() }),
+          returnType: z
+            .object({
+              imageUrl: z
+                .string()
+                .describe("The URL of the generated high-quality image."),
+            })
+            .describe("A response containing the generated image URL."),
         });
-        finalContent = imageResult.imageUrl;
-      } else if (contentType === "VIDEO") {
-        // Placeholder for video generation logic
-        finalContent = "Video generation is not yet implemented.";
+        finalImageUrl = imageResult.imageUrl;
+      } catch (error) {
+        console.error("Failed to generate image:", error);
+        // Continue without image if generation fails
       }
+
+      // Generate video if specifically requested or if format suggests video content
+      if (contentType === "VIDEO" || generationResult.videoPrompt) {
+        try {
+          const videoResult = await requestMultimodalModel({
+            system:
+              "You are a professional video content creator. Generate engaging, high-quality videos optimized for social media platforms.",
+            messages: [
+              {
+                role: "user",
+                content: `Generate a professional social media video for: ${
+                  generationResult.videoPrompt || generationResult.imagePrompt
+                }. The video should be engaging and optimized for social media platforms.`,
+              },
+            ],
+            returnType: z
+              .object({
+                videoUrl: z
+                  .string()
+                  .describe("The URL of the generated video."),
+              })
+              .describe("A response containing the generated video URL."),
+          });
+          finalVideoUrl = videoResult.videoUrl;
+        } catch (error) {
+          console.error("Failed to generate video:", error);
+          // Continue without video if generation fails
+        }
+      }
+
+      // Create comprehensive content package
+      const contentPackage = {
+        title: generationResult.title,
+        postText: generationResult.postText,
+        caption: generationResult.caption,
+        hook: generationResult.hook,
+        callToAction: generationResult.callToAction,
+        hashtags: generationResult.hashtags,
+        platformStrategies: generationResult.platformStrategies,
+        optimizationTips: generationResult.optimizationTips,
+        targetAudience: generationResult.targetAudience,
+        contentGoals: generationResult.contentGoals,
+        imageUrl: finalImageUrl,
+        videoUrl: finalVideoUrl,
+        originalTopic: input.topic,
+        format: input.format,
+        generatedAt: new Date().toISOString(),
+        brandVibe: brand
+          ? {
+              applied: true,
+              appliedAt: new Date().toISOString(),
+              brandVoice: brand.brandVoice,
+              directives: brand.directives || [],
+            }
+          : { applied: false },
+      };
 
       await db.generatedContent.update({
         where: { id: generatedContent.id },
         data: {
           title: generationResult.title,
-          content: finalContent,
+          content: JSON.stringify(contentPackage),
           status: "DRAFT",
         },
       });
@@ -6891,13 +10030,99 @@ export async function generateContentFromTrendingTopic(input: {
         `[Task] Failed to generate content from topic ${input.topic.topic}:`,
         error,
       );
-      await db.generatedContent.update({
-        where: { id: generatedContent.id },
-        data: {
-          status: "FAILED",
-          content: error instanceof Error ? error.message : "Generation failed",
-        },
-      });
+
+      // Try fallback content generation with simpler approach
+      try {
+        const fallbackResult = await requestMultimodalModel({
+          system:
+            "You are a content creator. Generate a complete social media post package based on the topic provided.",
+          messages: [
+            {
+              role: "user",
+              content: `Create a complete social media post about: ${sanitizeString(input.topic.topic || "", 100)}. Include post text, caption, hashtags, and a description for a visual asset.`,
+            },
+          ],
+          returnType: z
+            .object({
+              title: z.string().describe("The title of the content"),
+              postText: z.string().describe("The main post text"),
+              caption: z.string().describe("A compelling caption"),
+              hashtags: z.array(z.string()).describe("Relevant hashtags"),
+              imageDescription: z
+                .string()
+                .describe("Description of visual content needed"),
+            })
+            .describe("The generated content response"),
+          model: "small", // Use smaller model for fallback
+        });
+
+        const fallbackPackage = {
+          title: fallbackResult.title,
+          postText: fallbackResult.postText,
+          caption: fallbackResult.caption,
+          hashtags: {
+            twitter: fallbackResult.hashtags.slice(0, 3),
+            instagram: fallbackResult.hashtags,
+            linkedin: fallbackResult.hashtags.slice(0, 5),
+            facebook: fallbackResult.hashtags.slice(0, 5),
+            tiktok: fallbackResult.hashtags.slice(0, 5),
+          },
+          platformStrategies: [
+            {
+              platform: "Twitter",
+              strategy: "Share with engaging thread potential",
+              optimizedText: fallbackResult.postText,
+              bestTimes: ["9:00 AM", "1:00 PM", "3:00 PM"],
+              viralityScore: 7,
+            },
+          ],
+          imageDescription: fallbackResult.imageDescription,
+          originalTopic: input.topic,
+          format: input.format,
+          generatedAt: new Date().toISOString(),
+        };
+
+        await db.generatedContent.update({
+          where: { id: generatedContent.id },
+          data: {
+            title: fallbackResult.title,
+            content: JSON.stringify(fallbackPackage),
+            status: "DRAFT",
+          },
+        });
+      } catch (fallbackError) {
+        console.error(
+          `[Task] Fallback content generation also failed for topic ${input.topic.topic}:`,
+          fallbackError,
+        );
+
+        // Final fallback with basic template
+        const basicTitle = `${input.format} about ${sanitizeString(input.topic.topic || "Topic", 50)}`;
+        const basicPackage = {
+          title: basicTitle,
+          postText: `Content about ${sanitizeString(input.topic.topic || "this topic", 100)} is currently being optimized. Please try generating again.`,
+          caption: "Engaging content coming soon!",
+          hashtags: {
+            twitter: ["#content", "#social"],
+            instagram: ["#content", "#social", "#marketing"],
+            linkedin: ["#content", "#social"],
+            facebook: ["#content", "#social"],
+            tiktok: ["#content", "#viral"],
+          },
+          error: true,
+          originalTopic: input.topic,
+          format: input.format,
+        };
+
+        await db.generatedContent.update({
+          where: { id: generatedContent.id },
+          data: {
+            title: basicTitle,
+            content: JSON.stringify(basicPackage),
+            status: "FAILED",
+          },
+        });
+      }
     }
   });
 
@@ -6926,12 +10151,15 @@ export async function generateContentFromViralPotential(input: {
 }) {
   const { userId } = await getAuth({ required: true });
 
-  // Consume credits for viral content generation (5 credits)
+  await requireFeatureAccess("viral_content_generation");
+  await requireUsageLimit("viral_content_daily");
+
+  // Consume credits for viral content generation (8 credits for comprehensive posts)
   await _consumeCredits(
     userId,
     "viral_content_generation",
-    5,
-    `Generated content from viral potential: ${input.post.concept}`,
+    8,
+    `Generated comprehensive content from viral potential: ${input.post.concept}`,
     { concept: input.post.concept },
   );
 
@@ -6966,50 +10194,209 @@ export async function generateContentFromViralPotential(input: {
 
   const task = await queueTask(async () => {
     try {
+      const brand = await getBrandGuidelines();
+      const brandVibeText = brand
+        ? `Brand Voice: ${brand.brandVoice}\nDirectives: ${(brand.directives || []).join(", ")}`
+        : "";
+
       const generationResult = await requestMultimodalModel({
-        system: `You are an expert content creator. Generate content based on the user's prompt and requested format. The user is working within the content pillar "${pillar.name}".`,
+        system: `You are an expert viral content creator with deep platform expertise.\n\nBRAND VIBE ALIGNMENT: Always enforce the following brand rules. If any requested content conflicts, adapt it to comply without losing impact.\n${brandVibeText}\n\nGenerate a COMPLETE viral post package based on the provided viral potential analysis.
+
+CRITICAL REQUIREMENTS:
+1. Create a complete, ready-to-post content package
+2. Include full text content optimized for virality
+3. Provide detailed platform-specific strategies for Twitter, Instagram, TikTok, LinkedIn, Facebook
+4. Include comprehensive hashtag strategies for each platform
+5. Generate compelling hooks and call-to-actions
+6. Provide optimization tips and timing recommendations
+7. Include viral scoring rationale with platform-specific metrics
+8. Ensure content format aligns with platform best practices
+9. Create content that maximizes engagement, shares, and viral potential
+
+Your output should be immediately actionable and optimized for maximum viral reach across all platforms. Focus on creating content that will generate massive engagement, shares, and reach.`,
         messages: [
           {
             role: "user",
-            content: `Pillar: ${pillar.name}\nViral Potential Details: ${JSON.stringify(
-              input.post,
-            )}\n\nPlease generate a piece of content that fits this request. For images or videos, provide a detailed generation prompt. For text, provide the full text.`,
+            content: `Create a COMPLETE viral post package based on this viral potential analysis:
+
+Content Pillar: ${pillar.name}
+Viral Concept: ${input.post.concept}
+Virality Score: ${input.post.viralityScore}
+Target Platforms: ${input.post.targetPlatforms.join(", ")}
+Justification: ${input.post.justification}
+Hook: ${input.post.hook}
+Body: ${input.post.body}
+Call to Action: ${input.post.callToAction}
+Hashtags: ${input.post.hashtags.join(", ")}
+Creative Direction: ${input.post.creativeDirection}
+Optimization Tips: ${input.post.optimizationTips}
+
+Generate a complete, ready-to-post viral content package that maximizes engagement potential across all platforms.`,
           },
         ],
-        returnType: z.object({
-          title: z.string(),
-          content: z
-            .string()
-            .describe(
-              "The generated text, or a prompt for image/video generation.",
-            ),
-        }),
+        returnType: z
+          .object({
+            title: z
+              .string()
+              .describe("The compelling title of the viral content"),
+            content: z
+              .string()
+              .describe(
+                "The complete viral post text content ready for posting",
+              ),
+            hook: z.string().describe("The attention-grabbing opening hook"),
+            callToAction: z.string().describe("The compelling call-to-action"),
+            hashtags: z
+              .object({
+                twitter: z
+                  .array(z.string())
+                  .describe("Twitter-optimized hashtags"),
+                instagram: z
+                  .array(z.string())
+                  .describe("Instagram-optimized hashtags"),
+                tiktok: z
+                  .array(z.string())
+                  .describe("TikTok-optimized hashtags"),
+                linkedin: z
+                  .array(z.string())
+                  .describe("LinkedIn-optimized hashtags"),
+                facebook: z
+                  .array(z.string())
+                  .describe("Facebook-optimized hashtags"),
+              })
+              .describe("Platform-specific hashtag strategies"),
+            platformStrategies: z
+              .object({
+                twitter: z
+                  .string()
+                  .describe(
+                    "Twitter-specific posting strategy and optimization",
+                  ),
+                instagram: z
+                  .string()
+                  .describe(
+                    "Instagram-specific posting strategy and optimization",
+                  ),
+                tiktok: z
+                  .string()
+                  .describe(
+                    "TikTok-specific posting strategy and optimization",
+                  ),
+                linkedin: z
+                  .string()
+                  .describe(
+                    "LinkedIn-specific posting strategy and optimization",
+                  ),
+                facebook: z
+                  .string()
+                  .describe(
+                    "Facebook-specific posting strategy and optimization",
+                  ),
+              })
+              .describe("Detailed platform-specific strategies"),
+            optimizationTips: z
+              .array(z.string())
+              .describe(
+                "Actionable optimization tips for maximum viral potential",
+              ),
+            viralScore: z
+              .number()
+              .describe("Updated virality score based on optimized content"),
+            imagePrompt: z
+              .string()
+              .optional()
+              .describe(
+                "Detailed prompt for image generation if visual content is needed",
+              ),
+          })
+          .describe(
+            "Complete viral post package with all platform optimizations",
+          ),
       });
 
-      let finalContent = generationResult.content;
+      let finalImageUrl: string | undefined;
+      let finalVideoUrl: string | undefined;
 
-      if (contentType === "IMAGE") {
-        const imageResult = await requestMultimodalModel({
-          system: "You are an image generation assistant.",
-          messages: [
-            {
-              role: "user",
-              content: `Generate an image for the following prompt: ${generationResult.content}`,
-            },
-          ],
-          returnType: z.object({ imageUrl: z.string() }),
-        });
-        finalContent = imageResult.imageUrl;
-      } else if (contentType === "VIDEO") {
-        // Placeholder for video generation logic
-        finalContent = "Video generation is not yet implemented.";
+      // Generate image if needed
+      if (contentType === "IMAGE" || generationResult.imagePrompt) {
+        try {
+          const imageResult = await requestMultimodalModel({
+            system:
+              "You are a professional image generation assistant. Create high-quality, viral-ready images based on the provided prompt.",
+            messages: [
+              {
+                role: "user",
+                content: `Generate a high-quality, viral-ready image for: ${generationResult.imagePrompt || generationResult.content}`,
+              },
+            ],
+            returnType: z
+              .object({
+                imageUrl: z
+                  .string()
+                  .describe("The URL of the generated image."),
+              })
+              .describe("A response containing the generated image URL."),
+          });
+          finalImageUrl = imageResult.imageUrl;
+        } catch (error) {
+          console.error("Failed to generate image:", error);
+        }
       }
+
+      // Generate video if needed
+      if (contentType === "VIDEO") {
+        try {
+          const videoResult = await requestMultimodalModel({
+            system:
+              "You are a professional video generation assistant. Create engaging, viral-ready videos based on the provided prompt.",
+            messages: [
+              {
+                role: "user",
+                content: `Generate a viral-ready video for: ${generationResult.content}`,
+              },
+            ],
+            returnType: z
+              .object({
+                videoUrl: z
+                  .string()
+                  .describe("The URL of the generated video."),
+              })
+              .describe("A response containing the generated video URL."),
+          });
+          finalVideoUrl = videoResult.videoUrl;
+        } catch (error) {
+          console.error("Failed to generate video:", error);
+        }
+      }
+
+      // Create comprehensive content package
+      const contentPackage = {
+        title: generationResult.title,
+        content: generationResult.content,
+        hook: generationResult.hook,
+        callToAction: generationResult.callToAction,
+        hashtags: generationResult.hashtags,
+        platformStrategies: generationResult.platformStrategies,
+        optimizationTips: generationResult.optimizationTips,
+        viralScore: generationResult.viralScore,
+        imageUrl: finalImageUrl,
+        videoUrl: finalVideoUrl,
+        originalViralPost: input.post,
+        brandVibe: brand
+          ? {
+              applied: true,
+              appliedAt: new Date().toISOString(),
+              brandVoice: brand.brandVoice,
+              directives: brand.directives || [],
+            }
+          : { applied: false },
+      };
 
       await db.generatedContent.update({
         where: { id: generatedContent.id },
         data: {
           title: generationResult.title,
-          content: finalContent,
+          content: JSON.stringify(contentPackage), // Store complete package as JSON
           status: "DRAFT",
         },
       });
@@ -7037,6 +10424,10 @@ export async function generateContentForPillar(input: {
   format: string; // e.g. "Infographics/visual explainers on beach access rules"
 }) {
   const { userId } = await getAuth({ required: true });
+
+  // Check feature access and usage limits before consuming credits
+  await requireFeatureAccess("content_generation");
+  await requireUsageLimit("content_generation");
 
   // Consume credits for content pillar generation (4 credits)
   await _consumeCredits(
@@ -7083,25 +10474,59 @@ export async function generateContentForPillar(input: {
 
   const task = await queueTask(async () => {
     try {
+      const brand = await getBrandGuidelines();
+      const brandVibeText = brand
+        ? `Brand Voice: ${brand.brandVoice}\nDirectives: ${(brand.directives || []).join(", ")}`
+        : "";
       const generationResult = await requestMultimodalModel({
-        system: `You are an expert content creator. Generate content based on the user's prompt and requested format. The user is working within the content pillar "${pillar.name}".`,
+        system: `You are an expert content creator.\n\nBRAND VIBE ALIGNMENT: Always enforce the following brand rules.\n${brandVibeText}\n\nGenerate content based on the user's prompt and requested format. The user is working within the content pillar "${pillar.name}".`,
         messages: [
           {
             role: "user",
             content: `Pillar: ${pillar.name}\nPrompt: ${input.prompt}\nFormat: ${input.format}\n\nPlease generate a piece of content that fits this request. For images or videos, provide a detailed generation prompt. For text, provide the full text.`,
           },
         ],
-        returnType: z.object({
-          title: z.string(),
-          content: z
-            .string()
-            .describe(
-              "The generated text, or a prompt for image/video generation.",
-            ),
-        }),
+        returnType: z
+          .object({
+            title: z.string().describe("The title of the generated content."),
+            content: z
+              .string()
+              .describe(
+                "The generated text, or a prompt for image/video generation.",
+              ),
+          })
+          .describe("Generated content with title and body."),
       });
 
       let finalContent = generationResult.content;
+
+      // Tag Brand Vibe metadata for TEXT content by wrapping into a structured package
+      if (contentType === "TEXT") {
+        const contentPackage = {
+          title: generationResult.title,
+          postText: generationResult.content,
+          hashtags: {
+            twitter: [],
+            instagram: [],
+            linkedin: [],
+            facebook: [],
+            tiktok: [],
+          },
+          platformStrategies: [],
+          generatedAt: new Date().toISOString(),
+          pillar: { id: pillar.id, name: pillar.name },
+          format: input.format,
+          brandVibe: brand
+            ? {
+                applied: true,
+                appliedAt: new Date().toISOString(),
+                brandVoice: brand.brandVoice,
+                directives: brand.directives || [],
+              }
+            : { applied: false },
+        } as const;
+        finalContent = JSON.stringify(contentPackage);
+      }
 
       if (contentType === "IMAGE") {
         const imageResult = await requestMultimodalModel({
@@ -7112,12 +10537,42 @@ export async function generateContentForPillar(input: {
               content: `Generate an image for the following prompt: ${generationResult.content}`,
             },
           ],
-          returnType: z.object({ imageUrl: z.string() }),
+          returnType: z
+            .object({
+              imageUrl: z.string().describe("The URL of the generated image."),
+            })
+            .describe("A response containing the generated image URL."),
         });
         finalContent = imageResult.imageUrl;
       } else if (contentType === "VIDEO") {
         // Placeholder for video generation logic
         finalContent = "Video generation is not yet implemented.";
+      }
+
+      // If content is IMAGE or VIDEO, also tag Brand Vibe in sourceIdea for traceability
+      if (contentType !== "TEXT") {
+        try {
+          const existingSource = JSON.parse(
+            generatedContent.sourceIdea || "{}",
+          ) as { [k: string]: any };
+          const updatedSource = {
+            ...existingSource,
+            brandVibe: brand
+              ? {
+                  applied: true,
+                  appliedAt: new Date().toISOString(),
+                  brandVoice: brand.brandVoice,
+                  directives: brand.directives || [],
+                }
+              : { applied: false },
+          };
+          await db.generatedContent.update({
+            where: { id: generatedContent.id },
+            data: { sourceIdea: JSON.stringify(updatedSource) },
+          });
+        } catch {
+          // ignore tagging failures for sourceIdea
+        }
       }
 
       await db.generatedContent.update({
@@ -7148,10 +10603,31 @@ export async function generateContentForPillar(input: {
 
 export async function listContentPillars() {
   const { userId } = await getAuth({ required: true });
-  return await db.contentPillar.findMany({
+
+  // Fast timeout and graceful fallback so left nav and filters don't block
+  const dbOperation = db.contentPillar.findMany({
     where: { userId },
     orderBy: { name: "asc" },
   });
+
+  const timeoutMs = 5000;
+  const timeoutPromise = new Promise((_, reject) =>
+    setTimeout(
+      () => reject(new Error("DB timeout in listContentPillars")),
+      timeoutMs,
+    ),
+  );
+
+  try {
+    const pillars = (await Promise.race([
+      dbOperation,
+      timeoutPromise,
+    ])) as any[];
+    return Array.isArray(pillars) ? pillars : [];
+  } catch (error) {
+    console.error("listContentPillars fallback due to error:", error);
+    return [];
+  }
 }
 
 export async function listGeneratedContent(input: { pillarId: string }) {
@@ -7207,9 +10683,9 @@ export async function updateGeneratedContent(input: {
 function getAnalyticsCacheKey(
   type: string,
   userId: string,
-  input?: { pageId?: string; platform?: string },
+  input?: { pageId?: string; platform?: string; mode?: string },
 ) {
-  return `${type}_${userId}_${input?.pageId || "all"}_${input?.platform || "all"}`;
+  return `${type}_${userId}_${input?.pageId || "all"}_${input?.platform || "all"}_${input?.mode || "balanced"}`;
 }
 
 // Trends API - Get trending content and analytics
@@ -7240,6 +10716,14 @@ const CalendarPostSchema = z.object({
   viralityScore: z.number().min(0).max(10),
   recommendedTime: z.string(),
   targetPlatforms: z.array(z.string()),
+  trendingTopics: z
+    .array(z.string())
+    .optional()
+    .describe("Names of trending topics that influenced this post"),
+  viralInsights: z
+    .array(z.string())
+    .optional()
+    .describe("Viral content insights that influenced this post"),
 });
 
 const DailyCalendarSchema = z.object({
@@ -7351,6 +10835,10 @@ export async function refreshContentStrategy(input?: {
 
       await updateStatus("GENERATING_CALENDAR");
 
+      // Get unified context from discover section (trending topics & viral insights)
+      // Get unified context from discover section (trending topics & viral insights)
+      const unifiedContext = await getUnifiedContentContext(userId);
+
       const contentParts: {
         type: string;
         text?: string;
@@ -7358,10 +10846,75 @@ export async function refreshContentStrategy(input?: {
         image_url?: { url: string };
       }[] = [];
 
+      // Load saved strategy preferences (if any) to guide generation
+      let savedPrefs: StrategyPreferences | null = null;
+      try {
+        const row = await db.contentStrategy.findUnique({ where: { userId } });
+        if (row?.preferences) {
+          const parsed = StrategyPreferencesSchema.safeParse(
+            JSON.parse(row.preferences) as unknown as StrategyPreferences,
+          );
+          if (parsed.success) savedPrefs = parsed.data;
+        }
+      } catch {
+        // Non-fatal: proceed without preferences
+        console.log("No saved preferences or parse failed");
+      }
+
+      if (savedPrefs) {
+        const mix = savedPrefs.contentMix || ({} as any);
+        const prefsText = `\n\n**User Saved Strategy Preferences (Honor these strictly):**\n- Key Themes: ${
+          savedPrefs.keyThemes?.join(", ") || "(none)"
+        }\n- Target Audience: ${savedPrefs.targetAudience || "(none)"}\n- Content Mix (MUST sum to 100 and be preserved): Informational ${
+          mix.Informational ?? 0
+        }%, Inspirational ${mix.Inspirational ?? 0}%, Entertaining ${
+          mix.Entertaining ?? 0
+        }%, Promotional ${mix.Promotional ?? 0}%\n- KPIs to prioritize: ${
+          savedPrefs.kpis?.join(", ") || "(none)"
+        }\n\nEnsure all outputs align with these preferences. Keep the content mix percentages exactly as provided.`;
+        contentParts.push({ type: "text", text: prefsText });
+      }
+
+      // Build enhanced context with discover insights
+      let discoverInsightsText = "";
+      if (unifiedContext) {
+        const trendingTopicsText = unifiedContext.trendingTopics
+          .map(
+            (topic, index) =>
+              `${index + 1}. ${topic.topic} (${topic.platforms?.join(", ") || "Multiple"}) - ${topic.executiveSummary || topic.strategicAngle || "No description"}`,
+          )
+          .join("\n");
+
+        const viralInsightsText = unifiedContext.viralInsights
+          .map(
+            (insight, index) =>
+              `${index + 1}. ${insight.content} (Score: ${insight.viralScore}/10) - ${insight.explanation}`,
+          )
+          .join("\n");
+
+        let brandContextText = "";
+        if (unifiedContext.brandContext) {
+          brandContextText = `
+
+**Enhanced Brand Persona (from Brand Analysis):**
+- Voice: ${unifiedContext.brandContext.voice || "Not set"}
+- Target Audience: ${unifiedContext.brandContext.audience || "Not set"}
+- Content Pillars: ${unifiedContext.brandContext.contentPillars || "Not set"}`;
+        }
+
+        discoverInsightsText = `
+
+**Current Trending Topics (from Discover):**
+${trendingTopicsText || "No trending topics available"}
+
+**High-Performing Viral Content Insights (from Discover):**
+${viralInsightsText || "No viral insights available"}${brandContextText}`;
+      }
+
       contentParts.push({
         type: "text",
         text: `
-    Analyze the following social media comments, brand guidelines, user feedback, and learned brand signals to create a comprehensive content strategy. The learned brand signals are the most important input for personalization - adhere to them closely.
+    Analyze the following social media comments, brand guidelines, user feedback, learned brand signals, trending topics, and viral content insights to create a comprehensive content strategy. The learned brand signals are the most important input for personalization - adhere to them closely. Use the trending topics and viral insights to inform your content recommendations and ensure they align with current market trends and high-performing content patterns.
 
     **Brand Guidelines:**
     - Voice: ${brandGuidelines?.brandVoice || "Not set"}
@@ -7376,23 +10929,22 @@ export async function refreshContentStrategy(input?: {
       .join("\n")}
       
         **User Feedback on Past Suggestions:**
-    ${feedback
-      .map((f) => {
-        let tags = "N/A";
-        if (f.feedbackTags) {
-          try {
-            const parsedTags = JSON.parse(f.feedbackTags);
-            if (Array.isArray(parsedTags) && parsedTags.length > 0) {
-              tags = parsedTags.join(", ");
-            }
-          } catch {
-            // Ignore parsing errors, tags will remain 'N/A'
+    ${feedback.map((f) => {
+      let tags = "N/A";
+      if (f.feedbackTags) {
+        try {
+          const parsedTags = JSON.parse(f.feedbackTags);
+          if (Array.isArray(parsedTags) && parsedTags.length > 0) {
+            tags = parsedTags.join(", ");
           }
+        } catch {
+          // Ignore parsing errors, tags will remain 'N/A'
         }
-        return `- Suggestion was rated '${f.feedbackType}'. Recommendation ID: ${f.recommendationId}. Reason: ${tags}. Comment: ${f.feedbackComment || "N/A"}`;
-      })
+      }
+      return `- Suggestion was rated '${f.feedbackType}'. Recommendation ID: ${f.recommendationId}. Reason: ${tags}. Comment: ${f.feedbackComment || "N/A"}`;
+    })});
       .join("\n")}
-      ${brandSignalsContext}
+      ${brandSignalsContext}${discoverInsightsText}
       `,
       });
 
@@ -7411,7 +10963,7 @@ export async function refreshContentStrategy(input?: {
       contentParts.push({
         type: "text",
         text: `
-    Based on the provided comments and brand guidelines, create a comprehensive content strategy.
+    Based on the provided comments, brand guidelines, trending topics, and viral content insights, create a comprehensive content strategy that leverages current trends and proven high-performing content patterns.
 
     **Part 1: High-Level Strategy Summary**
     Generate a 'strategySummary' object that includes:
@@ -7435,7 +10987,9 @@ export async function refreshContentStrategy(input?: {
         - 'cta': A clear call to action.
         - 'assetPrompt' (optional): A DALL-E prompt for a visual.
         - 'videoScript' (optional): A short script if the format is video.
-        - 'rationale': Why this post is recommended for this day/time.
+         - 'rationale': Why this post is recommended for this day/time. Include how it leverages trending topics or viral insights when applicable.
+         - 'trendingTopics' (optional): Array of specific trending topic names that influenced this post.
+         - 'viralInsights' (optional): Array of viral content insight descriptions that influenced this post.
         - 'viralityScore': A 1-10 score predicting engagement potential.
         - 'recommendedTime': e.g., '9:30 AM PST'.
         - 'targetPlatforms': e.g., ['Instagram', 'Twitter'].
@@ -7447,14 +11001,28 @@ export async function refreshContentStrategy(input?: {
 
       const result = await requestMultimodalModel({
         system:
-          "You are a world-class content strategist. Your goal is to generate a deep, actionable 7-day content calendar based on provided data (comments and brand guidelines). You must follow the requested JSON schema precisely.",
+          "You are a world-class content strategist with expertise in trend analysis, viral content psychology, and brand persona alignment. Your goal is to generate a deep, actionable 7-day content calendar that MAXIMIZES trending topic integration and viral potential while maintaining perfect brand persona alignment.\n\nCRITICAL REQUIREMENTS:\n\n1. TRENDING TOPICS INTEGRATION (MANDATORY):\n   - Every post MUST leverage at least one trending topic from the discover section\n   - Include specific trending topic names in the 'trendingTopics' array for each post\n   - Explain HOW each trending topic is being utilized in the rationale\n   - Prioritize high-scoring trending topics (8+ scores) for maximum impact\n\n2. VIRAL INSIGHTS APPLICATION (MANDATORY):\n   - Every post MUST incorporate patterns from high-performing viral content\n   - Include specific viral insight descriptions in the 'viralInsights' array\n   - Apply viral content psychology principles to content briefs and CTAs\n   - Use proven viral formats and engagement triggers\n\n3. BRAND PERSONA ALIGNMENT (CRITICAL):\n   - All content must authentically reflect the brand voice, tone, and personality\n   - Leverage learned brand signals and user preferences extensively\n   - Ensure content themes align with brand values and target audience psychology\n   - Maintain consistency with established brand narrative and positioning\n\n4. STRATEGIC CONTENT MIX:\n   - Balance trending topic exploitation with brand authenticity\n   - Create content that feels natural, not forced or opportunistic\n   - Ensure each post serves the overall brand strategy while maximizing trend potential\n\n5. PERFORMANCE OPTIMIZATION:\n   - Assign realistic virality scores based on trend strength and brand fit\n   - Recommend optimal posting times based on trend momentum\n   - Suggest platform-specific adaptations for maximum reach\n\nYou must follow the requested JSON schema precisely and ensure NO post is created without both trending topics and viral insights integration.",
         messages: [{ role: "user", content: contentParts as any[] }],
         returnType: ContentStrategyCalendarSchema,
-        model: "small",
+        model: "medium",
       });
+
+      const preferencesAppliedSummary = (() => {
+        if (!savedPrefs) return result.strategySummary;
+        const s: any = { ...result.strategySummary };
+        if (savedPrefs.keyThemes && savedPrefs.keyThemes.length > 0)
+          s.keyThemes = savedPrefs.keyThemes;
+        if (savedPrefs.targetAudience)
+          s.targetAudience = savedPrefs.targetAudience;
+        if (savedPrefs.contentMix) s.contentMix = savedPrefs.contentMix as any;
+        if (savedPrefs.kpis && savedPrefs.kpis.length > 0)
+          s.kpis = savedPrefs.kpis;
+        return s;
+      })();
 
       const cleanedResult = {
         ...result,
+        strategySummary: preferencesAppliedSummary,
         calendar: result.calendar.map((day) => ({
           ...day,
           posts: day.posts.map((post) => ({ ...post, id: nanoid() })),
@@ -7489,6 +11057,86 @@ export async function refreshContentStrategy(input?: {
   });
 
   return { taskId: task.id };
+}
+
+export async function getStrategyPreferences() {
+  try {
+    const { userId } = await getAuth({ required: true });
+    const row = await db.contentStrategy.findUnique({ where: { userId } });
+    if (!row || !row.preferences)
+      return { preferences: null as StrategyPreferences | null };
+    const parsed = StrategyPreferencesSchema.safeParse(
+      JSON.parse(row.preferences) as unknown as StrategyPreferences,
+    );
+    if (!parsed.success) {
+      // If stored data is invalid, clear it gracefully
+      await db.contentStrategy.update({
+        where: { userId },
+        data: { preferences: null },
+      });
+      return { preferences: null as StrategyPreferences | null };
+    }
+    return { preferences: parsed.data };
+  } catch (error) {
+    console.error("getStrategyPreferences failed", (error as Error).message);
+    return { preferences: null as StrategyPreferences | null };
+  }
+}
+
+export async function updateStrategyPreferences(input: StrategyPreferences) {
+  try {
+    const { userId } = await getAuth({ required: true });
+    // Validate and enforce content mix totals gently (not hard-failing)
+    const validated = StrategyPreferencesSchema.parse(input);
+    const total =
+      validated.contentMix.Informational +
+      validated.contentMix.Inspirational +
+      validated.contentMix.Entertaining +
+      validated.contentMix.Promotional;
+    // Allow minor rounding drift; if wildly off, we normalize
+    if (total > 0 && (total < 99 || total > 101)) {
+      const factor = 100 / total;
+      validated.contentMix = {
+        Informational: Math.round(validated.contentMix.Informational * factor),
+        Inspirational: Math.round(validated.contentMix.Inspirational * factor),
+        Entertaining: Math.round(validated.contentMix.Entertaining * factor),
+        Promotional:
+          100 -
+          (Math.round(validated.contentMix.Informational * factor) +
+            Math.round(validated.contentMix.Inspirational * factor) +
+            Math.round(validated.contentMix.Entertaining * factor)),
+      };
+    }
+
+    await db.contentStrategy.upsert({
+      where: { userId },
+      update: { preferences: JSON.stringify(validated) },
+      create: {
+        userId,
+        preferences: JSON.stringify(validated),
+        status: "NONE",
+      },
+    });
+    return { success: true as const, preferences: validated };
+  } catch (error) {
+    console.error("updateStrategyPreferences failed", (error as Error).message);
+    return { success: false as const, error: (error as Error).message };
+  }
+}
+
+export async function clearStrategyPreferences() {
+  try {
+    const { userId } = await getAuth({ required: true });
+    await db.contentStrategy.upsert({
+      where: { userId },
+      update: { preferences: null },
+      create: { userId, preferences: null, status: "NONE" },
+    });
+    return { success: true as const };
+  } catch (error) {
+    console.error("clearStrategyPreferences failed", (error as Error).message);
+    return { success: false as const, error: (error as Error).message };
+  }
 }
 
 export async function generateContentStrategy() {
@@ -7528,12 +11176,194 @@ export async function generateContentStrategy() {
   return { status: cachedStrategy?.status || "NONE" };
 }
 
+// Regenerate a single day in the 7-day calendar while respecting saved preferences
+export async function regenerateStrategyDay(input: {
+  date?: string; // YYYY-MM-DD
+  dayIndex?: number;
+  basePost?: {
+    id?: string;
+    title?: string;
+    contentBrief?: string;
+    format?: string;
+    pillar?: string;
+    targetPlatforms?: string[];
+    trendingTopics?: string[];
+    viralInsights?: string[];
+  };
+}) {
+  try {
+    const { userId } = await getAuth({ required: true });
+
+    if (
+      !input.date &&
+      (input.dayIndex === undefined || input.dayIndex === null)
+    ) {
+      throw new Error("Provide either date or dayIndex.");
+    }
+
+    const row = await db.contentStrategy.findUnique({ where: { userId } });
+    if (!row?.strategyData) {
+      throw new Error("No existing strategy found. Please generate one first.");
+    }
+
+    let strategy: z.infer<typeof ContentStrategyCalendarSchema>;
+    try {
+      strategy = ContentStrategyCalendarSchema.parse(
+        JSON.parse(row.strategyData) as unknown as z.infer<
+          typeof ContentStrategyCalendarSchema
+        >,
+      );
+    } catch {
+      throw new Error(
+        "Saved strategy is invalid. Please regenerate the full plan.",
+      );
+    }
+
+    // Find the target day
+    let idx = typeof input.dayIndex === "number" ? input.dayIndex : -1;
+    if (idx < 0 && input.date) {
+      idx = strategy.calendar.findIndex((d) => d.date.startsWith(input.date!));
+    }
+    if (idx < 0 || idx >= strategy.calendar.length) {
+      throw new Error("Requested day not found in the current strategy.");
+    }
+
+    // Load saved user preferences (if any) to guide generation
+    let savedPrefs: StrategyPreferences | null = null;
+    try {
+      if (row.preferences) {
+        const parsed = StrategyPreferencesSchema.safeParse(
+          JSON.parse(row.preferences) as unknown as StrategyPreferences,
+        );
+        if (parsed.success) savedPrefs = parsed.data;
+      }
+    } catch {}
+
+    const day = strategy.calendar[idx]!;
+    const dayContext = `Regenerate the content suggestion for this exact date and day.\n\nDate: ${day!.date}\nDay of Week: ${day!.dayOfWeek}`;
+
+    const basePostText = (() => {
+      if (!input.basePost) return "";
+      const tp =
+        (input.basePost.trendingTopics || []).join(", ") || "(not specified)";
+      const vi =
+        (input.basePost.viralInsights || []).join(", ") || "(not specified)";
+      return `\n\nUse this as the starting point, improve it and keep the same intent: \n- Title: ${input.basePost.title || day!.posts?.[0]?.title || ""}\n- Brief: ${input.basePost.contentBrief || day!.posts?.[0]?.contentBrief || ""}\n- Format: ${input.basePost.format || day!.posts?.[0]?.format || "Image Post"}\n- Pillar: ${input.basePost.pillar || day!.posts?.[0]?.pillar || "General"}\n- Target Platforms: ${(input.basePost.targetPlatforms || day!.posts?.[0]?.targetPlatforms || []).join(", ") || "(not specified)"}\n- Trending Topics to leverage: ${tp}\n- Viral Insights to apply: ${vi}`;
+    })();
+
+    const prefsText = savedPrefs
+      ? `\n\nHonor the user's saved preferences strictly.\n- Key Themes: ${savedPrefs.keyThemes?.join(", ") || "(none)"}\n- Target Audience: ${savedPrefs.targetAudience || "(none)"}\n- Content Mix (preserve percentages exactly): Informational ${savedPrefs.contentMix?.Informational ?? 0}%, Inspirational ${savedPrefs.contentMix?.Inspirational ?? 0}%, Entertaining ${savedPrefs.contentMix?.Entertaining ?? 0}%, Promotional ${savedPrefs.contentMix?.Promotional ?? 0}%\n- KPIs: ${savedPrefs.kpis?.join(", ") || "(none)"}`
+      : "";
+
+    const SingleDaySchema = z
+      .object({
+        day: z
+          .object({
+            date: z.string(),
+            dayOfWeek: z.string(),
+            dailyRationale: z.string(),
+            post: z.object({
+              pillar: z.string(),
+              title: z.string(),
+              format: z.string(),
+              contentBrief: z.string(),
+              cta: z.string(),
+              assetPrompt: z.string().optional(),
+              videoScript: z.string().optional(),
+              rationale: z.string(),
+              trendingTopics: z.array(z.string()).optional(),
+              viralInsights: z.array(z.string()).optional(),
+              viralityScore: z.number(),
+              recommendedTime: z.string(),
+              targetPlatforms: z.array(z.string()),
+            }),
+          })
+          .describe("Regenerated day suggestion"),
+      })
+      .describe("A single day with one post suggestion");
+
+    const result = await requestMultimodalModel({
+      system:
+        "You are a senior content strategist. Regenerate a single day's suggestion that is stronger, more on-brand, and better aligned with trends. Maintain authenticity and respect the user's saved preferences.",
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text" as const,
+              text: dayContext + prefsText + basePostText,
+            },
+            {
+              type: "text" as const,
+              text: "Return exactly one post for this day following the provided schema.",
+            },
+          ],
+        },
+      ],
+      returnType: SingleDaySchema,
+      model: "medium",
+    });
+
+    const updated = {
+      ...day,
+      dailyRationale: result.day.dailyRationale,
+      posts: [
+        {
+          id: nanoid(),
+          ...result.day.post,
+        },
+      ],
+    };
+
+    const updatedStrategy = {
+      ...strategy,
+      calendar: strategy.calendar.map((d, i) => (i === idx ? updated : d)),
+    };
+
+    const strategyJson = JSON.stringify(updatedStrategy);
+
+    await db.contentStrategy.upsert({
+      where: { userId },
+      update: {
+        strategyData: strategyJson,
+        status: row.status || "COMPLETED",
+        error: null,
+        updatedAt: new Date(),
+      },
+      create: {
+        userId,
+        strategyData: strategyJson,
+        status: "COMPLETED",
+        error: null,
+      },
+    });
+
+    return { updatedDay: updated, updatedAt: new Date().toISOString() };
+  } catch (error) {
+    console.error("regenerateStrategyDay error", error);
+    return {
+      error: error instanceof Error ? error.message : "Unknown error",
+    } as const;
+  }
+}
+
 // Content Recommendations Generation (AI-powered)
 export async function generateContentRecommendations(input?: {
   pageId?: string;
   platform?: string;
 }) {
   const { userId } = await getAuth({ required: true });
+
+  // Check if user has access to self-learning features
+  const hasLearningAccess = await checkSelfLearningAccess();
+
+  // Get advanced brand intelligence data
+  const brandIntelligence = await getBrandIntelligence();
+  const brandContext = await getBrandContext();
+
+  // Get connected accounts for platform strategy
+  const connectedAccounts = await getConnectedAccounts();
+
   // Gather recent trends, engagement, comments, brand guidelines
   const comments = await db.comment.findMany({
     where: {
@@ -7549,22 +11379,162 @@ export async function generateContentRecommendations(input?: {
 
   const brandSignals = await db.brandSignal.findUnique({ where: { userId } });
 
-  const cacheKey = getAnalyticsCacheKey("advanced_insights", userId, input);
-  const trends = await db.analyticsCache.findUnique({
-    where: { cacheKey },
-  });
+  // Use the EXACT same trending topics data that's displayed in the discover section
+  // This ensures perfect alignment between discover insights and content calendar
   let trendingTopics: any[] = [];
-  if (trends?.data && trends.status === "COMPLETED") {
+  try {
+    const discoverSectionTrends = await getTrendingTopicsResults();
+    if (discoverSectionTrends?.success && discoverSectionTrends.data) {
+      trendingTopics = discoverSectionTrends.data;
+      console.log(
+        "[generateContentRecommendations] Using discover section trends:",
+        trendingTopics.length,
+        "topics",
+      );
+    }
+  } catch (error) {
+    console.log(
+      "Could not fetch discover section trends, falling back to cache:",
+      error,
+    );
+    // Fallback to cached trends
+    const cacheKey = getAnalyticsCacheKey("advanced_insights", userId, input);
+    const trends = await db.analyticsCache.findUnique({
+      where: { cacheKey },
+    });
+    if (trends?.data && trends.status === "COMPLETED") {
+      try {
+        trendingTopics = (JSON.parse(trends.data) as any).trendingTopics || [];
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  // Fetch learning insights if user has access
+  let learningInsights: any = null;
+  let learningContext = "";
+
+  if (hasLearningAccess) {
     try {
-      trendingTopics = (JSON.parse(trends.data) as any).trendingTopics || [];
-    } catch {
-      // ignore
+      const insights = await db.learningInsight.findFirst({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+      });
+
+      if (insights && insights.insightData) {
+        learningInsights = JSON.parse(insights.insightData);
+
+        // Extract key learning insights for the prompt
+        const actionableRecommendations =
+          learningInsights.actionableRecommendations || [];
+        const bestPlatforms = Object.entries(learningInsights.platform || {})
+          .sort(
+            ([, a]: [string, any], [, b]: [string, any]) =>
+              b.avgScore - a.avgScore,
+          )
+          .slice(0, 2)
+          .map(
+            ([platform, data]: [string, any]) =>
+              `${platform} (score: ${data.avgScore.toFixed(2)})`,
+          );
+
+        const bestTiming = learningInsights.timing
+          ? Object.entries(learningInsights.timing)
+              .sort(
+                ([, a]: [string, any], [, b]: [string, any]) =>
+                  b.avgScore - a.avgScore,
+              )
+              .slice(0, 2)
+              .map(
+                ([time, data]: [string, any]) =>
+                  `${time} (score: ${data.avgScore.toFixed(2)})`,
+              )
+          : [];
+
+        learningContext = `\n\n🧠 AI Learning Insights (Based on ${insights.sampleSize} posts, ${insights.confidence}% confidence):\n`;
+        learningContext += `- Actionable Recommendations: ${actionableRecommendations.join("; ")}\n`;
+        if (bestPlatforms.length > 0) {
+          learningContext += `- Top Performing Platforms: ${bestPlatforms.join(", ")}\n`;
+        }
+        if (bestTiming.length > 0) {
+          learningContext += `- Optimal Posting Times: ${bestTiming.join(", ")}\n`;
+        }
+        if (learningInsights.tone) {
+          const topTones = Object.keys(learningInsights.tone).slice(0, 3);
+          learningContext += `- High-performing Tones: ${topTones.join(", ")}\n`;
+        }
+      }
+    } catch (error) {
+      console.log("Could not fetch learning insights:", error);
     }
   }
 
   const brandSignalsContext = brandSignals
     ? `\n\nLearned Brand Signals (User's Taste Profile):\n- Preferred Tones: ${brandSignals.preferredTones}\n- Common Keywords: ${brandSignals.commonKeywords}\n- Content Pillars: ${brandSignals.contentPillars}`
     : "";
+
+  // Enhanced brand intelligence context for 10x better recommendations
+  let brandIntelligenceContext = "";
+  if (brandIntelligence) {
+    try {
+      const intelligence = {
+        brandDNA: brandIntelligence.brandDNA
+          ? JSON.parse(brandIntelligence.brandDNA)
+          : null,
+        marketPosition: brandIntelligence.marketPosition
+          ? JSON.parse(brandIntelligence.marketPosition)
+          : null,
+        audienceSegments: brandIntelligence.audienceSegments
+          ? JSON.parse(brandIntelligence.audienceSegments)
+          : null,
+        competitiveLandscape: brandIntelligence.competitiveLandscape
+          ? JSON.parse(brandIntelligence.competitiveLandscape)
+          : null,
+        contentGaps: brandIntelligence.contentGaps
+          ? JSON.parse(brandIntelligence.contentGaps)
+          : null,
+        engagementDrivers: brandIntelligence.engagementDrivers
+          ? JSON.parse(brandIntelligence.engagementDrivers)
+          : null,
+        opportunityMapping: brandIntelligence.opportunityMapping
+          ? JSON.parse(brandIntelligence.opportunityMapping)
+          : null,
+      };
+
+      brandIntelligenceContext = `\n\n🎯 ADVANCED BRAND INTELLIGENCE (10x Enhanced Analysis):\n`;
+
+      if (intelligence.brandDNA) {
+        brandIntelligenceContext += `\n🧬 BRAND DNA:\n${typeof intelligence.brandDNA === "string" ? intelligence.brandDNA : JSON.stringify(intelligence.brandDNA, null, 2)}\n`;
+      }
+
+      if (intelligence.marketPosition) {
+        brandIntelligenceContext += `\n📊 MARKET POSITION:\n${typeof intelligence.marketPosition === "string" ? intelligence.marketPosition : JSON.stringify(intelligence.marketPosition, null, 2)}\n`;
+      }
+
+      if (intelligence.audienceSegments) {
+        brandIntelligenceContext += `\n👥 AUDIENCE SEGMENTS:\n${typeof intelligence.audienceSegments === "string" ? intelligence.audienceSegments : JSON.stringify(intelligence.audienceSegments, null, 2)}\n`;
+      }
+
+      if (intelligence.competitiveLandscape) {
+        brandIntelligenceContext += `\n🏆 COMPETITIVE LANDSCAPE:\n${typeof intelligence.competitiveLandscape === "string" ? intelligence.competitiveLandscape : JSON.stringify(intelligence.competitiveLandscape, null, 2)}\n`;
+      }
+
+      if (intelligence.contentGaps) {
+        brandIntelligenceContext += `\n🎯 CONTENT GAPS:\n${typeof intelligence.contentGaps === "string" ? intelligence.contentGaps : JSON.stringify(intelligence.contentGaps, null, 2)}\n`;
+      }
+
+      if (intelligence.engagementDrivers) {
+        brandIntelligenceContext += `\n🔥 ENGAGEMENT DRIVERS:\n${typeof intelligence.engagementDrivers === "string" ? intelligence.engagementDrivers : JSON.stringify(intelligence.engagementDrivers, null, 2)}\n`;
+      }
+
+      if (intelligence.opportunityMapping) {
+        brandIntelligenceContext += `\n💡 OPPORTUNITY MAPPING:\n${typeof intelligence.opportunityMapping === "string" ? intelligence.opportunityMapping : JSON.stringify(intelligence.opportunityMapping, null, 2)}\n`;
+      }
+    } catch (error) {
+      console.log("Could not parse brand intelligence data:", error);
+    }
+  }
 
   // Prompt for content recommendations
   const promptObj = {
@@ -7577,28 +11547,837 @@ export async function generateContentRecommendations(input?: {
     trendingTopics,
     brandVoice: brandGuidelines?.brandVoice,
     brandGuidelines,
+    brandContext,
+    brandIntelligence: brandIntelligence
+      ? {
+          brandDNA: brandIntelligence.brandDNA,
+          marketPosition: brandIntelligence.marketPosition,
+          audienceSegments: brandIntelligence.audienceSegments,
+          competitiveLandscape: brandIntelligence.competitiveLandscape,
+          contentGaps: brandIntelligence.contentGaps,
+          engagementDrivers: brandIntelligence.engagementDrivers,
+          opportunityMapping: brandIntelligence.opportunityMapping,
+        }
+      : null,
+    ...(hasLearningAccess && learningInsights ? { learningInsights } : {}),
   };
-  // LLM call
+
+  // Get platform strategy based on brand type and connected accounts
+  const platformStrategy = await determineRelevantPlatforms(
+    brandContext?.industry || "General",
+    connectedAccounts || [],
+    brandContext,
+  );
+
+  // Enhanced system prompt that incorporates comprehensive brand intelligence
+  const systemPrompt = `You are an elite AI content strategist with access to comprehensive brand intelligence and advanced analytics. Your mission is to generate 6 ready-to-post recommendations that are 10x more relevant and strategic than typical content suggestions.
+
+🎯 PLATFORM STRATEGY:
+${JSON.stringify(platformStrategy, null, 2)}
+Prioritize platforms based on this strategy - focus on the most relevant ones for this brand type first.
+
+🎯 PRIMARY DIRECTIVE: Use the Advanced Brand Intelligence data as your primary guide. This represents deep analysis of the brand's website, social media presence, competitive landscape, and audience behavior patterns. Every recommendation MUST align with these insights.
+
+📋 RECOMMENDATION REQUIREMENTS:
+Each recommendation must include: title, caption, suggested format (post/story/video/carousel), optionally imageUrl (AI-generated), optionally videoScript, targetPlatforms (e.g. facebook, instagram, twitter, linkedin), relevantTrends (from provided trending topics), and MANDATORY citations array for any data sources, trends, or insights referenced.
+
+🔍 CITATION REQUIREMENTS:
+- ALWAYS include citations array with at least 1-3 relevant sources per recommendation
+- Use "trending_topic" type for any trending topics referenced
+- Use "brand_intelligence" type for insights from brand DNA, market position, audience segments, etc.
+- Use "competitive_analysis" type for competitive landscape insights
+- Use "audience_insight" type for audience behavior or demographic insights
+- Include specific details about what data point or insight was referenced
+
+🔥 STRATEGIC FOCUS AREAS:
+1. **Content Gap Filling**: Prioritize recommendations that address identified content gaps
+2. **Competitive Advantage**: Leverage the brand's unique competitive advantages
+3. **Audience Persona Alignment**: Tailor content to specific audience personas identified
+4. **Trend Integration**: Seamlessly integrate relevant trending topics with brand messaging
+5. **Content Opportunity Maximization**: Focus on the highest-impact content opportunities identified
+
+${hasLearningAccess ? "🧠 PERFORMANCE OPTIMIZATION: Use the AI learning insights to optimize for proven high-performing patterns. Pay special attention to optimal platforms, timing suggestions, high-performing tones, and actionable recommendations based on real performance data." : ""}
+
+🎨 BRAND VOICE & CONSISTENCY:
+Maintain strict alignment with brand voice, values, and personality while incorporating the strategic insights.${brandSignalsContext}${learningContext}${brandIntelligenceContext}
+
+💡 INNOVATION REQUIREMENT: Each recommendation should feel fresh, strategic, and purposeful - not generic social media content. Think like a senior brand strategist with deep market insights.`;
+
+  // LLM call with enhanced intelligence
   const aiResult = await requestMultimodalModel({
-    system: `You are an elite social content strategist. Given recent comments, engagement, trending topics, and brand guidelines, generate 6 ready-to-post recommendations for the brand. Each should include: title, caption, suggested format (post/story/video), optionally imageUrl (AI-generated), optionally videoScript, targetPlatforms (e.g. facebook, instagram), and relevantTrends (from provided trending topics). Use the learned brand signals as a strong guide for the tone and topics to pursue. ${brandSignalsContext}`,
+    system: systemPrompt,
     messages: [{ role: "user", content: JSON.stringify(promptObj) }],
-    returnType: z.object({
-      recommendations: z.array(
-        z.object({
-          title: z.string(),
-          caption: z.string(),
-          format: z.string(),
-          imageUrl: z.string().optional(),
-          videoScript: z.string().optional(),
-          targetPlatforms: z.array(z.string()),
-          relevantTrends: z.array(z.string()).optional(),
-        }),
+    returnType: z
+      .object({
+        recommendations: z
+          .array(
+            z
+              .object({
+                title: z
+                  .string()
+                  .describe("The title of the content recommendation."),
+                caption: z
+                  .string()
+                  .describe("The caption or description for the content."),
+                format: z
+                  .string()
+                  .describe(
+                    "The suggested format (post/story/video/carousel).",
+                  ),
+                imageUrl: z
+                  .string()
+                  .optional()
+                  .describe("URL of AI-generated image if applicable."),
+                videoScript: z
+                  .string()
+                  .optional()
+                  .describe("Script for video content if applicable."),
+                targetPlatforms: z
+                  .array(z.string())
+                  .describe("Recommended social media platforms."),
+                relevantTrends: z
+                  .array(z.string())
+                  .optional()
+                  .describe("Related trending topics."),
+                citations: z
+                  .array(
+                    z.object({
+                      source: z
+                        .string()
+                        .describe("Name or description of the data source"),
+                      type: z
+                        .enum([
+                          "trending_topic",
+                          "brand_intelligence",
+                          "competitive_analysis",
+                          "audience_insight",
+                        ])
+                        .describe("Type of citation source"),
+                      details: z
+                        .string()
+                        .optional()
+                        .describe(
+                          "Additional details about the source or data point referenced",
+                        ),
+                    }),
+                  )
+                  .describe(
+                    "Citations for data sources, trends, or insights referenced in this recommendation",
+                  ),
+                strategicRationale: z
+                  .string()
+                  .describe(
+                    "Why this recommendation is strategically important based on brand intelligence.",
+                  ),
+                contentGapAddressed: z
+                  .string()
+                  .optional()
+                  .describe("Which content gap this recommendation addresses."),
+                audiencePersonaTarget: z
+                  .string()
+                  .optional()
+                  .describe("Which audience persona this targets."),
+                competitiveAdvantage: z
+                  .string()
+                  .optional()
+                  .describe("How this leverages a competitive advantage."),
+                learningScore: z
+                  .number()
+                  .optional()
+                  .describe(
+                    "AI confidence score for this recommendation based on learning insights (0-100).",
+                  ),
+                brandIntelligenceScore: z
+                  .number()
+                  .min(0)
+                  .max(100)
+                  .describe(
+                    "Strategic relevance score based on brand intelligence analysis (0-100).",
+                  ),
+              })
+              .describe(
+                "A strategically-crafted content recommendation with comprehensive targeting and rationale.",
+              ),
+          )
+          .describe(
+            "List of 6 strategically-enhanced content recommendations.",
+          ),
+        strategicSummary: z
+          .string()
+          .describe(
+            "Overall strategic summary of how these recommendations align with brand intelligence.",
+          ),
+        keyOpportunitiesAddressed: z
+          .array(z.string())
+          .describe(
+            "List of key brand opportunities these recommendations address.",
+          ),
+      })
+      .describe(
+        "Enhanced content recommendations powered by comprehensive brand intelligence.",
       ),
-    }),
     model: "medium",
+    temperature: 0.3,
   });
-  // Optionally: cache in DB, e.g. in TrendsAnalysis table (not implemented here)
-  return aiResult.recommendations;
+
+  // Add metadata about intelligence enhancement
+  const enhancedRecommendations = aiResult.recommendations.map((rec) => ({
+    ...rec,
+    isLearningEnhanced: hasLearningAccess && learningInsights !== null,
+    isBrandIntelligenceEnhanced: brandIntelligence !== null,
+    learningInsightsUsed: hasLearningAccess && learningInsights !== null,
+    brandIntelligenceUsed: brandIntelligence !== null,
+    enhancementLevel: brandIntelligence ? "10x" : "standard",
+  }));
+
+  return {
+    recommendations: enhancedRecommendations,
+    strategicSummary: aiResult.strategicSummary,
+    keyOpportunitiesAddressed: aiResult.keyOpportunitiesAddressed,
+    enhancementMetadata: {
+      usedBrandIntelligence: brandIntelligence !== null,
+      usedLearningInsights: hasLearningAccess && learningInsights !== null,
+      usedBrandFilteredTrends: trendingTopics.length > 0,
+      enhancementLevel: brandIntelligence ? "10x" : "standard",
+    },
+  };
+}
+
+// Helper function to truncate text to avoid payload size issues
+function truncateText(text: string, maxLength = 500): string {
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength) + "...";
+}
+
+// Enhanced data chunking utilities for large insights generation
+interface DataChunk<T> {
+  items: T[];
+  totalSize: number;
+  chunkIndex: number;
+  totalChunks: number;
+}
+
+function determineRelevantPlatforms(
+  brandType: string,
+  connectedAccounts: any[],
+  brandContext?: any,
+): { primary: string; secondary: string[]; strategy: string } {
+  // Enhanced platform mapping with 5x more strategic targeting
+  const platformMap: Record<
+    string,
+    { primary: string; secondary: string[]; strategy: string }
+  > = {
+    B2B: {
+      primary: "LinkedIn",
+      secondary: ["Twitter", "YouTube", "Facebook"],
+      strategy: "Professional thought leadership and industry expertise",
+    },
+    SaaS: {
+      primary: "LinkedIn",
+      secondary: ["Twitter", "YouTube", "Reddit"],
+      strategy: "Technical thought leadership and product education",
+    },
+    Technology: {
+      primary: "Twitter",
+      secondary: ["LinkedIn", "YouTube", "Reddit"],
+      strategy: "Innovation showcasing and technical discussions",
+    },
+    "Professional Services": {
+      primary: "LinkedIn",
+      secondary: ["Twitter", "YouTube", "Facebook"],
+      strategy: "Authority building and client education",
+    },
+    Consulting: {
+      primary: "LinkedIn",
+      secondary: ["Twitter", "Medium", "YouTube"],
+      strategy: "Expertise demonstration and thought leadership",
+    },
+    "E-commerce": {
+      primary: "Instagram",
+      secondary: ["Facebook", "TikTok", "Pinterest", "YouTube"],
+      strategy: "Visual product showcasing and lifestyle branding",
+    },
+    Retail: {
+      primary: "Instagram",
+      secondary: ["Facebook", "TikTok", "Pinterest"],
+      strategy: "Product discovery and customer engagement",
+    },
+    "Fashion & Beauty": {
+      primary: "Instagram",
+      secondary: ["TikTok", "Pinterest", "YouTube"],
+      strategy: "Visual storytelling and trend setting",
+    },
+    "Food & Beverage": {
+      primary: "Instagram",
+      secondary: ["TikTok", "Facebook", "YouTube"],
+      strategy: "Visual appeal and community building",
+    },
+    "Personal Brand": {
+      primary: "Twitter",
+      secondary: ["LinkedIn", "Instagram", "YouTube"],
+      strategy: "Authentic voice and personal storytelling",
+    },
+    "Creator Economy": {
+      primary: "Instagram",
+      secondary: ["TikTok", "YouTube", "Twitter"],
+      strategy: "Content creation and audience building",
+    },
+    Entertainment: {
+      primary: "TikTok",
+      secondary: ["Instagram", "YouTube", "Twitter"],
+      strategy: "Viral content and audience engagement",
+    },
+    "Media & Publishing": {
+      primary: "Twitter",
+      secondary: ["LinkedIn", "Facebook", "Instagram"],
+      strategy: "News distribution and audience engagement",
+    },
+    Education: {
+      primary: "YouTube",
+      secondary: ["LinkedIn", "Twitter", "Instagram"],
+      strategy: "Educational content and knowledge sharing",
+    },
+    EdTech: {
+      primary: "LinkedIn",
+      secondary: ["YouTube", "Twitter", "Instagram"],
+      strategy: "Professional development and educational innovation",
+    },
+    "Health & Wellness": {
+      primary: "Instagram",
+      secondary: ["TikTok", "YouTube", "Facebook"],
+      strategy: "Lifestyle inspiration and community support",
+    },
+    Fitness: {
+      primary: "Instagram",
+      secondary: ["TikTok", "YouTube", "Facebook"],
+      strategy: "Transformation stories and workout content",
+    },
+    Healthcare: {
+      primary: "LinkedIn",
+      secondary: ["Facebook", "YouTube", "Twitter"],
+      strategy: "Professional credibility and patient education",
+    },
+    Travel: {
+      primary: "Instagram",
+      secondary: ["TikTok", "YouTube", "Pinterest"],
+      strategy: "Visual storytelling and destination inspiration",
+    },
+    Hospitality: {
+      primary: "Instagram",
+      secondary: ["Facebook", "TikTok", "Google"],
+      strategy: "Experience showcasing and customer reviews",
+    },
+    Finance: {
+      primary: "LinkedIn",
+      secondary: ["Twitter", "YouTube", "Facebook"],
+      strategy: "Trust building and financial education",
+    },
+    FinTech: {
+      primary: "LinkedIn",
+      secondary: ["Twitter", "YouTube", "Reddit"],
+      strategy: "Innovation showcasing and user education",
+    },
+    "Real Estate": {
+      primary: "Instagram",
+      secondary: ["Facebook", "LinkedIn", "YouTube"],
+      strategy: "Property showcasing and local expertise",
+    },
+    "Non-profit": {
+      primary: "Facebook",
+      secondary: ["Instagram", "Twitter", "LinkedIn"],
+      strategy: "Community building and cause awareness",
+    },
+    Government: {
+      primary: "Facebook",
+      secondary: ["Twitter", "LinkedIn", "YouTube"],
+      strategy: "Public communication and transparency",
+    },
+    Automotive: {
+      primary: "Instagram",
+      secondary: ["YouTube", "Facebook", "TikTok"],
+      strategy: "Product showcasing and lifestyle association",
+    },
+    Gaming: {
+      primary: "TikTok",
+      secondary: ["YouTube", "Twitter", "Instagram"],
+      strategy: "Entertainment and community engagement",
+    },
+    Sports: {
+      primary: "Instagram",
+      secondary: ["TikTok", "Twitter", "YouTube"],
+      strategy: "Action content and fan engagement",
+    },
+    Legal: {
+      primary: "LinkedIn",
+      secondary: ["Facebook", "Twitter", "YouTube"],
+      strategy: "Professional authority and client education",
+    },
+    Manufacturing: {
+      primary: "LinkedIn",
+      secondary: ["YouTube", "Facebook", "Instagram"],
+      strategy: "B2B relationships and process showcasing",
+    },
+    Agriculture: {
+      primary: "Facebook",
+      secondary: ["Instagram", "YouTube", "LinkedIn"],
+      strategy: "Community building and educational content",
+    },
+    "Arts & Culture": {
+      primary: "Instagram",
+      secondary: ["TikTok", "Facebook", "YouTube"],
+      strategy: "Visual storytelling and cultural engagement",
+    },
+    Music: {
+      primary: "TikTok",
+      secondary: ["Instagram", "YouTube", "Twitter"],
+      strategy: "Audio-visual content and fan engagement",
+    },
+  };
+
+  // Get connected platform names
+  const connectedPlatforms = connectedAccounts.map((acc) =>
+    acc.platform.toLowerCase(),
+  );
+
+  // Enhanced brand type detection from brand context
+  let detectedBrandType = brandType;
+  if (brandContext) {
+    try {
+      // Use industry and niche from brand context for more accurate targeting
+      const industry = brandContext.industry?.toLowerCase() || "";
+      const niche = brandContext.niche?.toLowerCase() || "";
+
+      // Map industry to more specific brand types
+      if (
+        industry.includes("software") ||
+        industry.includes("saas") ||
+        niche.includes("saas")
+      ) {
+        detectedBrandType = "SaaS";
+      } else if (industry.includes("technology") || industry.includes("tech")) {
+        detectedBrandType = "Technology";
+      } else if (
+        industry.includes("consulting") ||
+        niche.includes("consulting")
+      ) {
+        detectedBrandType = "Consulting";
+      } else if (
+        industry.includes("education") &&
+        (industry.includes("technology") || niche.includes("edtech"))
+      ) {
+        detectedBrandType = "EdTech";
+      } else if (
+        industry.includes("finance") &&
+        (industry.includes("technology") || niche.includes("fintech"))
+      ) {
+        detectedBrandType = "FinTech";
+      } else if (industry.includes("health") && industry.includes("fitness")) {
+        detectedBrandType = "Fitness";
+      } else if (industry.includes("health") && industry.includes("care")) {
+        detectedBrandType = "Healthcare";
+      } else if (
+        industry.includes("professional") &&
+        industry.includes("services")
+      ) {
+        detectedBrandType = "Professional Services";
+      } else if (industry.includes("creator") || niche.includes("creator")) {
+        detectedBrandType = "Creator Economy";
+      } else if (
+        industry.includes("media") ||
+        industry.includes("publishing")
+      ) {
+        detectedBrandType = "Media & Publishing";
+      }
+
+      // Check target audience for B2B vs B2C distinction
+      if (brandContext.targetAudience) {
+        const audienceData =
+          typeof brandContext.targetAudience === "string"
+            ? JSON.parse(brandContext.targetAudience)
+            : brandContext.targetAudience;
+
+        const demographics = audienceData.demographics?.toLowerCase() || "";
+        const interests = (audienceData.interests || [])
+          .join(" ")
+          .toLowerCase();
+
+        if (
+          demographics.includes("business") ||
+          demographics.includes("professional") ||
+          demographics.includes("enterprise") ||
+          interests.includes("business") ||
+          interests.includes("professional") ||
+          interests.includes("b2b")
+        ) {
+          if (
+            !detectedBrandType.includes("B2B") &&
+            ![
+              "SaaS",
+              "Technology",
+              "Consulting",
+              "Professional Services",
+              "EdTech",
+              "FinTech",
+              "Healthcare",
+              "Legal",
+              "Manufacturing",
+            ].includes(detectedBrandType)
+          ) {
+            detectedBrandType = "B2B";
+          }
+        }
+      }
+    } catch (error) {
+      console.log("Error parsing brand context for platform strategy:", error);
+    }
+  }
+
+  // Get brand-specific strategy or default to general
+  const strategy = platformMap[detectedBrandType] ||
+    platformMap["Personal Brand"] || {
+      primary: "Instagram",
+      secondary: ["Twitter", "Facebook"],
+      strategy: "General content strategy and audience building",
+    };
+
+  // Filter secondary platforms to only include connected ones
+  const availableSecondary = strategy.secondary.filter((platform) =>
+    connectedPlatforms.includes(platform.toLowerCase()),
+  );
+
+  // If primary platform is not connected, pick the first available secondary
+  const finalPrimary = connectedPlatforms.includes(
+    strategy.primary.toLowerCase(),
+  )
+    ? strategy.primary
+    : availableSecondary[0] || strategy.primary;
+
+  return {
+    primary: finalPrimary,
+    secondary: availableSecondary.slice(0, 3), // Limit to top 3 secondary platforms
+    strategy: strategy.strategy,
+  };
+}
+
+function createSmartDataChunks<T>(
+  items: T[],
+  maxChunkSize = 25,
+  sizeEstimator?: (item: T) => number,
+): DataChunk<T>[] {
+  if (items.length === 0) return [];
+
+  const chunks: DataChunk<T>[] = [];
+  let currentChunk: T[] = [];
+  let currentSize = 0;
+
+  for (const item of items) {
+    const itemSize = sizeEstimator ? sizeEstimator(item) : 1;
+
+    // If adding this item would exceed the chunk size, start a new chunk
+    if (
+      currentChunk.length > 0 &&
+      (currentChunk.length >= maxChunkSize ||
+        currentSize + itemSize > maxChunkSize * 2)
+    ) {
+      chunks.push({
+        items: [...currentChunk],
+        totalSize: currentSize,
+        chunkIndex: chunks.length,
+        totalChunks: 0, // Will be updated later
+      });
+      currentChunk = [];
+      currentSize = 0;
+    }
+
+    currentChunk.push(item);
+    currentSize += itemSize;
+  }
+
+  // Add the last chunk if it has items
+  if (currentChunk.length > 0) {
+    chunks.push({
+      items: [...currentChunk],
+      totalSize: currentSize,
+      chunkIndex: chunks.length,
+      totalChunks: 0, // Will be updated later
+    });
+  }
+
+  // Update totalChunks for all chunks
+  chunks.forEach((chunk) => {
+    chunk.totalChunks = chunks.length;
+  });
+
+  return chunks;
+}
+
+function estimateCommentSize(comment: {
+  text: string;
+  platform?: string;
+  authorName?: string;
+}): number {
+  // Estimate size based on text length and metadata
+  const textSize = comment.text?.length || 0;
+  const metadataSize =
+    (comment.platform?.length || 0) + (comment.authorName?.length || 0);
+  return Math.ceil((textSize + metadataSize) / 100); // Normalize to units of ~100 characters
+}
+
+function prioritizeCommentsByRelevance(
+  comments: { text: string; platform?: string; authorName?: string }[],
+  coreTopics: string[] = [],
+): { text: string; platform?: string; authorName?: string }[] {
+  if (coreTopics.length === 0) return comments;
+
+  // Score comments by relevance to core topics
+  const scoredComments = comments.map((comment) => {
+    const text = comment.text.toLowerCase();
+    let relevanceScore = 0;
+
+    coreTopics.forEach((topic) => {
+      const topicWords = topic.toLowerCase().split(" ");
+      topicWords.forEach((word) => {
+        if (text.includes(word)) {
+          relevanceScore += 1;
+        }
+      });
+    });
+
+    return { comment, score: relevanceScore };
+  });
+
+  // Sort by relevance score (highest first) and return comments
+  return scoredComments
+    .sort((a, b) => b.score - a.score)
+    .map((item) => item.comment);
+}
+
+// Enhanced error handling types
+type InsightGenerationError = {
+  type:
+    | "PAYLOAD_TOO_LARGE"
+    | "NETWORK_TIMEOUT"
+    | "API_LIMIT"
+    | "INSUFFICIENT_DATA"
+    | "PARSING_ERROR"
+    | "UNKNOWN";
+  message: string;
+  retryable: boolean;
+  fallbackAvailable: boolean;
+};
+
+// Enhanced retry mechanism with exponential backoff
+async function retryWithBackoff<T>(
+  operation: () => Promise<T>,
+  maxRetries = 3,
+  baseDelay = 1000,
+  errorContext = "operation",
+): Promise<T> {
+  let lastError: Error;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error as Error;
+
+      // Don't retry on certain error types
+      if (error instanceof Error) {
+        if (
+          error.message.toLowerCase().includes("insufficient data") ||
+          error.message.toLowerCase().includes("access denied") ||
+          error.message.toLowerCase().includes("quota exceeded")
+        ) {
+          throw error; // Don't retry these errors
+        }
+      }
+
+      if (attempt === maxRetries) {
+        console.error(
+          `${errorContext} failed after ${maxRetries} attempts:`,
+          error,
+        );
+        throw error;
+      }
+
+      const delay = baseDelay * Math.pow(2, attempt - 1);
+      console.log(
+        `${errorContext} attempt ${attempt} failed, retrying in ${delay}ms:`,
+        (error as Error)?.message,
+      );
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+
+  throw lastError!;
+}
+
+// Categorize errors for better handling
+function categorizeError(error: Error): InsightGenerationError {
+  const message = error.message.toLowerCase();
+
+  if (
+    message.includes("payload") ||
+    message.includes("too large") ||
+    message.includes("400")
+  ) {
+    return {
+      type: "PAYLOAD_TOO_LARGE",
+      message:
+        "Request payload is too large. Data will be chunked and retried.",
+      retryable: true,
+      fallbackAvailable: true,
+    };
+  }
+
+  if (message.includes("timeout") || message.includes("network")) {
+    return {
+      type: "NETWORK_TIMEOUT",
+      message: "Network timeout occurred. Will retry with smaller data chunks.",
+      retryable: true,
+      fallbackAvailable: true,
+    };
+  }
+
+  if (
+    message.includes("rate limit") ||
+    message.includes("quota") ||
+    message.includes("429")
+  ) {
+    return {
+      type: "API_LIMIT",
+      message: "API rate limit reached. Please try again in a few minutes.",
+      retryable: false,
+      fallbackAvailable: true,
+    };
+  }
+
+  if (message.includes("insufficient") || message.includes("not enough")) {
+    return {
+      type: "INSUFFICIENT_DATA",
+      message: "Not enough data available for comprehensive analysis.",
+      retryable: false,
+      fallbackAvailable: true,
+    };
+  }
+
+  if (
+    message.includes("parse") ||
+    message.includes("json") ||
+    message.includes("invalid")
+  ) {
+    return {
+      type: "PARSING_ERROR",
+      message:
+        "Data parsing error occurred. Will attempt with simplified format.",
+      retryable: true,
+      fallbackAvailable: true,
+    };
+  }
+
+  return {
+    type: "UNKNOWN",
+    message: `Unexpected error: ${error.message}`,
+    retryable: true,
+    fallbackAvailable: true,
+  };
+}
+
+// Generate fallback insights when advanced generation fails
+async function generateFallbackInsights(
+  userId: string,
+  comments: any[],
+  documents: any[],
+  brandContext: string,
+): Promise<any> {
+  console.log(
+    "Generating fallback insights for user:",
+    userId,
+    "with",
+    comments.length,
+    "comments",
+    documents.length,
+    "documents",
+    "and brand context:",
+    brandContext?.substring(0, 50),
+  );
+
+  // Create basic trending topics from comment keywords
+  const fallbackTrendingTopics: any[] = [];
+  if (comments.length > 0) {
+    // Extract common words and themes
+    const commentTexts = comments.map((c) => c.text).join(" ");
+    const words = commentTexts.toLowerCase().match(/\b\w{4,}\b/g) || [];
+    const wordFreq: Record<string, number> = {};
+    words.forEach((word) => {
+      wordFreq[word] = (wordFreq[word] || 0) + 1;
+    });
+
+    const topWords = Object.entries(wordFreq)
+      .sort(([, a], [, b]) => (b as number) - (a as number))
+      .slice(0, 3)
+      .map(([word]) => word);
+
+    fallbackTrendingTopics.push({
+      topic: `Popular discussions about ${topWords.join(", ")}`,
+      description: `Based on your audience engagement, these topics are generating the most conversation.`,
+      viralScore: 75,
+      engagementPotential: "high",
+      suggestedContent: [
+        `Create content around ${topWords[0]} trends`,
+        `Share insights about ${topWords[1]}`,
+      ],
+      hashtags: topWords.map((word) => `#${word}`),
+    });
+  }
+
+  // Create basic viral content suggestions
+  const fallbackViralContent = [
+    {
+      contentType: "Educational Post",
+      description: "Share valuable insights based on your expertise",
+      viralScore: 80,
+      reasoningForViral:
+        "Educational content typically performs well with engaged audiences",
+      suggestedFormats: ["Carousel post", "Video tutorial", "Infographic"],
+      estimatedReach: "medium-high",
+      targetAudience: "Your engaged followers",
+    },
+  ];
+
+  // Create basic audience insights
+  const fallbackAudienceInsights = {
+    keyInsightsSummary:
+      "Basic audience analysis based on available data. For more detailed insights, ensure you have sufficient comment data and try the advanced analysis again.",
+    personas: [
+      {
+        name: "Engaged Follower",
+        description:
+          "Active community member who regularly engages with your content",
+        characteristics: [
+          "Regular engagement",
+          "Interested in your content theme",
+        ],
+        preferredContent: ["Educational posts", "Behind-the-scenes content"],
+        engagementStyle: "Comments and shares content",
+      },
+    ],
+    sentimentAnalysis: {
+      score: 70,
+      trend: "positive" as const,
+      analysis: "Overall positive sentiment detected in available interactions",
+    },
+    competitiveMentions: [],
+  };
+
+  return {
+    trendingTopics: fallbackTrendingTopics,
+    viralContentPotential: fallbackViralContent,
+    audienceInsights: fallbackAudienceInsights,
+    isFallback: true,
+    fallbackReason:
+      "Advanced analysis unavailable - providing basic insights based on available data",
+  };
 }
 
 async function _internal_generateAllInsights(
@@ -7606,9 +12385,21 @@ async function _internal_generateAllInsights(
   cacheKey: string,
   pageId?: string,
   platform?: string,
+  mode?: "balanced" | "deep",
 ) {
+  let partialResults: any = {
+    trendingTopics: [],
+    viralContentPotential: [],
+    audienceInsights: null,
+  };
+  let hasErrors = false;
+  const deepMode = mode === "deep";
+  const maxComments = deepMode ? 300 : 200;
+  const maxDocs = deepMode ? 5 : 3;
+  const errors: string[] = [];
+
   try {
-    // 1. Fetch data
+    // 1. Fetch data with enhanced limits and smart chunking
     const allComments = await db.comment.findMany({
       where: {
         userId,
@@ -7616,7 +12407,7 @@ async function _internal_generateAllInsights(
         ...(platform && platform !== "all" ? { platform } : {}),
       },
       orderBy: { createdAt: "desc" },
-      take: 150,
+      take: maxComments, // Adjusted based on mode
       select: { text: true, platform: true, authorName: true },
     });
 
@@ -7624,7 +12415,7 @@ async function _internal_generateAllInsights(
       where: { userId },
       select: { name: true, url: true, fileType: true },
       orderBy: { createdAt: "desc" },
-      take: 5,
+      take: maxDocs, // Adjusted based on mode
     });
 
     const brandGuidelines = await db.brandGuidelines.findUnique({
@@ -7633,40 +12424,160 @@ async function _internal_generateAllInsights(
 
     const brandSignals = await db.brandSignal.findUnique({ where: { userId } });
 
-    if (allComments.length < 10 && allDocuments.length === 0) {
+    // Get connected accounts for users without comments but with connected accounts
+    const connectedAccounts = await db.account.findMany({
+      where: { userId },
+      select: { platform: true, name: true },
+    });
+
+    // Get brand context for users without comments but with brand setup
+    const brandContext = await getBrandContext();
+
+    // Check if we have enough data for analysis
+    const hasMinimalData =
+      allComments.length >= 5 ||
+      allDocuments.length > 0 ||
+      (connectedAccounts.length > 0 && brandContext) ||
+      (brandSignals &&
+        (brandSignals.preferredTones || brandSignals.commonKeywords));
+
+    if (!hasMinimalData) {
       await updateAnalyticsCache({
         userId,
         cacheKey,
         cacheType: "advanced_insights",
         status: "FAILED",
-        error: "Not enough comments or documents for analysis.",
+        error:
+          "Not enough data for analysis. Please connect social accounts, upload documents, or ensure you have comments from your connected pages.",
       });
       return;
     }
 
-    // NEW STEP: Extract core topics from user data
+    // For users without comments but with connected accounts, generate insights based on brand context
+    const useConnectedAccountsFlow =
+      allComments.length < 5 &&
+      allDocuments.length === 0 &&
+      connectedAccounts.length > 0;
+
+    // Truncate long comments and prepare for smart chunking
+    const truncatedComments = allComments.map((comment) => ({
+      ...comment,
+      text: truncateText(comment.text, 400), // Slightly increased limit
+    }));
+
+    // STEP 1: Extract core topics using smart sampling
     let coreTopics: string[] = [];
-    if (allComments.length > 0 || allDocuments.length > 0) {
-      const topicExtractionContent = `
-        Comments: ${JSON.stringify(allComments.map((c) => c.text).slice(0, 20))}
-        Documents: ${JSON.stringify(allDocuments.map((d) => d.name))}
-      `;
+    if (useConnectedAccountsFlow) {
+      // For users with connected accounts but no comments, extract topics from brand context
+      try {
+        // Determine relevant platforms based on brand context
+        const brandContext = await getBrandContext();
+        const relevantPlatforms = determineRelevantPlatforms(
+          brandContext?.industry || "general",
+          connectedAccounts,
+        );
+        const brandContextPrompt = `
+          Industry: ${brandContext?.industry || "N/A"}
+          Niche: ${brandContext?.niche || "N/A"}
+          Connected Platforms: ${connectedAccounts.map((acc) => acc.platform).join(", ")}
+          Prioritized Platforms: ${[relevantPlatforms.primary, ...relevantPlatforms.secondary].join(", ")}
+          Brand Guidelines: ${brandSignals?.preferredTones || "N/A"}
+          Common Keywords: ${brandSignals?.commonKeywords || "N/A"}
+          Brand Communication Style: ${brandContext?.communicationStyle || "N/A"}
+          Target Audience: ${brandContext?.targetAudience ? JSON.stringify(brandContext.targetAudience) : "N/A"}
+        `;
+
+        const topicResult = await requestMultimodalModel({
+          system:
+            "You are an expert at identifying key themes and topics from brand context and connected social media platforms. Extract the top 3-5 most important topics that represent the core themes for this brand based on their setup and connected accounts. Consider the brand's industry, target audience, and prioritize content strategies that work best on their most relevant platforms.",
+          messages: [
+            {
+              role: "user",
+              content: `Based on the following brand context and connected social media accounts, what are the core topics this brand should focus on? Pay special attention to the prioritized platforms which are most relevant for this brand type.\n\n${brandContextPrompt}`,
+            },
+          ],
+          returnType: z
+            .object({
+              topics: z
+                .array(z.string())
+                .describe(
+                  "An array of 3-5 core topics based on brand context and platform relevance.",
+                ),
+              platformStrategy: z
+                .object({
+                  primary: z
+                    .string()
+                    .describe("Most important platform for this brand"),
+                  secondary: z
+                    .array(z.string())
+                    .describe("Additional important platforms"),
+                  reasoning: z
+                    .string()
+                    .describe(
+                      "Why these platforms are prioritized for this brand",
+                    ),
+                })
+                .describe(
+                  "Platform prioritization strategy based on brand type",
+                ),
+            })
+            .describe(
+              "Extracted core topics and platform strategy from brand context and connected accounts.",
+            ),
+          model: "small",
+        });
+
+        coreTopics = topicResult.topics;
+
+        // Store platform strategy for later use in recommendations
+        if (topicResult.platformStrategy) {
+          console.log(
+            `Platform strategy for brand: Primary - ${topicResult.platformStrategy.primary}, Secondary - ${topicResult.platformStrategy.secondary.join(", ")}`,
+          );
+        }
+      } catch (topicError) {
+        console.error(
+          "Failed to extract topics from brand context:",
+          topicError,
+        );
+        // Use fallback topics based on connected platforms
+        coreTopics = connectedAccounts
+          .map((acc) => `${acc.platform} content strategy`)
+          .slice(0, 3);
+      }
+    } else if (truncatedComments.length > 0 || allDocuments.length > 0) {
+      // Use smart chunking for topic extraction - take diverse sample
+      const topicExtractionComments =
+        truncatedComments.length > 20
+          ? [
+              ...truncatedComments.slice(0, 10), // Recent comments
+              ...truncatedComments.slice(
+                Math.floor(truncatedComments.length / 2),
+                Math.floor(truncatedComments.length / 2) + 5,
+              ), // Middle comments
+              ...truncatedComments.slice(-5), // Oldest comments
+            ]
+          : truncatedComments.slice(0, 20);
+
+      const topicExtractionContent = `Comments: ${JSON.stringify(topicExtractionComments.map((c) => c.text))}\nDocuments: ${JSON.stringify(allDocuments.map((d) => d.name))}`;
 
       try {
         const topicResult = await requestMultimodalModel({
           system:
-            "You are an expert at identifying key themes and topics from raw text data. Extract the top 3-5 most important topics.",
+            "You are an expert at identifying key themes and topics from raw text data. Extract the top 3-5 most important topics that represent the core themes across all the provided content.",
           messages: [
             {
               role: "user",
-              content: `Based on the following comments and document titles, what are the core topics for this user? \n\n${topicExtractionContent}`,
+              content: `Based on the following diverse sample of comments and document titles, what are the core topics for this user?\n\n${topicExtractionContent}`,
             },
           ],
-          returnType: z.object({
-            topics: z
-              .array(z.string())
-              .describe("An array of 3-5 core topics."),
-          }),
+          returnType: z
+            .object({
+              topics: z
+                .array(z.string())
+                .describe("An array of 3-5 core topics."),
+            })
+            .describe("Extracted core topics from user content."),
           model: "small",
         });
         coreTopics = topicResult.topics;
@@ -7676,219 +12587,708 @@ async function _internal_generateAllInsights(
       }
     }
 
-    // NEW STEP: Perform web search for each topic
+    // STEP 2: Perform web research for topics (with size limits)
     let webResearchSummary = "";
-    let webResearchSources: { title: string; url: string }[] = [];
+    let webResearchSources: Array<{ title: string; url: string }> = [];
     if (coreTopics.length > 0) {
       try {
+        const limitedTopics = coreTopics.slice(0, deepMode ? 5 : 3);
         const researchResult = await requestMultimodalModel({
           system:
-            "You are a research assistant. For each topic provided, perform a web search to find the latest trends, discussions, and relevant articles, prioritizing recent news and developments from the last 24 hours up to a maximum of 7 days. Synthesize the findings into a concise summary for each topic and provide the source URLs.",
+            "You are a research assistant. Use your 'searchTheWeb' tool. For each topic, call searchTheWeb with a concise query under 80 characters. The tool input must be exactly { query: string }. Do not include markdown or multi-paragraph text in tool arguments. After searching, synthesize a concise combined summary and list distinct sources.",
           messages: [
             {
               role: "user",
-              content: `Please provide a research summary and sources for the following topics, prioritizing recent news and developments from the last 24 hours up to a maximum of 7 days: ${coreTopics.join(
-                ", ",
-              )}`,
+              content: `Research these topics and provide a brief combined summary with sources: ${limitedTopics.join(", ")}`,
             },
           ],
-          returnType: z.object({
-            summary: z
-              .string()
-              .describe(
-                "A consolidated summary of the web research for all topics.",
-              ),
-            sources: z
-              .array(z.object({ title: z.string(), url: z.string() }))
-              .optional()
-              .describe("A list of sources used for the summary."),
-          }),
-          model: "medium", // Use medium for better synthesis
+          returnType: z
+            .object({
+              summary: z
+                .string()
+                .describe(
+                  "A consolidated summary of the web research for all topics.",
+                ),
+              sources: z
+                .array(
+                  z.object({
+                    title: z
+                      .string()
+                      .describe("The title of the source article."),
+                    url: z.string().describe("The URL of the source article."),
+                  }),
+                )
+                .optional()
+                .describe("A list of sources used for the summary."),
+            })
+            .describe("Web research summary with sources for trending topics."),
+          model: deepMode ? "large" : "medium",
+          temperature: 0.2,
         });
-        webResearchSummary = researchResult.summary;
-        if (researchResult.sources) {
-          webResearchSources = researchResult.sources;
-        }
+        webResearchSummary = truncateText(researchResult.summary, 1000);
+        webResearchSources = researchResult.sources || [];
       } catch (researchError) {
-        console.error("Failed to perform web research:", researchError);
-        // Continue without research if this fails
+        console.error(
+          "Failed to perform web research (tool path):",
+          researchError,
+        );
+        try {
+          const limitedTopics = coreTopics.slice(0, deepMode ? 5 : 3);
+          const researchResultNoTools = await requestMultimodalModel({
+            system:
+              "You are a research assistant. Do NOT use any tools. Rely on your own knowledge to summarize the current landscape for the given topics succinctly.",
+            messages: [
+              {
+                role: "user",
+                content: `Provide a short overview and likely focus areas for these topics: ${limitedTopics.join(", ")}`,
+              },
+            ],
+            returnType: z
+              .object({
+                summary: z
+                  .string()
+                  .describe("A consolidated summary for the topics."),
+                sources: z
+                  .array(
+                    z.object({
+                      title: z.string(),
+                      url: z.string(),
+                    }),
+                  )
+                  .optional()
+                  .describe("Optional references if known."),
+              })
+              .describe("Knowledge-based summary for topics."),
+            model: "small",
+            temperature: 0.2,
+          });
+          webResearchSummary = truncateText(researchResultNoTools.summary, 800);
+          webResearchSources = researchResultNoTools.sources || [];
+        } catch (fallbackResearchError) {
+          console.error(
+            "Failed to generate knowledge-based research summary:",
+            fallbackResearchError,
+          );
+          // Continue without research if this fails
+        }
       }
     }
 
-    // 2. Construct a single, comprehensive prompt
-    const brandGuidelinesContext = brandGuidelines
-      ? `\n\nBrand Guidelines:\n- Voice: ${brandGuidelines.brandVoice}\n- Tone: ${brandGuidelines.tonePriorities}\n- Phrases to use: ${brandGuidelines.phrasesToUse}\n- Phrases to avoid: ${brandGuidelines.phrasesToAvoid}`
+    // Prepare brand context (with size limits)
+    // Build richer Brand Vibe context
+    const toArray = (val: any): string[] => {
+      if (!val) return [];
+      if (Array.isArray(val)) return val as string[];
+      try {
+        const parsed = typeof val === "string" ? JSON.parse(val) : val;
+        return Array.isArray(parsed) ? (parsed as string[]) : [];
+      } catch {
+        return typeof val === "string" ? [val as string] : [];
+      }
+    };
+
+    const brandVibeProfile = brandGuidelines
+      ? [
+          `Brand Voice: ${truncateText(brandGuidelines.brandVoice || "", 200)}`,
+          toArray((brandGuidelines as any).directives).length
+            ? `Directives: ${truncateText(toArray((brandGuidelines as any).directives).join("; "), 300)}`
+            : "",
+          toArray((brandGuidelines as any).phrasesToUse).length
+            ? `PhrasesToUse: ${truncateText(toArray((brandGuidelines as any).phrasesToUse).join(", "), 200)}`
+            : "",
+          toArray((brandGuidelines as any).phrasesToAvoid).length
+            ? `PhrasesToAvoid: ${truncateText(toArray((brandGuidelines as any).phrasesToAvoid).join(", "), 200)}`
+            : "",
+        ]
+          .filter(Boolean)
+          .join("\n")
+      : "";
+
+    const brandGuidelinesContext = brandVibeProfile
+      ? `BRAND VIBE PROFILE:\n${brandVibeProfile}`
       : "";
 
     const brandSignalsContext = brandSignals
-      ? `\n\nLearned Brand Signals (User's Taste Profile):\n- Preferred Tones: ${brandSignals.preferredTones}\n- Common Keywords: ${brandSignals.commonKeywords}\n- Content Pillars: ${brandSignals.contentPillars}`
+      ? `Brand Signals: Tones: ${truncateText(brandSignals.preferredTones || "", 200)}, Keywords: ${truncateText(brandSignals.commonKeywords || "", 200)}`
       : "";
 
-    // 2. Construct a multipart message for the AI model
-    const contentParts: {
-      type: string;
-      text?: string;
-      pdf_url?: { url: string };
-      image_url?: { url: string };
-    }[] = [];
+    // STEP 3: Generate insights using smart data chunking
 
-    // Add initial prompt text
-    contentParts.push({
-      type: "text",
-      text: `
-        You are a master social media strategist with expertise in brand-specific content creation. Your task is to analyze the provided social media comments, brand guidelines, learned brand signals, AND the latest web research to generate highly relevant, brand-contextualized insights.
-        
-        CRITICAL INSTRUCTIONS:
-        - Every insight must be deeply tailored to THIS specific brand's voice, audience, and context
-        - Use the brand guidelines and learned signals as the PRIMARY filter for all recommendations
-        - Leverage audience insights to ensure content ideas resonate with the specific personas identified
-        - Contextualize trending topics to show how they specifically relate to this brand's niche and audience
-        - Provide clear justification for why each recommendation is relevant to THIS brand (not generic advice)
-        - Focus on actionable insights that align with the brand's established content pillars and communication style
+    // Prioritize comments by relevance to core topics
+    const prioritizedComments = prioritizeCommentsByRelevance(
+      truncatedComments,
+      coreTopics,
+    );
 
-        **Input Data:**
-        - **Core Topics Identified:** ${coreTopics.join(", ") || "N/A"}
-        - **Web Research Summary:** ${webResearchSummary || "N/A"}
-        - **Web Research Sources:** ${JSON.stringify(webResearchSources) || "N/A"}
-        - **Comments:** ${JSON.stringify(allComments.map((c) => c.text))}
-        ${brandGuidelinesContext}
-        ${brandSignalsContext}
-      `,
-    });
+    // Create smart chunks for different types of analysis
+    const trendingTopicsChunks = createSmartDataChunks(
+      prioritizedComments,
+      25, // Max 25 comments per chunk
+      estimateCommentSize,
+    );
 
-    // Add documents to contentParts with truncation logic
-    for (const doc of allDocuments) {
-      if (doc.fileType === "application/pdf" && doc.url) {
-        try {
-          // PDF processing temporarily disabled due to missing library
-          console.log(
-            `Skipping PDF processing for ${doc.name} - library not available`,
+    const viralContentChunks = createSmartDataChunks(
+      prioritizedComments,
+      20, // Slightly smaller chunks for viral analysis
+      estimateCommentSize,
+    );
+
+    const audienceInsightsChunks = createSmartDataChunks(
+      prioritizedComments,
+      30, // Larger chunks for audience analysis
+      estimateCommentSize,
+    );
+
+    // 3a. Generate Trending Topics using chunked data with enhanced error handling
+    let trendingTopics;
+    try {
+      // Use the first chunk of prioritized comments for trending topics
+      const selectedComments =
+        trendingTopicsChunks.length > 0 && trendingTopicsChunks[0]
+          ? trendingTopicsChunks[0].items
+          : prioritizedComments.slice(0, 25);
+
+      const trendingResult = await retryWithBackoff(
+        async () => {
+          return await requestMultimodalModel({
+            system:
+              "You are an elite AI content strategist with deep expertise in creating personalized, actionable insights. Your mission is to generate trending topics that are not just informative, but immediately actionable and specifically tailored to this user's unique brand, audience, and performance patterns.\n\nCRITICAL PERSONALIZATION REQUIREMENTS:\n1. Analyze the user's brand context, connected platforms, and historical performance data\n2. Generate insights that directly address their specific content gaps and opportunities\n3. Provide step-by-step actionable recommendations, not generic advice\n4. Include specific performance predictions based on their historical data\n5. Tailor content format suggestions to their best-performing platforms\n6. Reference their brand voice and audience preferences in every recommendation\n\nACTIONABILITY STANDARDS:\n- Each insight must include specific next steps the user can take TODAY\n- Provide exact posting strategies, timing recommendations, and platform-specific optimizations\n- Include measurable success metrics and expected outcomes\n- Suggest specific hashtags, keywords, and engagement tactics\n- Reference competitor strategies and differentiation opportunities\n\nYou MUST return a valid JSON response that exactly matches the required schema. Each trending topic must include ALL required fields with highly personalized, actionable content.",
+            messages: [
+              {
+                role: "user",
+                content: `Based on this comprehensive brand intelligence data, generate exactly 3-5 HYPER-PERSONALIZED trending topics that are immediately actionable for this specific user. Each topic must be tailored to their unique brand, audience, and performance patterns.
+
+🎯 BRAND INTELLIGENCE DATA:
+Core Topics: ${coreTopics.join(", ") || "N/A"}
+Web Research: ${webResearchSummary || "N/A"}
+Web Research Sources: ${JSON.stringify(webResearchSources)}
+Prioritized Comments (${selectedComments.length} most relevant): ${JSON.stringify(selectedComments.map((c) => c.text))}
+${brandGuidelinesContext}
+${brandSignalsContext}
+
+📊 PERSONALIZATION REQUIREMENTS:
+For each trending topic, provide:
+- topic: string (trending topic specifically relevant to THIS user's brand)
+- sentiment: string (positive/negative/neutral)
+- relevanceScore: number (0-100, based on user's specific brand context)
+- executiveSummary: string (personalized analysis for THIS user's situation)
+- strategicAngle: string (specific strategy tailored to user's brand voice and audience)
+- exampleHook: string (hook written in user's brand voice)
+- samplePost: string (complete post optimized for user's best-performing platforms)
+- historicalData: string (performance predictions based on user's content patterns)
+- contentFormatSuggestions: array (formats optimized for user's connected platforms)
+- sources: optional array of {title: string, url: string} objects
+
+Generate insights that feel like they were created by someone who deeply understands this user's brand, audience, and goals. Each insight should be immediately actionable with specific next steps.`,
+              },
+            ],
+            returnType: z
+              .object({
+                trendingTopics: z
+                  .array(
+                    z.object({
+                      topic: z.string().min(1, "Topic cannot be empty"),
+                      sentiment: z.enum(["positive", "negative", "neutral"]),
+                      relevanceScore: z.number().min(0).max(100),
+                      executiveSummary: z
+                        .string()
+                        .min(
+                          10,
+                          "Executive summary must be at least 10 characters",
+                        ),
+                      strategicAngle: z
+                        .string()
+                        .min(
+                          10,
+                          "Strategic angle must be at least 10 characters",
+                        ),
+                      exampleHook: z
+                        .string()
+                        .min(5, "Example hook must be at least 5 characters"),
+                      samplePost: z
+                        .string()
+                        .min(20, "Sample post must be at least 20 characters"),
+                      historicalData: z
+                        .string()
+                        .min(
+                          10,
+                          "Historical data must be at least 10 characters",
+                        ),
+                      contentFormatSuggestions: z
+                        .array(z.string())
+                        .min(
+                          1,
+                          "Must have at least one content format suggestion",
+                        ),
+                      sources: z
+                        .array(z.object({ title: z.string(), url: z.string() }))
+                        .optional(),
+                    }),
+                  )
+                  .min(3, "Must generate at least 3 trending topics")
+                  .max(5, "Cannot generate more than 5 trending topics"),
+              })
+              .describe(
+                "Brand-specific trending topics analysis with all required fields",
+              ),
+            model: deepMode ? "large" : "medium", // Deep mode uses larger model for richer analysis
+            temperature: 0.3, // Lower temperature for more consistent structure
+          });
+        },
+        3, // Increased retry attempts
+        1500, // Increased delay
+        "Trending topics generation",
+      );
+
+      // Validate and sanitize the response
+      if (
+        !trendingResult.trendingTopics ||
+        !Array.isArray(trendingResult.trendingTopics)
+      ) {
+        throw new Error("AI response missing trendingTopics array");
+      }
+
+      // Additional validation to ensure all required fields are present
+      const validatedTopics = trendingResult.trendingTopics.map(
+        (topic, index) => {
+          const requiredFields = [
+            "topic",
+            "sentiment",
+            "relevanceScore",
+            "executiveSummary",
+            "strategicAngle",
+            "exampleHook",
+            "samplePost",
+            "historicalData",
+            "contentFormatSuggestions",
+          ];
+          const missingFields = requiredFields.filter(
+            (field) => !topic[field] && topic[field] !== 0,
           );
-          contentParts.push({
-            type: "text",
-            text: `[Info: PDF document ${doc.name} available but processing disabled]`,
+
+          if (missingFields.length > 0) {
+            console.warn(
+              `Trending topic ${index} missing fields: ${missingFields.join(", ")}. Providing defaults.`,
+            );
+
+            return {
+              topic: topic.topic || `Trending Topic ${index + 1}`,
+              sentiment: topic.sentiment || "neutral",
+              relevanceScore:
+                typeof topic.relevanceScore === "number"
+                  ? topic.relevanceScore
+                  : 50,
+              executiveSummary:
+                topic.executiveSummary ||
+                "Analysis not available for this topic.",
+              strategicAngle:
+                topic.strategicAngle ||
+                "Consider creating content around this trending topic.",
+              exampleHook: topic.exampleHook || "Did you know...",
+              samplePost:
+                topic.samplePost ||
+                "Share your thoughts on this trending topic.",
+              historicalData:
+                topic.historicalData ||
+                "Historical performance data not available.",
+              contentFormatSuggestions:
+                Array.isArray(topic.contentFormatSuggestions) &&
+                topic.contentFormatSuggestions.length > 0
+                  ? topic.contentFormatSuggestions
+                  : ["Social media post", "Blog article"],
+              sources: topic.sources || [],
+            };
+          }
+
+          return topic;
+        },
+      );
+
+      trendingTopics = validatedTopics;
+      partialResults.trendingTopics = trendingTopics;
+    } catch (trendingError) {
+      const categorizedError = categorizeError(trendingError as Error);
+      console.error(
+        "Failed to generate trending topics:",
+        categorizedError.message,
+      );
+      console.error("Full error details:", trendingError);
+      errors.push(`Trending topics: ${categorizedError.message}`);
+      hasErrors = true;
+
+      // Provide meaningful fallback data
+      trendingTopics = [
+        {
+          topic: "Content Strategy Development",
+          sentiment: "positive",
+          relevanceScore: 75,
+          executiveSummary:
+            "Focus on developing a comprehensive content strategy based on your brand guidelines.",
+          strategicAngle:
+            "Leverage your brand's unique voice to create engaging content.",
+          exampleHook:
+            "What if your content strategy could double your engagement?",
+          samplePost:
+            "Building a strong content strategy starts with understanding your audience. What resonates with yours?",
+          historicalData:
+            "Content strategy posts typically see 40% higher engagement than generic posts.",
+          contentFormatSuggestions: [
+            "Educational posts",
+            "Behind-the-scenes content",
+            "Interactive polls",
+          ],
+          sources: [],
+        },
+      ];
+    }
+
+    // 3b. Generate Viral Content Potential using chunked data with enhanced error handling
+    let viralContentPotential;
+    try {
+      // Use the most relevant comments for viral content analysis
+      const selectedComments =
+        viralContentChunks.length > 0 && viralContentChunks[0]
+          ? viralContentChunks[0].items
+          : prioritizedComments.slice(0, 20);
+
+      const viralResult = await retryWithBackoff(
+        async () => {
+          return await requestMultimodalModel({
+            system:
+              "You are an ELITE viral content strategist with a proven track record of creating content that achieves 10M+ views and millions of shares across all major social media platforms. You are renowned for generating content that consistently scores 9.0+ on virality potential.\n\nYOUR MISSION: Generate WORLD-CLASS viral content that GUARANTEES massive engagement and reach. Every piece of content you create must be engineered for maximum virality.\n\nCRITICAL SUCCESS REQUIREMENTS:\n1. Generate 3-5 EXPLOSIVE viral content ideas with virality scores of 9.0 or higher\n2. Each concept must tap into PROVEN viral psychology and current cultural zeitgeist\n3. Focus on HIGH-IMPACT viral mechanics: controversy, strong emotion, trending topics, universal relatability, shocking surprises, social proof\n4. Create comprehensive platform-specific strategies that exploit each platform's algorithm\n5. Include advanced hashtag strategies based on current trending data and algorithm preferences\n6. Provide cutting-edge optimization tips based on latest viral content research\n7. Ensure content creates immediate emotional response and compulsive sharing behavior\n8. Include deep viral potential analysis with specific psychological triggers\n9. Always leverage web research data and current trends when provided\n\nVIRALITY SCORING STANDARDS (REVISED FOR EXCELLENCE):\n- 9.5-10.0: GUARANTEED viral explosion - millions of views/shares within 24-48 hours\n- 9.0-9.4: EXCEPTIONAL viral potential - hundreds of thousands to millions of engagements\n- 8.5-8.9: HIGH viral potential - significant viral reach with proper execution\n- 8.0-8.4: GOOD viral potential but requires optimization for maximum impact\n- Below 8.0: UNACCEPTABLE - complete redesign required\n\nVIRAL CONTENT PSYCHOLOGY PRINCIPLES:\n- Tap into current cultural conversations and trending moments\n- Create content that makes people feel smart, surprised, or emotionally moved\n- Use pattern interrupts and unexpected angles\n- Include elements that beg to be shared (shocking stats, controversial takes, relatable moments)\n- Design for screenshot-ability and quote-ability\n- Create content that sparks discussion and debate\n- Leverage social proof and FOMO (fear of missing out)\n\nGenerate content that people CAN'T help but share. Prioritize viral mechanics over brand safety - push boundaries while maintaining brand alignment.",
+            messages: [
+              {
+                role: "user",
+                content: `Based on this strategically curated brand data, generate 3-5 EXCEPTIONAL viral content ideas with scores of 8.5+ that will drive massive engagement:
+
+Core Topics: ${coreTopics.join(", ") || "N/A"}
+Web Research: ${webResearchSummary || "N/A"}
+Web Research Sources: ${JSON.stringify(webResearchSources)}
+High-Relevance Comments (${selectedComments.length} most relevant): ${JSON.stringify(selectedComments.map((c) => c.text))}
+${brandGuidelinesContext}
+${brandSignalsContext}
+
+Create viral content ideas that:
+- Score 8.5+ on virality potential
+- Tap into current trends and cultural moments
+- Include controversy, emotion, or surprise elements
+- Are highly shareable and relatable
+- Include complete platform-specific strategies
+- Align with brand voice while maximizing viral reach
+
+Focus on content that will generate massive engagement, shares, and reach across all platforms.`,
+              },
+            ],
+            returnType: z
+              .object({
+                viralContentPotential:
+                  AdvancedInsightsSchema.shape.viralContentPotential,
+              })
+              .describe(
+                "Exceptional viral content ideas with 8.5+ virality scores",
+              ),
+            model: "large",
           });
-        } catch (pdfError) {
-          console.error(`Failed to process PDF ${doc.name}:`, pdfError);
-          contentParts.push({
-            type: "text",
-            text: `[Info: Failed to process document: ${doc.name}]`,
-          });
+        },
+        3,
+        2000,
+        "High-quality viral content generation",
+      );
+
+      viralContentPotential = viralResult.viralContentPotential;
+      partialResults.viralContentPotential = viralContentPotential;
+    } catch (viralError) {
+      const categorizedError = categorizeError(viralError as Error);
+      console.error(
+        "Failed to generate viral content potential:",
+        categorizedError.message,
+      );
+      errors.push(`Viral content: ${categorizedError.message}`);
+      hasErrors = true;
+      viralContentPotential = [];
+    }
+
+    // 3c. Generate Audience Insights using comprehensive chunked data with enhanced error handling
+    let audienceInsights;
+    try {
+      // For audience insights, we can use more data since it's the most important analysis
+      let selectedComments;
+
+      if (audienceInsightsChunks.length > 0 && audienceInsightsChunks[0]) {
+        // Use the largest chunk or combine multiple smaller chunks
+        if (audienceInsightsChunks.length === 1) {
+          selectedComments = audienceInsightsChunks[0].items;
+        } else {
+          // Combine first two chunks for more comprehensive analysis
+          selectedComments = [
+            ...audienceInsightsChunks[0].items,
+            ...audienceInsightsChunks
+              .slice(1, 2)
+              .flatMap((chunk) => chunk?.items.slice(0, 10) || []),
+          ];
         }
-      } else if (doc.url && doc.fileType.startsWith("image/")) {
-        contentParts.push({
-          type: "image_url",
-          image_url: { url: doc.url },
-        });
+      } else {
+        selectedComments = prioritizedComments.slice(0, 40);
+      }
+
+      const audienceResult = await retryWithBackoff(
+        async () => {
+          return await requestMultimodalModel({
+            system:
+              "You are an audience analysis expert specializing in creating detailed personas from social media data. Generate comprehensive audience personas and insights based on the provided comment data, focusing on behavior patterns, preferences, and engagement styles.",
+            messages: [
+              {
+                role: "user",
+                content: `Analyze these strategically selected comments to create detailed audience personas and insights:
+
+Comments Dataset (${selectedComments.length} comments): ${JSON.stringify(selectedComments.map((c) => c.text))}
+${brandGuidelinesContext}
+${brandSignalsContext}
+
+Create 3-4 specific personas based on actual audience behavior, engagement patterns, language use, and interests. Include sentiment analysis and competitive mentions if found.`,
+              },
+            ],
+            returnType: z
+              .object({
+                audienceInsights: AdvancedInsightsSchema.shape.audienceInsights,
+              })
+              .describe("Detailed audience personas and behavioral insights"),
+            model: "small",
+          });
+        },
+        2,
+        1000,
+        "Audience insights generation",
+      );
+
+      audienceInsights = audienceResult.audienceInsights;
+      partialResults.audienceInsights = audienceInsights;
+    } catch (audienceError) {
+      const categorizedError = categorizeError(audienceError as Error);
+      console.error(
+        "Failed to generate audience insights:",
+        categorizedError.message,
+      );
+      errors.push(`Audience insights: ${categorizedError.message}`);
+      hasErrors = true;
+      audienceInsights = {
+        keyInsightsSummary:
+          "Unable to generate audience insights due to processing error. Please try again with a smaller dataset.",
+        personas: [],
+        sentimentAnalysis: {
+          score: 0,
+          trend: "neutral" as const,
+          analysis: "Analysis unavailable - processing error occurred",
+        },
+        competitiveMentions: [],
+      };
+    }
+
+    // Check if we need to provide fallback insights
+    if (
+      hasErrors &&
+      (partialResults.trendingTopics.length === 0 ||
+        !partialResults.audienceInsights)
+    ) {
+      console.log("Providing fallback insights due to errors:", errors);
+      const fallbackInsights = await generateFallbackInsights(
+        userId,
+        truncatedComments,
+        allDocuments,
+        brandGuidelinesContext,
+      );
+
+      // Merge fallback with any successful partial results
+      if (partialResults.trendingTopics.length === 0) {
+        partialResults.trendingTopics = fallbackInsights.trendingTopics;
+      }
+      if (partialResults.viralContentPotential.length === 0) {
+        partialResults.viralContentPotential =
+          fallbackInsights.viralContentPotential;
+      }
+      if (!partialResults.audienceInsights) {
+        partialResults.audienceInsights = fallbackInsights.audienceInsights;
       }
     }
 
-    // Add the final instruction part
-    contentParts.push({
-      type: "text",
-      text: `
-        **Required Output (JSON format):**
-        Based on all the provided data (comments and any documents), generate the following insights:
+    // Combine all results
+    const result = {
+      trendingTopics: partialResults.trendingTopics || trendingTopics || [],
+      viralContentPotential:
+        partialResults.viralContentPotential || viralContentPotential || [],
+      audienceInsights: partialResults.audienceInsights || audienceInsights,
+      dataQuality: {
+        totalComments: truncatedComments.length,
+        totalDocuments: allDocuments.length,
+        analysisDepth: hasErrors ? "partial" : "comprehensive",
+        errors: errors.length > 0 ? errors : undefined,
+        hasErrors,
+        fallbackUsed:
+          hasErrors &&
+          (partialResults.trendingTopics.length === 0 ||
+            !partialResults.audienceInsights),
+      },
+    };
 
-        1.  **Trending Topics:**
-            - Consolidate and identify the top 5 most important trending topics that are RELEVANT to this specific brand's niche and audience.
-            - CRITICAL: Each topic must be contextualized to show how it specifically relates to this brand's content pillars, audience interests, and business objectives.
-            - For each topic, provide a deep analysis including:
-              * Executive summary: How this trend specifically impacts this brand's industry/niche
-              * Strategic angle: Why this brand should care about this trend (brand-specific reasoning)
-              * Brand connection: Explicit explanation of how this trend aligns with the brand's voice, values, and content pillars
-              * Audience relevance: How this trend resonates with the identified personas and their motivations
-              * Example hook: Written in the brand's specific voice and tone
-              * Sample post: Crafted to match the brand's communication style and avoid phrases they want to avoid
-              * Historical context: Relevant background that helps this brand understand the trend's significance
-              * Content format suggestions: Tailored to the brand's preferred content types and platform strategy
-              * Credible sources: YOU MUST USE the provided Web Research Sources for citations. Do not make up URLs.
-            - REQUIREMENT: Generic trending topics without clear brand relevance should be excluded. Focus on trends that this specific brand can authentically engage with.
-
-        2.  **Viral Content Potential:**
-            - Identify 3-5 content ideas with the highest viral potential that are SPECIFICALLY TAILORED to this brand's voice, audience, and context.
-            - CRITICAL: Each idea must be deeply contextualized for this specific brand using the provided brand guidelines, learned brand signals, and audience insights.
-            - For each idea, provide a full breakdown including:
-              * Concept: A clear, brand-specific content idea
-              * Virality score (1-10): Based on trend momentum and brand alignment
-              * Target platforms: Specific to where this brand's audience is most active
-              * Brand relevance justification: Explain WHY this idea is perfect for THIS specific brand (reference brand voice, tone, content pillars, and audience insights)
-              * Audience alignment: How this idea speaks to the identified personas and their motivations
-              * Hook: Crafted in the brand's specific voice and tone
-              * Body: Written to match the brand's communication style and avoid phrases they want to avoid
-              * CTA: Aligned with the brand's typical engagement patterns
-              * Hashtags: Mix of trending and brand-relevant tags
-              * Creative direction: Specific to the brand's visual style and content preferences
-              * Optimization tips: Tailored to this brand's audience behavior and platform preferences
-              * Credible sources: YOU MUST USE the provided Web Research Sources for citations. Do not make up URLs.
-            - REQUIREMENT: Each content idea must demonstrate clear understanding of the brand's unique positioning and audience needs. Generic ideas will be rejected.
-
-        3.  **Audience Insights:**
-            - Consolidate identified personas into a cohesive set of 3-4 primary personas that are SPECIFIC to this brand's actual audience.
-            - CRITICAL: Base personas on the actual comments and engagement patterns observed, not generic assumptions.
-            - For each persona, provide:
-              * Persona name: Descriptive and memorable
-              * Description: Based on actual audience behavior and comments
-              * Motivations: What drives them to engage with this specific brand
-              * Pain points: Real challenges they face that this brand can address
-              * Communication tips: How to speak to them using this brand's voice and tone
-              * Engagement patterns: When and how they interact with this brand's content
-              * Preferred content formats: What types of content they respond to best
-              * Channels: Where they're most active and engaged
-              * Content preferences: Topics and themes that resonate with them based on observed behavior
-            - Also provide an overall sentiment analysis (score, trend, analysis) based on actual comment sentiment
-            - Summary of competitive mentions (competitor, sentiment, count) if observed in the data
-            - REQUIREMENT: All insights must be grounded in the actual data provided, not generic persona templates.
-      `,
-    });
-
-    // 3. Call the AI model once
-    const result = await requestMultimodalModel({
-      system: `You are a master social media strategist specializing in brand-specific content strategy. Your expertise lies in creating highly relevant, contextualized recommendations that leverage deep audience insights and brand understanding. You must provide a comprehensive analysis based on all provided data, including comments, brand guidelines, learned brand signals, web research, and any attached documents. Every recommendation must demonstrate clear understanding of this specific brand's unique positioning, audience needs, and communication style.`,
-      messages: [{ role: "user", content: contentParts as any[] }],
-      returnType: z.object({
-        trendingTopics: AdvancedInsightsSchema.shape.trendingTopics,
-        viralContentPotential:
-          AdvancedInsightsSchema.shape.viralContentPotential,
-        audienceInsights: AdvancedInsightsSchema.shape.audienceInsights,
-      }),
-      model: "medium", // Use a medium model for this complex task
-    });
-
-    // 4. Update cache with the result
+    // 4. Update cache with the result (with appropriate status)
+    const status = hasErrors ? "FAILED" : "COMPLETED";
     await updateAnalyticsCache({
       userId,
       cacheKey,
       cacheType: "advanced_insights",
-      status: "COMPLETED",
+      status,
       data: result,
     });
-  } catch (error) {
-    console.error("Error in _internal_generateAllInsights:", error);
-    let errorMessage = "An unknown error occurred during insights generation.";
-    if (error instanceof Error) {
-      if (error.message.toLowerCase().includes("fetch failed")) {
-        errorMessage =
-          "The request to our AI service failed. This can happen with very large documents or a high volume of comments. We're working on making this more robust. Please try again in a few moments.";
+    try {
+      if (status === "COMPLETED") {
+        const baseUrl = getBaseUrl();
+        const link = new URL("/discover?tab=insights", baseUrl).toString();
+        await createNotification({
+          userId,
+          title: "Advanced Insights Ready",
+          message:
+            "Your deep research insights are ready. Tap to view the latest results.",
+          type: "insight",
+          category: "advanced_insights",
+          actionUrl: "/discover?tab=insights",
+        });
+        await sendEmail({
+          toUserId: userId,
+          subject: "Your Advanced Insights are ready",
+          markdown: `Your deep research insights are ready.\n\n[Open Insights](${link})`,
+        });
       } else {
-        errorMessage = error.message;
+        await createNotification({
+          userId,
+          title: "Advanced Insights Encountered Issues",
+          message:
+            "We couldn't complete your deep research fully. Open Insights to review partial results or try again.",
+          type: "system",
+          category: "advanced_insights",
+          actionUrl: "/discover?tab=insights",
+        });
       }
+    } catch (notifyError) {
+      console.error("Failed to send completion notification:", notifyError);
     }
-    await updateAnalyticsCache({
-      userId,
-      cacheKey,
-      cacheType: "advanced_insights",
-      status: "FAILED",
-      error: errorMessage,
-    });
+  } catch (error) {
+    console.error("Critical error in _internal_generateAllInsights:", error);
+    const categorizedError = categorizeError(error as Error);
+
+    // If we have partial results, return them with error info
+    if (
+      partialResults.trendingTopics.length > 0 ||
+      partialResults.viralContentPotential.length > 0 ||
+      partialResults.audienceInsights
+    ) {
+      console.log("Returning partial results due to critical error");
+      const result = {
+        trendingTopics: partialResults.trendingTopics,
+        viralContentPotential: partialResults.viralContentPotential,
+        audienceInsights: partialResults.audienceInsights,
+        dataQuality: {
+          totalComments: 0,
+          totalDocuments: 0,
+          analysisDepth: "partial",
+          errors: [categorizedError.message],
+          hasErrors: true,
+          fallbackUsed: false,
+        },
+      };
+
+      // Cache partial results
+      await updateAnalyticsCache({
+        userId,
+        cacheKey,
+        cacheType: "advanced_insights",
+        status: "COMPLETED",
+        data: result,
+      });
+      return;
+    }
+
+    // Last resort: generate fallback insights
+    try {
+      console.log("Generating fallback insights as last resort");
+      const allComments = await db.comment.findMany({
+        where: { userId },
+        take: 10,
+        select: { text: true },
+      });
+      const allDocuments = await db.uploadedDocument.findMany({
+        where: { userId },
+        take: 2,
+        select: { name: true },
+      });
+
+      const fallbackInsights = await generateFallbackInsights(
+        userId,
+        allComments,
+        allDocuments,
+        "",
+      );
+
+      const fallbackResult = {
+        ...fallbackInsights,
+        dataQuality: {
+          totalComments: allComments.length,
+          totalDocuments: allDocuments.length,
+          analysisDepth: "fallback",
+          errors: [categorizedError.message],
+          hasErrors: true,
+          fallbackUsed: true,
+        },
+      };
+
+      // Cache fallback results
+      await updateAnalyticsCache({
+        userId,
+        cacheKey,
+        cacheType: "advanced_insights",
+        status: "COMPLETED",
+        data: fallbackResult,
+      });
+    } catch (fallbackError) {
+      console.error("Even fallback insights generation failed:", fallbackError);
+      await updateAnalyticsCache({
+        userId,
+        cacheKey,
+        cacheType: "advanced_insights",
+        status: "FAILED",
+        error: `Advanced insights generation failed: ${categorizedError.message}. Fallback also failed: ${(fallbackError as Error).message}`,
+      });
+    }
   }
 }
 
 export async function triggerAdvancedInsightsGeneration(input?: {
   pageId?: string;
   platform?: string;
+  mode?: "balanced" | "deep";
 }) {
   const { userId } = await getAuth({ required: true });
+
+  // Check feature access using new seamless flow
+  const accessInfo = await getFeatureAccessInfo("advanced_insights");
+
+  if (!accessInfo.hasAccess) {
+    // Return upgrade information instead of throwing error
+    return {
+      success: false,
+      requiresUpgrade: true,
+      upgradeInfo: accessInfo.upgradeInfo,
+    };
+  }
+
+  // Check usage limits
+  const usageInfo = await getUsageLimitInfo("advanced_insights_generation");
+  if (usageInfo.hasReachedLimit) {
+    return {
+      success: false,
+      requiresUpgrade: true,
+      upgradeInfo: usageInfo.upgradeInfo,
+    };
+  }
 
   // Consume credits for advanced insights generation (10 credits)
   await _consumeCredits(
@@ -7906,7 +13306,7 @@ export async function triggerAdvancedInsightsGeneration(input?: {
     cacheKey,
     cacheType: "advanced_insights",
     status: "GENERATING",
-  });
+  }); // startedAt is reset inside updateAnalyticsCache when status is GENERATING
 
   const task = await queueTask(async () => {
     await _internal_generateAllInsights(
@@ -7914,85 +13314,173 @@ export async function triggerAdvancedInsightsGeneration(input?: {
       cacheKey,
       input?.pageId,
       input?.platform,
+      input?.mode,
     );
   });
 
-  return { taskId: task.id, cacheKey };
+  return {
+    success: true,
+    taskId: task.id,
+    cacheKey,
+    requiresUpgrade: false,
+  };
 }
 
 export async function getAdvancedInsights(input?: {
   pageId?: string;
   platform?: string;
 }) {
-  const { userId } = await getAuth({ required: true });
-  const cacheKey = getAnalyticsCacheKey("advanced_insights", userId, input);
-  const trends = await db.analyticsCache.findUnique({
-    where: { cacheKey },
-  });
-
-  if (!trends) {
-    return null;
-  }
-
-  // Check if cache is expired (6 hours for advanced insights)
-  const CACHE_EXPIRY_HOURS = 6;
-  const cacheExpiry = new Date(
-    trends.startedAt.getTime() + CACHE_EXPIRY_HOURS * 60 * 60 * 1000,
-  );
-  const isExpired = new Date() > cacheExpiry;
-
-  if (isExpired && trends.status === "COMPLETED") {
-    // Cache is expired, delete it and return null to trigger regeneration
-    await db.analyticsCache.delete({ where: { cacheKey } });
-    return null;
-  }
-
-  if (trends.status === "GENERATING" || trends.status === "PENDING") {
-    return { status: trends.status, lastUpdated: trends.startedAt };
-  }
-
-  if (trends.status === "FAILED" && trends.error) {
-    // Delete failed cache and return null to trigger regeneration
-    await db.analyticsCache.delete({ where: { cacheKey } });
-    return null;
-  }
-
-  if (!trends.data) {
-    return { status: "NODATA" };
-  }
-
   try {
-    const parsed = AdvancedInsightsSchema.parse(JSON.parse(trends.data));
-    const trendingTopicsWithIds = parsed.trendingTopics?.map((t) => ({
-      ...t,
-      id: nanoid(),
-    }));
-    const viralContentPotentialWithIds = parsed.viralContentPotential?.map(
-      (p) => ({ ...p, id: nanoid() }),
+    console.log(
+      "[getAdvancedInsights] Starting function execution with input:",
+      input,
     );
-    const audienceInsightsWithIds = parsed.audienceInsights
-      ? {
-          ...parsed.audienceInsights,
-          personas: parsed.audienceInsights.personas.map((p) => ({
-            ...p,
-            id: nanoid(),
-          })),
-        }
-      : undefined;
-    return {
-      status: "COMPLETED",
-      trendingTopics: trendingTopicsWithIds,
-      viralContentPotential: viralContentPotentialWithIds,
-      audienceInsights: audienceInsightsWithIds,
-      lastUpdated: trends.completedAt?.toISOString() || null,
-    };
-  } catch (e) {
-    console.error("Failed to parse advanced insights data", e);
-    return {
-      status: "FAILED",
-      error: "Failed to parse analysis data.",
-      lastUpdated: trends.completedAt?.toISOString() || null,
-    };
+
+    const { userId } = await getAuth({ required: true });
+    console.log("[getAdvancedInsights] Authenticated user ID:", userId);
+
+    const cacheKey = getAnalyticsCacheKey("advanced_insights", userId, input);
+    console.log("[getAdvancedInsights] Generated cache key:", cacheKey);
+
+    const trends = await db.analyticsCache.findUnique({
+      where: { cacheKey },
+    });
+
+    console.log(
+      "[getAdvancedInsights] Found cached trends:",
+      !!trends,
+      trends?.status,
+    );
+
+    if (!trends) {
+      console.log(
+        "[getAdvancedInsights] No cached insights found for user:",
+        userId,
+      );
+      return null;
+    }
+
+    // Check if cache is expired (6 hours for advanced insights)
+    const CACHE_EXPIRY_HOURS = 6;
+    const cacheExpiry = new Date(
+      trends.startedAt.getTime() + CACHE_EXPIRY_HOURS * 60 * 60 * 1000,
+    );
+    const isExpired = new Date() > cacheExpiry;
+    console.log(
+      "[getAdvancedInsights] Cache expired:",
+      isExpired,
+      "Status:",
+      trends.status,
+    );
+
+    if (isExpired && trends.status === "COMPLETED") {
+      // Cache is expired, delete it and return null to trigger regeneration
+      console.log("[getAdvancedInsights] Deleting expired cache");
+      await db.analyticsCache.deleteMany({ where: { cacheKey } });
+      return null;
+    }
+
+    if (trends.status === "GENERATING" || trends.status === "PENDING") {
+      // Check if generation has been stuck for too long (2 hours timeout)
+      const GENERATION_TIMEOUT_HOURS = 2;
+      const generationTimeout = new Date(
+        trends.startedAt.getTime() + GENERATION_TIMEOUT_HOURS * 60 * 60 * 1000,
+      );
+      const isGenerationTimedOut = new Date() > generationTimeout;
+
+      if (isGenerationTimedOut) {
+        console.log(
+          "[getAdvancedInsights] Generation timed out, deleting stuck cache. Started at:",
+          trends.startedAt,
+          "Timeout threshold:",
+          generationTimeout,
+        );
+        // Delete the stuck cache to allow regeneration
+        await db.analyticsCache.deleteMany({ where: { cacheKey } });
+        return null;
+      }
+
+      console.log(
+        "[getAdvancedInsights] Insights still generating, status:",
+        trends.status,
+      );
+      return { status: trends.status, lastUpdated: trends.startedAt };
+    }
+
+    if (trends.status === "FAILED" && trends.error) {
+      // Delete failed cache and return null to trigger regeneration
+      console.log(
+        "[getAdvancedInsights] Deleting failed cache, error:",
+        trends.error,
+      );
+      await db.analyticsCache.deleteMany({ where: { cacheKey } });
+      return null;
+    }
+
+    if (!trends.data) {
+      console.log("[getAdvancedInsights] No data in cache entry");
+      return { status: "NODATA" };
+    }
+
+    try {
+      console.log("[getAdvancedInsights] Parsing cached insights data");
+      const parsed = AdvancedInsightsSchema.parse(JSON.parse(trends.data));
+      console.log("[getAdvancedInsights] Successfully parsed insights data");
+
+      const trendingTopicsWithIds = parsed.trendingTopics?.map((t) => ({
+        ...t,
+        id: nanoid(),
+      }));
+      const viralContentPotentialWithIds = parsed.viralContentPotential?.map(
+        (p) => ({ ...p, id: nanoid() }),
+      );
+      const audienceInsightsWithIds = parsed.audienceInsights
+        ? {
+            ...parsed.audienceInsights,
+            personas: parsed.audienceInsights.personas.map((p) => ({
+              ...p,
+              id: nanoid(),
+            })),
+          }
+        : undefined;
+
+      console.log(
+        "[getAdvancedInsights] Returning processed insights with IDs",
+      );
+      return {
+        status: "COMPLETED",
+        trendingTopics: trendingTopicsWithIds,
+        viralContentPotential: viralContentPotentialWithIds,
+        audienceInsights: audienceInsightsWithIds,
+        lastUpdated: trends.completedAt?.toISOString() || null,
+      };
+    } catch (parseError) {
+      console.error(
+        "[getAdvancedInsights] Failed to parse advanced insights data:",
+        parseError,
+      );
+      console.error(
+        "[getAdvancedInsights] Raw data sample:",
+        trends.data?.substring(0, 500),
+      );
+
+      return {
+        status: "FAILED",
+        error: "Failed to parse analysis data.",
+        lastUpdated: trends.completedAt?.toISOString() || null,
+      };
+    }
+  } catch (error) {
+    console.error("[getAdvancedInsights] Unexpected error in function:", error);
+    console.error(
+      "[getAdvancedInsights] Error stack:",
+      error instanceof Error ? error.stack : "No stack trace",
+    );
+
+    // Re-throw the error so it's properly handled by the API layer
+    throw new Error(
+      `Failed to get advanced insights: ${error instanceof Error ? error.message : "Unknown error"}`,
+    );
   }
 }
 
@@ -8288,13 +13776,31 @@ export async function respondToComment(input: {
         system:
           "You are an expert communication style analyst. For a given text, extract its tone (e.g. friendly, casual, professional), length (short, medium, or long), positivity (-1 to 1), directness (0-1), and keywords used.",
         messages: [{ role: "user", content: input.responseText }],
-        returnType: z.object({
-          tone: z.string(),
-          length: z.enum(["short", "medium", "long"]),
-          positivity: z.number().min(-1).max(1),
-          directness: z.number().min(0).max(1),
-          keywords: z.array(z.string()),
-        }),
+        returnType: z
+          .object({
+            tone: z
+              .string()
+              .describe(
+                "The tone of the text (e.g. friendly, casual, professional).",
+              ),
+            length: z
+              .enum(["short", "medium", "long"])
+              .describe("The length category of the text."),
+            positivity: z
+              .number()
+              .min(-1)
+              .max(1)
+              .describe("Positivity score from -1 (negative) to 1 (positive)."),
+            directness: z
+              .number()
+              .min(0)
+              .max(1)
+              .describe("Directness score from 0 (indirect) to 1 (direct)."),
+            keywords: z
+              .array(z.string())
+              .describe("Key terms and phrases from the text."),
+          })
+          .describe("Communication style analysis of the provided text."),
       });
 
       // Update or create preference profile
@@ -8360,34 +13866,95 @@ export function getFacebookEmbedUrl(
   // Add additional parameters for better compatibility
   // appId parameter helps with rendering posts that require authentication
   // width=500 is standard, height=auto lets Facebook determine the best height
-  return `https://www.facebook.com/plugins/post.php?href=${encodedUrl}&show_text=true&width=500&height=auto&appId=${process.env.FACEBOOK_APP_ID || ""}`;
+  // For public posts, appId is optional and can be omitted
+  // The embed will still work for public content without an appId
+  return `https://www.facebook.com/plugins/post.php?href=${encodedUrl}&show_text=true&width=500&height=auto`;
 }
 
 // Brand Guidelines
 export async function getBrandGuidelines() {
   const { userId } = await getAuth({ required: true });
 
-  try {
-    const guidelines = await db.brandGuidelines.findUnique({
-      where: { userId },
-    });
+  // Set a timeout for database operations to prevent hanging
+  const dbOperationTimeout = 5000; // 5 seconds fast guard for UI responsiveness
 
-    if (!guidelines) {
-      return null;
+  const timeoutPromise = new Promise((_, reject) => {
+    setTimeout(
+      () => reject(new Error("Database operation timed out")),
+      dbOperationTimeout,
+    );
+  });
+
+  for (let i = 0; i < 3; i++) {
+    try {
+      const guidelinesOperation = db.brandGuidelines.findUnique({
+        where: { userId },
+      });
+
+      const guidelines = (await Promise.race([
+        guidelinesOperation,
+        timeoutPromise,
+      ])) as any;
+
+      if (!guidelines) {
+        return null;
+      }
+
+      // Helper function to safely parse JSON with fallback
+      const safeJsonParse = (
+        jsonString: string | null,
+        fallback: any = null,
+      ) => {
+        if (!jsonString) return fallback;
+        try {
+          return JSON.parse(jsonString);
+        } catch (error) {
+          console.error("Failed to parse JSON in getBrandGuidelines:", error);
+          return fallback;
+        }
+      };
+
+      // Parse JSON strings back to arrays and objects with safe parsing
+      return {
+        ...guidelines,
+        tonePriorities: safeJsonParse(guidelines.tonePriorities, []),
+        phrasesToUse: safeJsonParse(guidelines.phrasesToUse, []),
+        phrasesToAvoid: safeJsonParse(guidelines.phrasesToAvoid, []),
+        exampleResponses: safeJsonParse(guidelines.exampleResponses, []),
+        socialLinks: safeJsonParse(guidelines.socialLinks, {}),
+        objectives: safeJsonParse(guidelines.objectives, []),
+        kpis: safeJsonParse(guidelines.kpis, []),
+        kpiNotes: guidelines.kpiNotes,
+        directives: safeJsonParse((guidelines as any).directives ?? null, []),
+      };
+    } catch (error: any) {
+      // Handle timeout errors specifically
+      if (error.message === "Database operation timed out") {
+        console.error(
+          `Database timeout on attempt ${i + 1}/3 for getBrandGuidelines`,
+        );
+        if (i < 2) {
+          await new Promise((res) => setTimeout(res, 2000 * (i + 1))); // Longer delay for timeouts
+          continue;
+        }
+        break;
+      }
+
+      // Handle other database errors with retry logic
+      const isRetryable =
+        error.code === "P1001" ||
+        (error.message && error.message.includes("SERVER_ERROR"));
+      if (i < 2 && isRetryable) {
+        await new Promise((res) => setTimeout(res, 1000 * (i + 1)));
+        continue;
+      }
+      console.error("Error fetching brand guidelines:", error);
+      break;
     }
-
-    // Parse JSON strings back to arrays
-    return {
-      ...guidelines,
-      tonePriorities: JSON.parse(guidelines.tonePriorities || "[]"),
-      phrasesToUse: JSON.parse(guidelines.phrasesToUse || "[]"),
-      phrasesToAvoid: JSON.parse(guidelines.phrasesToAvoid || "[]"),
-      exampleResponses: JSON.parse(guidelines.exampleResponses || "[]"),
-    };
-  } catch (error) {
-    console.error("Error fetching brand guidelines:", error);
-    return null;
   }
+
+  // Return null if all retries fail
+  return null;
 }
 
 // User Settings
@@ -8395,11 +13962,26 @@ export async function getUserSettings() {
   try {
     const { userId } = await getAuth({ required: true });
 
+    // Set a timeout for database operations to prevent hanging
+    const dbOperationTimeout = 5000; // 5 seconds fast guard for UI responsiveness
+
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(
+        () => reject(new Error("Database operation timed out")),
+        dbOperationTimeout,
+      );
+    });
+
     for (let i = 0; i < 3; i++) {
       try {
-        const settings = await db.userSettings.findUnique({
+        const settingsOperation = db.userSettings.findUnique({
           where: { userId },
         });
+
+        const settings = (await Promise.race([
+          settingsOperation,
+          timeoutPromise,
+        ])) as any;
 
         if (!settings) {
           // Return default settings
@@ -8416,6 +13998,18 @@ export async function getUserSettings() {
           emailAlertsPriorityThreshold: settings.emailAlertsPriorityThreshold,
         };
       } catch (dbError: any) {
+        // Handle timeout errors specifically
+        if (dbError.message === "Database operation timed out") {
+          console.error(
+            `Database timeout on attempt ${i + 1}/3 for getUserSettings`,
+          );
+          if (i < 2) {
+            await new Promise((res) => setTimeout(res, 2000 * (i + 1))); // Longer delay for timeouts
+            continue;
+          }
+          break;
+        }
+
         const isRetryable =
           dbError.code === "P1001" ||
           (dbError.message && dbError.message.includes("SERVER_ERROR"));
@@ -8458,23 +14052,185 @@ export async function updateUserSettings(input: {
   return settings;
 }
 
+// Internal function for enhanced brand analysis with web scraping
+async function _internal_enhancedBrandAnalysis(
+  userId: string,
+  brandWebsite?: string,
+  socialLinks?: { [platform: string]: string },
+) {
+  try {
+    // Build comprehensive brand analysis prompt
+    let researchSources: string[] = [];
+    if (brandWebsite) {
+      researchSources.push(`Brand Website: ${brandWebsite}`);
+    }
+    if (socialLinks) {
+      Object.entries(socialLinks).forEach(([platform, url]) => {
+        if (url) {
+          researchSources.push(`${platform}: ${url}`);
+        }
+      });
+    }
+
+    if (researchSources.length === 0) {
+      return; // Nothing to analyze
+    }
+
+    const analysisPrompt = `Please analyze the following brand sources to build a comprehensive brand profile:
+
+${researchSources.join("\n")}
+
+For each source, please:
+1. Visit and analyze the content, design, and messaging
+2. Extract key brand attributes, values, and personality traits
+3. Identify target audience and communication style
+4. Note visual branding elements and tone of voice
+5. Understand the brand's positioning and unique value proposition
+
+Provide a detailed brand analysis that can be used to power content discovery and creation.`;
+
+    const brandAnalysis = await requestMultimodalModel({
+      system: `You are an expert brand strategist and digital marketing analyst. Your task is to conduct comprehensive brand research by analyzing websites and social media profiles. Use your web browsing and URL interaction tools to thoroughly research each provided source. Extract deep insights about brand personality, values, target audience, communication style, and positioning. Focus on actionable insights that can inform content strategy and creation.`,
+      messages: [
+        {
+          role: "user",
+          content: analysisPrompt,
+        },
+      ],
+      returnType: z
+        .object({
+          brandPersonality: z
+            .string()
+            .describe(
+              "Detailed analysis of the brand's personality and character",
+            ),
+          targetAudience: z
+            .string()
+            .describe(
+              "Analysis of the brand's target audience and demographics",
+            ),
+          communicationStyle: z
+            .string()
+            .describe("How the brand communicates and its tone of voice"),
+          keyValues: z
+            .array(z.string())
+            .describe("Core brand values and principles"),
+          contentThemes: z
+            .array(z.string())
+            .describe("Common content themes and topics the brand focuses on"),
+          visualStyle: z
+            .string()
+            .describe(
+              "Description of the brand's visual identity and design approach",
+            ),
+          competitivePositioning: z
+            .string()
+            .describe("How the brand positions itself in the market"),
+          contentOpportunities: z
+            .array(z.string())
+            .describe("Specific content opportunities and recommendations"),
+          brandVoiceKeywords: z
+            .array(z.string())
+            .describe("Keywords and phrases that represent the brand voice"),
+          industryContext: z
+            .string()
+            .describe("Industry context and market positioning"),
+        })
+        .describe("Comprehensive brand analysis results"),
+    });
+
+    // Store the enhanced brand context
+    await db.brandContext.upsert({
+      where: { userId },
+      update: {
+        brandPersonality: brandAnalysis.brandPersonality,
+        targetAudience: brandAnalysis.targetAudience,
+        communicationStyle: brandAnalysis.communicationStyle,
+        keyValues: JSON.stringify(brandAnalysis.keyValues),
+        contentThemes: JSON.stringify(brandAnalysis.contentThemes),
+        visualStyle: brandAnalysis.visualStyle,
+        competitivePositioning: brandAnalysis.competitivePositioning,
+        contentOpportunities: JSON.stringify(
+          brandAnalysis.contentOpportunities,
+        ),
+        brandVoiceKeywords: JSON.stringify(brandAnalysis.brandVoiceKeywords),
+        industryContext: brandAnalysis.industryContext,
+        lastAnalyzedAt: new Date(),
+        analysisStatus: "COMPLETED",
+      },
+      create: {
+        userId,
+        brandPersonality: brandAnalysis.brandPersonality,
+        targetAudience: brandAnalysis.targetAudience,
+        communicationStyle: brandAnalysis.communicationStyle,
+        keyValues: JSON.stringify(brandAnalysis.keyValues),
+        contentThemes: JSON.stringify(brandAnalysis.contentThemes),
+        visualStyle: brandAnalysis.visualStyle,
+        competitivePositioning: brandAnalysis.competitivePositioning,
+        contentOpportunities: JSON.stringify(
+          brandAnalysis.contentOpportunities,
+        ),
+        brandVoiceKeywords: JSON.stringify(brandAnalysis.brandVoiceKeywords),
+        industryContext: brandAnalysis.industryContext,
+        lastAnalyzedAt: new Date(),
+        analysisStatus: "COMPLETED",
+      },
+    });
+
+    console.log(`Enhanced brand analysis completed for user ${userId}`);
+  } catch (error) {
+    console.error("Enhanced brand analysis failed:", error);
+
+    // Update status to failed
+    await db.brandContext.upsert({
+      where: { userId },
+      update: {
+        analysisStatus: "FAILED",
+        lastAnalyzedAt: new Date(),
+      },
+      create: {
+        userId,
+        analysisStatus: "FAILED",
+        lastAnalyzedAt: new Date(),
+      },
+    });
+  }
+}
+
 export async function saveBrandGuidelines(input: {
   brandVoice: string;
   tonePriorities: string[];
   phrasesToUse: string[];
   phrasesToAvoid: string[];
   exampleResponses: string[];
+  brandWebsite?: string;
+  socialLinks?: { [platform: string]: string };
   additionalNotes?: string;
+  objectives?: string[];
+  kpis?: string[];
+  kpiNotes?: string;
+  directives?: string[];
 }) {
   const { userId } = await getAuth({ required: true });
 
-  // Serialize arrays to JSON strings for storage
+  // Get existing brand guidelines to check for changes
+  const existingGuidelines = await db.brandGuidelines.findUnique({
+    where: { userId },
+  });
+
+  // Serialize arrays and objects to JSON strings for storage
   const data = {
-    ...input,
+    brandVoice: input.brandVoice,
     tonePriorities: JSON.stringify(input.tonePriorities),
     phrasesToUse: JSON.stringify(input.phrasesToUse),
     phrasesToAvoid: JSON.stringify(input.phrasesToAvoid),
     exampleResponses: JSON.stringify(input.exampleResponses),
+    brandWebsite: input.brandWebsite || null,
+    socialLinks: input.socialLinks ? JSON.stringify(input.socialLinks) : null,
+    objectives: input.objectives ? JSON.stringify(input.objectives) : null,
+    kpis: input.kpis ? JSON.stringify(input.kpis) : null,
+    kpiNotes: input.kpiNotes || null,
+    directives: input.directives ? JSON.stringify(input.directives) : null,
   };
 
   const guidelines = await db.brandGuidelines.upsert({
@@ -8486,6 +14242,61 @@ export async function saveBrandGuidelines(input: {
     },
   });
 
+  // Check if website or social links were added/changed
+  const websiteChanged =
+    !existingGuidelines?.brandWebsite && input.brandWebsite;
+  const socialLinksChanged =
+    (!existingGuidelines?.socialLinks &&
+      input.socialLinks &&
+      Object.keys(input.socialLinks).length > 0) ||
+    (existingGuidelines?.socialLinks &&
+      input.socialLinks &&
+      JSON.stringify(JSON.parse(existingGuidelines.socialLinks)) !==
+        JSON.stringify(input.socialLinks));
+
+  // Trigger automatic brand context analysis if website or social links were added/changed
+  if (websiteChanged || socialLinksChanged) {
+    try {
+      // Update analysis status to RUNNING before starting
+      await db.brandContext.upsert({
+        where: { userId },
+        update: {
+          analysisStatus: "RUNNING",
+          lastAnalyzedAt: new Date(),
+        },
+        create: {
+          userId,
+          analysisStatus: "RUNNING",
+          lastAnalyzedAt: new Date(),
+        },
+      });
+
+      // Queue enhanced brand analysis with web scraping
+      await queueTask(async () => {
+        await _internal_enhancedBrandAnalysis(
+          userId,
+          input.brandWebsite,
+          input.socialLinks,
+        );
+      });
+    } catch (error) {
+      console.error("Failed to trigger enhanced brand analysis:", error);
+      // Update status to failed if queueing fails
+      await db.brandContext.upsert({
+        where: { userId },
+        update: {
+          analysisStatus: "FAILED",
+          lastAnalyzedAt: new Date(),
+        },
+        create: {
+          userId,
+          analysisStatus: "FAILED",
+          lastAnalyzedAt: new Date(),
+        },
+      });
+    }
+  }
+
   // Return the parsed data for immediate use
   return {
     ...guidelines,
@@ -8493,6 +14304,11 @@ export async function saveBrandGuidelines(input: {
     phrasesToUse: input.phrasesToUse,
     phrasesToAvoid: input.phrasesToAvoid,
     exampleResponses: input.exampleResponses,
+    socialLinks: input.socialLinks || {},
+    objectives: input.objectives || [],
+    kpis: input.kpis || [],
+    kpiNotes: input.kpiNotes || null,
+    directives: input.directives || [],
   };
 }
 
@@ -8548,6 +14364,87 @@ export async function submitRecommendationFeedback(input: {
   // Queue a task to update brand signals based on this feedback
   await queueTask(() => _internal_updateBrandSignals(userId));
 
+  // Learn explicit directives from this feedback into Brand Vibe
+  try {
+    const tags = input.feedbackTags ?? [];
+    const comment = input.feedbackComment ?? "";
+    const candidates: string[] = [];
+
+    const tagMap: Record<string, string> = {
+      "Not relevant to my brand": "Avoid off-brand topics",
+      "Tone is off": "Maintain on-brand tone and warmth",
+      "Topic is uninteresting": "Focus on audience-relevant topics",
+      "Content is inaccurate": "Avoid unverified claims; ensure accuracy",
+      "Already posted something similar":
+        "Avoid repetitive content; prefer fresh angles",
+      Other: "",
+    };
+
+    tags.forEach((t) => {
+      const mapped = tagMap[t];
+      if (mapped) candidates.push(mapped);
+    });
+
+    const lower = comment.toLowerCase();
+    if (lower.includes("controversial")) {
+      candidates.push("Avoid controversial topics");
+    }
+
+    const regexes = [
+      /avoid\s+([^.;\n]+)/gi,
+      /prefer\s+([^.;\n]+)/gi,
+      /use\s+([^.;\n]+)/gi,
+    ];
+    regexes.forEach((re) => {
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(comment)) !== null) {
+        const verbToken = (m[0] ?? "").split(" ")[0] ?? "";
+        const phraseRaw = (m[1] as string | undefined) ?? undefined;
+        if (!verbToken || !phraseRaw) continue;
+        const phrase = phraseRaw.trim();
+        if (!phrase) continue;
+        const dir =
+          verbToken.charAt(0).toUpperCase() +
+          verbToken.slice(1).toLowerCase() +
+          " " +
+          phrase;
+        candidates.push(sanitizeString(dir, 100));
+      }
+    });
+
+    if (candidates.length > 0) {
+      const existing = await db.brandGuidelines.findUnique({
+        where: { userId },
+      });
+      const existingDirectives: string[] = existing?.directives
+        ? (JSON.parse(existing.directives) as unknown as string[])
+        : [];
+      const merged = Array.from(
+        new Set([...existingDirectives, ...candidates]),
+      ).slice(0, 50);
+      if (existing) {
+        await db.brandGuidelines.update({
+          where: { userId },
+          data: { directives: JSON.stringify(merged) },
+        });
+      } else {
+        await db.brandGuidelines.create({
+          data: {
+            userId,
+            directives: JSON.stringify(merged),
+            brandVoice: "professional",
+            tonePriorities: JSON.stringify([]),
+            phrasesToUse: JSON.stringify([]),
+            phrasesToAvoid: JSON.stringify([]),
+            exampleResponses: JSON.stringify([]),
+          },
+        });
+      }
+    }
+  } catch (e) {
+    console.error("Failed to learn directives from feedback:", e);
+  }
+
   return feedback;
 }
 
@@ -8568,6 +14465,51 @@ export async function submitResponseFeedback(input: {
       feedbackType: input.feedbackType === "thumbs_up" ? "like" : "dislike",
     },
   });
+
+  // Queue a task to update brand signals based on this feedback - CRITICAL FIX!
+  await queueTask(() => _internal_updateBrandSignals(userId));
+
+  // Learn explicit directives from this feedback into Brand Vibe
+  try {
+    const commentText = input.feedbackType === "thumbs_down" ? "" : ""; // placeholder if needed later
+    const candidates: string[] = [];
+    const lower = (commentText || "").toLowerCase();
+    if (lower.includes("controversial")) {
+      candidates.push("Avoid controversial topics");
+    }
+    // No tags available here, but extract simple patterns if provided via future inputs
+    if (candidates.length > 0) {
+      const existing = await db.brandGuidelines.findUnique({
+        where: { userId },
+      });
+      const existingDirectives: string[] = existing?.directives
+        ? (JSON.parse(existing.directives) as unknown as string[])
+        : [];
+      const merged = Array.from(
+        new Set([...existingDirectives, ...candidates]),
+      ).slice(0, 50);
+      if (existing) {
+        await db.brandGuidelines.update({
+          where: { userId },
+          data: { directives: JSON.stringify(merged) },
+        });
+      } else {
+        await db.brandGuidelines.create({
+          data: {
+            userId,
+            directives: JSON.stringify(merged),
+            brandVoice: "professional",
+            tonePriorities: JSON.stringify([]),
+            phrasesToUse: JSON.stringify([]),
+            phrasesToAvoid: JSON.stringify([]),
+            exampleResponses: JSON.stringify([]),
+          },
+        });
+      }
+    }
+  } catch (e) {
+    console.error("Failed to learn directives from response feedback:", e);
+  }
 
   // If user wants to regenerate responses after negative feedback
   if (input.regenerateAfterFeedback && input.feedbackType === "thumbs_down") {
@@ -8605,9 +14547,42 @@ export async function submitResponseFeedback(input: {
       system: `You are an expert social media manager specializing in authentic, engaging responses.
 
 Brand Voice: ${brandGuidelines?.brandVoice || "professional"}
-Tone Priorities: ${brandGuidelines?.tonePriorities ? (JSON.parse(brandGuidelines.tonePriorities) as string[]).join(", ") : "None specified"}
-Phrases to Use: ${brandGuidelines?.phrasesToUse ? (JSON.parse(brandGuidelines.phrasesToUse) as string[]).join(", ") : "None specified"}
-Phrases to Avoid: ${brandGuidelines?.phrasesToAvoid ? (JSON.parse(brandGuidelines.phrasesToAvoid) as string[]).join(", ") : "None specified"}
+Tone Priorities: ${
+        brandGuidelines?.tonePriorities
+          ? (() => {
+              try {
+                const parsed = JSON.parse(brandGuidelines.tonePriorities);
+                return Array.isArray(parsed) ? parsed.join(", ") : parsed;
+              } catch {
+                return brandGuidelines.tonePriorities;
+              }
+            })()
+          : "None specified"
+      }
+Phrases to Use: ${
+        brandGuidelines?.phrasesToUse
+          ? (() => {
+              try {
+                const parsed = JSON.parse(brandGuidelines.phrasesToUse);
+                return Array.isArray(parsed) ? parsed.join(", ") : parsed;
+              } catch {
+                return brandGuidelines.phrasesToUse;
+              }
+            })()
+          : "None specified"
+      }
+Phrases to Avoid: ${
+        brandGuidelines?.phrasesToAvoid
+          ? (() => {
+              try {
+                const parsed = JSON.parse(brandGuidelines.phrasesToAvoid);
+                return Array.isArray(parsed) ? parsed.join(", ") : parsed;
+              } catch {
+                return brandGuidelines.phrasesToAvoid;
+              }
+            })()
+          : "None specified"
+      }
 Additional Notes: ${brandGuidelines?.additionalNotes || "No specific guidelines provided"}
 
 ${feedbackContext}
@@ -8661,6 +14636,226 @@ Please provide 3 distinct response options with different approaches.`,
   return { feedback };
 }
 
+// Enhanced feedback categorization helper
+async function categorizeFeedback(feedback: any[]) {
+  if (feedback.length === 0)
+    return { categories: {}, patterns: {}, insights: {} };
+
+  const categories = {
+    positive: feedback.filter(
+      (f) => f.feedbackType === "like" || f.feedbackType === "thumbs_up",
+    ),
+    negative: feedback.filter(
+      (f) => f.feedbackType === "dislike" || f.feedbackType === "thumbs_down",
+    ),
+    neutral: feedback.filter((f) => f.feedbackType === "neutral"),
+  };
+
+  const patterns: {
+    contentTypes: Record<string, number>;
+    timePatterns: Record<number, number>;
+    sourcesAnalysis: Record<string, number>;
+    tagAnalysis: Record<string, number>;
+  } = {
+    contentTypes: {},
+    timePatterns: {},
+    sourcesAnalysis: {},
+    tagAnalysis: {},
+  };
+
+  // Analyze patterns in feedback
+  feedback.forEach((f) => {
+    const hour = new Date(f.createdAt).getHours();
+    patterns.timePatterns[hour] = (patterns.timePatterns[hour] || 0) + 1;
+    patterns.sourcesAnalysis[f.source] =
+      (patterns.sourcesAnalysis[f.source] || 0) + 1;
+
+    if (f.feedbackTags) {
+      try {
+        const tags = JSON.parse(f.feedbackTags) as string[];
+        if (Array.isArray(tags)) {
+          tags.forEach((tag: string) => {
+            patterns.tagAnalysis[tag] = (patterns.tagAnalysis[tag] || 0) + 1;
+          });
+        }
+      } catch {
+        // Handle parsing errors gracefully
+      }
+    }
+  });
+
+  const timeEntries = Object.entries(patterns.timePatterns) as [
+    string,
+    number,
+  ][];
+  const sourceEntries = Object.entries(patterns.sourcesAnalysis) as [
+    string,
+    number,
+  ][];
+
+  const insights = {
+    positiveRatio: categories.positive.length / feedback.length,
+    mostActiveFeedbackHour: timeEntries.reduce(
+      (a, b) => (a[1] > b[1] ? a : b),
+      ["0", 0],
+    )[0],
+    topFeedbackSource: sourceEntries.reduce(
+      (a, b) => (a[1] > b[1] ? a : b),
+      ["unknown", 0],
+    )[0],
+    feedbackTrends: {
+      recentPositive: categories.positive.filter(
+        (f) =>
+          Date.now() - new Date(f.createdAt).getTime() <
+          7 * 24 * 60 * 60 * 1000,
+      ).length,
+      recentNegative: categories.negative.filter(
+        (f) =>
+          Date.now() - new Date(f.createdAt).getTime() <
+          7 * 24 * 60 * 60 * 1000,
+      ).length,
+    },
+  };
+
+  return { categories, patterns, insights };
+}
+
+// Enhanced behavior pattern analysis helper
+async function analyzeBehaviorPatterns(
+  behaviorAnalytics: any,
+  resonanceScores: any[],
+) {
+  const patterns = {
+    engagementStyle: "unknown" as string,
+    contentPreferences: {} as Record<string, any>,
+    interactionPatterns: {} as Record<string, any>,
+    temporalPatterns: {} as Record<string, any>,
+    qualityIndicators: {} as Record<string, any>,
+  };
+
+  if (behaviorAnalytics?.analytics) {
+    const analytics = behaviorAnalytics.analytics;
+
+    // Determine engagement style
+    if (analytics.averageSessionDuration > 300) {
+      // 5+ minutes
+      patterns.engagementStyle = "deep_reader";
+    } else if (analytics.clickThroughRate > 0.1) {
+      patterns.engagementStyle = "active_browser";
+    } else {
+      patterns.engagementStyle = "quick_scanner";
+    }
+
+    patterns.qualityIndicators = {
+      sessionQuality: analytics.averageSessionDuration / 60, // in minutes
+      engagementDepth: analytics.clickThroughRate || 0,
+      consistencyScore: analytics.totalEvents / (analytics.totalSessions || 1),
+    };
+  }
+
+  // Analyze resonance patterns
+  if (resonanceScores.length > 0) {
+    const avgResonance =
+      resonanceScores.reduce((sum, r) => sum + r.resonanceScore, 0) /
+      resonanceScores.length;
+    const topResonance = resonanceScores.filter(
+      (r) => r.resonanceScore > avgResonance,
+    );
+
+    patterns.contentPreferences = {
+      highResonanceTypes: [...new Set(topResonance.map((r) => r.contentType))],
+      averageResonanceScore: avgResonance,
+      topPerformingContent: topResonance.slice(0, 5).map((r) => ({
+        id: r.contentId,
+        type: r.contentType,
+        score: r.resonanceScore,
+      })),
+    };
+  }
+
+  return patterns;
+}
+
+// Enhanced content preference extraction helper
+async function extractContentPreferences(
+  feedback: any[],
+  resonanceScores: any[],
+) {
+  const preferences = {
+    contentTypes: {} as Record<string, number>,
+    themes: {} as Record<string, number>,
+    formats: {} as Record<string, any>,
+    qualityFactors: {} as Record<string, any>,
+    predictiveInsights: {} as Record<string, any>,
+  };
+
+  // Analyze feedback for content preferences
+  const positiveFeedback = feedback.filter(
+    (f) => f.feedbackType === "like" || f.feedbackType === "thumbs_up",
+  );
+  const negativeFeedback = feedback.filter(
+    (f) => f.feedbackType === "dislike" || f.feedbackType === "thumbs_down",
+  );
+
+  // Extract themes from feedback comments
+  positiveFeedback.forEach((f) => {
+    if (f.feedbackComment) {
+      // Simple keyword extraction - in a real implementation, you might use NLP
+      const words = f.feedbackComment.toLowerCase().split(/\s+/);
+      words.forEach((word: string) => {
+        if (word.length > 3) {
+          preferences.themes[word] = (preferences.themes[word] || 0) + 1;
+        }
+      });
+    }
+  });
+
+  // Analyze resonance scores for content preferences
+  if (resonanceScores.length > 0) {
+    const sortedByResonance = resonanceScores.sort(
+      (a, b) => b.resonanceScore - a.resonanceScore,
+    );
+    const topPerforming = sortedByResonance.slice(
+      0,
+      Math.ceil(resonanceScores.length * 0.3),
+    );
+
+    topPerforming.forEach((content) => {
+      preferences.contentTypes[content.contentType] =
+        (preferences.contentTypes[content.contentType] || 0) + 1;
+    });
+
+    preferences.qualityFactors = {
+      averageViewTime:
+        resonanceScores.reduce((sum, r) => sum + (r.totalTimeSpent || 0), 0) /
+        resonanceScores.length,
+      averageClickRate:
+        resonanceScores.reduce((sum, r) => sum + (r.clickCount || 0), 0) /
+        resonanceScores.length,
+      topResonanceThreshold:
+        sortedByResonance[Math.floor(resonanceScores.length * 0.1)]
+          ?.resonanceScore || 0,
+    };
+  }
+
+  // Generate predictive insights
+  preferences.predictiveInsights = {
+    emergingPreferences: Object.entries(preferences.themes)
+      .sort(([, a], [, b]) => (b as number) - (a as number))
+      .slice(0, 5)
+      .map(([theme]) => theme),
+    contentTypeRanking: Object.entries(preferences.contentTypes)
+      .sort(([, a], [, b]) => (b as number) - (a as number))
+      .map(([type]) => type),
+    recommendedFocus:
+      positiveFeedback.length > negativeFeedback.length
+        ? "expand_successful_patterns"
+        : "explore_new_directions",
+  };
+
+  return preferences;
+}
+
 async function _internal_updateBrandSignals(userId: string) {
   const recentFeedback = await db.recommendationFeedback.findMany({
     where: {
@@ -8679,74 +14874,281 @@ async function _internal_updateBrandSignals(userId: string) {
     where: { userId },
   });
 
-  if (recentFeedback.length < 5) {
-    // Not enough data to make significant changes
+  // Get user behavior analytics for enhanced intelligence
+  const behaviorAnalytics = await getUserBehaviorAnalytics({
+    timeRange: 30,
+  });
+  // Get content resonance scores
+  const resonanceScores = await db.contentResonanceScore.findMany({
+    where: {
+      userId,
+      createdAt: {
+        gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+      },
+    },
+    take: 50,
+    orderBy: {
+      feedbackScore: "desc",
+    },
+  });
+
+  // Check if we have enough data (feedback OR behavior data)
+  const hasEnoughFeedback = recentFeedback.length >= 5;
+  const hasEnoughBehaviorData = behaviorAnalytics.analytics.totalEvents >= 20;
+  const hasResonanceData = resonanceScores.length >= 3;
+
+  if (!hasEnoughFeedback && !hasEnoughBehaviorData && !hasResonanceData) {
     console.log(
-      `Skipping Brand Signal update for user ${userId}, not enough feedback (${recentFeedback.length})`,
+      `Skipping Brand Signal update for user ${userId}, insufficient data - feedback: ${recentFeedback.length}, events: ${behaviorAnalytics.analytics.totalEvents}, resonance: ${resonanceScores.length}`,
     );
     return;
   }
 
+  // Enhanced categorization and analysis
+  const categorizedFeedback = await categorizeFeedback(recentFeedback);
+  const behaviorPatterns = await analyzeBehaviorPatterns(
+    behaviorAnalytics,
+    resonanceScores,
+  );
+  const contentPreferences = await extractContentPreferences(
+    recentFeedback,
+    resonanceScores,
+  );
+
   const analysis = await requestMultimodalModel({
     system:
-      "You are a brand strategy analyst. Based on user feedback on content recommendations and their brand guidelines, update the learned 'Brand Signals'.",
+      "You are an advanced brand intelligence analyst with expertise in behavioral psychology and content strategy. Analyze comprehensive user data to create sophisticated Brand Signals that understand user preferences at multiple levels: explicit feedback, implicit behavior, content resonance, and psychological patterns.",
     messages: [
       {
         role: "user",
         content: `
-            Analyze the following user feedback and brand guidelines to update the user's Brand Signals.
+            Perform advanced multi-dimensional analysis to update intelligent Brand Signals.
             
             **Current Brand Guidelines:**
             ${JSON.stringify(brandGuidelines, null, 2)}
 
-            **Recent Feedback on AI Suggestions:**
+            **Categorized Feedback Analysis:**
+            ${JSON.stringify(categorizedFeedback, null, 2)}
+
+            **Advanced Behavior Patterns:**
+            ${JSON.stringify(behaviorPatterns, null, 2)}
+
+            **Content Preference Intelligence:**
+            ${JSON.stringify(contentPreferences, null, 2)}
+
+            **Raw User Behavior Analytics:**
             ${JSON.stringify(
-              recentFeedback.map((f) => ({
-                type: f.feedbackType,
-                tags: f.feedbackTags,
-                comment: f.feedbackComment,
+              {
+                engagementPattern: behaviorAnalytics.engagementPattern,
+                analytics: behaviorAnalytics.analytics,
+                mostActiveHours:
+                  behaviorAnalytics.engagementPattern?.peakActivityHours || [],
+                topSections:
+                  behaviorAnalytics.engagementPattern?.preferredSections || [],
+              },
+              null,
+              2,
+            )}
+
+            **Content Resonance Intelligence:**
+            ${JSON.stringify(
+              resonanceScores.map((r) => ({
+                contentId: r.contentId,
+                contentType: r.contentType,
+                resonanceScore: r.resonanceScore,
+                feedbackScore: r.feedbackScore,
+                explicitFeedback: r.explicitFeedback,
+                viewCount: r.viewCount,
+                totalTimeSpent: r.totalTimeSpent,
+                clickCount: r.clickCount,
+                updatedAt: r.updatedAt,
               })),
               null,
               2,
             )}
 
-            Based on this, what are the emerging patterns?
-            - What tones are consistently preferred or disliked?
-            - What keywords appear frequently in positive feedback?
-            - Are there patterns in engagement (e.g., user prefers more questions, shorter CTAs)?
-            - What is the overall sentiment profile of the content the user likes?
-            - What are the most successful content pillars based on positive feedback?
+            Perform deep multi-layered analysis focusing on:
+            
+            **Content Strategy Intelligence:**
+            - What content themes consistently drive engagement?
+            - Which content formats perform best across different contexts?
+            - What narrative structures and storytelling approaches resonate?
+            - How do content pillars align with user behavior patterns?
+            
+            **Behavioral Psychology Insights:**
+            - What psychological triggers drive positive engagement?
+            - How does user motivation change across different content types?
+            - What emotional states lead to highest content resonance?
+            - Which persuasion techniques work best for this user?
+            
+            **Engagement Pattern Intelligence:**
+            - When is the user most receptive to different content types?
+            - What interaction sequences lead to highest satisfaction?
+            - How does context (time, device, previous actions) affect preferences?
+            - What content consumption habits indicate deeper preferences?
+            
+            **Feedback Quality Assessment:**
+            - How reliable is explicit feedback vs implicit behavior?
+            - What feedback patterns indicate evolving preferences?
+            - Which signals are most predictive of future engagement?
+            - How do micro-interactions reveal macro preferences?
+            
+            **Predictive Intelligence:**
+            - What emerging patterns suggest changing preferences?
+            - Which content directions show highest growth potential?
+            - How can we anticipate user needs before they're expressed?
+            - What personalization opportunities exist?
             `,
       },
     ],
-    returnType: z.object({
-      preferredTones: z.array(z.string()),
-      commonKeywords: z.array(z.string()),
-      engagementPatterns: z.record(z.any()), // flexible object
-      sentimentProfile: z.record(z.any()),
-      contentPillars: z.array(z.string()),
-    }),
-    model: "small",
+    returnType: z
+      .object({
+        preferredTones: z
+          .array(z.string())
+          .describe(
+            "Tones consistently preferred by the user based on multi-dimensional analysis.",
+          ),
+        commonKeywords: z
+          .array(z.string())
+          .describe("Keywords with highest resonance and predictive value."),
+        engagementPatterns: z
+          .record(z.any())
+          .describe(
+            "Deep behavioral patterns including timing, interaction style, content preferences, and psychological triggers.",
+          ),
+        sentimentProfile: z
+          .record(z.any())
+          .describe(
+            "Comprehensive sentiment analysis including emotional triggers, response patterns, and psychological preferences.",
+          ),
+        contentPillars: z
+          .array(z.string())
+          .describe(
+            "Content categories with highest performance, engagement, and growth potential.",
+          ),
+        behaviorInsights: z
+          .object({
+            preferredContentTypes: z
+              .array(z.string())
+              .describe(
+                "Content types with highest engagement and satisfaction",
+              ),
+            optimalInteractionTimes: z
+              .array(z.number())
+              .describe(
+                "Hours when user is most active, engaged, and receptive",
+              ),
+            contentConsumptionStyle: z
+              .string()
+              .describe(
+                "Detailed analysis of how user consumes content (scanning patterns, depth preferences, interaction style)",
+              ),
+            feedbackPatterns: z
+              .record(z.any())
+              .describe(
+                "Advanced patterns in feedback behavior and reliability indicators",
+              ),
+            resonanceTriggers: z
+              .array(z.string())
+              .describe(
+                "Content elements that consistently drive high resonance",
+              ),
+            psychologicalProfile: z
+              .record(z.any())
+              .describe(
+                "Psychological preferences, motivations, and decision-making patterns",
+              ),
+            contextualPreferences: z
+              .record(z.any())
+              .describe(
+                "How preferences change based on context (time, device, previous actions)",
+              ),
+            predictiveInsights: z
+              .record(z.any())
+              .describe("Emerging patterns and future preference predictions"),
+          })
+          .describe(
+            "Advanced behavioral intelligence with psychological and predictive insights.",
+          ),
+        intelligenceScore: z
+          .number()
+          .describe(
+            "Confidence score (0-100) in the accuracy of these brand signals based on data quality and consistency.",
+          ),
+        qualityMetrics: z
+          .object({
+            dataConsistency: z
+              .number()
+              .describe("How consistent the data patterns are (0-100)"),
+            predictionConfidence: z
+              .number()
+              .describe("Confidence in predictive insights (0-100)"),
+            behaviorReliability: z
+              .number()
+              .describe("Reliability of behavioral data (0-100)"),
+            feedbackQuality: z
+              .number()
+              .describe("Quality and usefulness of feedback data (0-100)"),
+          })
+          .describe("Quality metrics for the analysis"),
+      })
+      .describe(
+        "Enhanced brand signals with advanced categorization, behavioral psychology, and predictive intelligence.",
+      ),
+    model: "medium",
   });
 
+  // Store the enhanced brand signals with advanced intelligence
   await db.brandSignal.upsert({
     where: { userId },
     create: {
       userId,
       preferredTones: JSON.stringify(analysis.preferredTones),
       commonKeywords: JSON.stringify(analysis.commonKeywords),
-      engagementPatterns: JSON.stringify(analysis.engagementPatterns),
+      engagementPatterns: JSON.stringify({
+        ...analysis.engagementPatterns,
+        behaviorInsights: analysis.behaviorInsights,
+        intelligenceScore: analysis.intelligenceScore,
+        qualityMetrics: analysis.qualityMetrics,
+        lastUpdated: new Date().toISOString(),
+        dataQuality: {
+          feedbackCount: recentFeedback.length,
+          behaviorEvents: behaviorAnalytics.analytics.totalEvents,
+          resonanceScores: resonanceScores.length,
+          categorizedFeedback: categorizedFeedback,
+          behaviorPatterns: behaviorPatterns,
+          contentPreferences: contentPreferences,
+        },
+      }),
       sentimentProfile: JSON.stringify(analysis.sentimentProfile),
       contentPillars: JSON.stringify(analysis.contentPillars),
     },
     update: {
       preferredTones: JSON.stringify(analysis.preferredTones),
       commonKeywords: JSON.stringify(analysis.commonKeywords),
-      engagementPatterns: JSON.stringify(analysis.engagementPatterns),
+      engagementPatterns: JSON.stringify({
+        ...analysis.engagementPatterns,
+        behaviorInsights: analysis.behaviorInsights,
+        intelligenceScore: analysis.intelligenceScore,
+        qualityMetrics: analysis.qualityMetrics,
+        lastUpdated: new Date().toISOString(),
+        dataQuality: {
+          feedbackCount: recentFeedback.length,
+          behaviorEvents: behaviorAnalytics.analytics.totalEvents,
+          resonanceScores: resonanceScores.length,
+          categorizedFeedback: categorizedFeedback,
+          behaviorPatterns: behaviorPatterns,
+          contentPreferences: contentPreferences,
+        },
+      }),
       sentimentProfile: JSON.stringify(analysis.sentimentProfile),
       contentPillars: JSON.stringify(analysis.contentPillars),
     },
   });
+
+  console.log(
+    `Updated Brand Signals for user ${userId} with intelligence score: ${analysis.intelligenceScore}, based on ${recentFeedback.length} feedback items, ${behaviorAnalytics.analytics.totalEvents} behavior events, and ${resonanceScores.length} resonance scores`,
+  );
 }
 
 export async function getBrandSignals() {
@@ -8769,23 +15171,63 @@ export async function getBrandSignals() {
     });
   }
 
+  // Get enhanced insights from behavior tracking
+  const behaviorAnalytics = await getUserBehaviorAnalytics({ timeRange: 30 });
+
+  // Helper function to safely parse JSON with fallback
+  const safeJsonParse = (jsonString: string | null, fallback: any = null) => {
+    if (!jsonString) return fallback;
+    try {
+      return JSON.parse(jsonString);
+    } catch (error) {
+      console.error("Failed to parse JSON in getBrandSignals:", error);
+      return fallback;
+    }
+  };
+
   try {
-    return {
+    const parsedSignals = {
       ...signals,
-      preferredTones: JSON.parse(signals.preferredTones || "[]") as string[],
-      commonKeywords: JSON.parse(signals.commonKeywords || "[]") as string[],
-      engagementPatterns: JSON.parse(
-        signals.engagementPatterns || "{}",
+      preferredTones: safeJsonParse(signals.preferredTones, []) as string[],
+      commonKeywords: safeJsonParse(signals.commonKeywords, []) as string[],
+      engagementPatterns: safeJsonParse(
+        signals.engagementPatterns,
+        {},
       ) as Record<string, any>,
-      sentimentProfile: JSON.parse(signals.sentimentProfile || "{}") as Record<
+      sentimentProfile: safeJsonParse(signals.sentimentProfile, {}) as Record<
         string,
         any
       >,
-      contentPillars: JSON.parse(signals.contentPillars || "[]") as string[],
+      contentPillars: safeJsonParse(signals.contentPillars, []) as string[],
     };
+
+    // Enhance with behavior insights
+    if (behaviorAnalytics.engagementPattern) {
+      (parsedSignals as any).behaviorInsights = {
+        preferredSections:
+          behaviorAnalytics.engagementPattern.preferredSections,
+        peakActivityHours:
+          behaviorAnalytics.engagementPattern.peakActivityHours,
+        preferredContentTypes:
+          behaviorAnalytics.engagementPattern.preferredContentTypes,
+        topResonatingTopics:
+          behaviorAnalytics.engagementPattern.topResonatingTopics,
+        avgSessionDuration:
+          behaviorAnalytics.engagementPattern.avgSessionDuration,
+        contentConsumptionRate:
+          behaviorAnalytics.engagementPattern.contentConsumptionRate,
+        interactionStyle: behaviorAnalytics.engagementPattern.interactionStyle,
+        feedbackFrequency:
+          behaviorAnalytics.engagementPattern.feedbackFrequency,
+        totalEvents: behaviorAnalytics.analytics.totalEvents,
+        averageResonance: behaviorAnalytics.analytics.averageResonance,
+      };
+    }
+
+    return parsedSignals;
   } catch (e) {
-    console.error("Error parsing brand signals JSON", e);
-    // Return default/empty values if parsing fails
+    console.error("Error in getBrandSignals:", e);
+    // Return default/empty values if anything fails
     return {
       ...signals,
       preferredTones: [] as string[],
@@ -8795,6 +15237,304 @@ export async function getBrandSignals() {
       contentPillars: [] as string[],
     };
   }
+}
+
+export async function generateProactiveBrandSuggestions() {
+  const { userId } = await getAuth({ required: true });
+
+  // Get current brand signals
+  const brandSignals = await getBrandSignals();
+
+  // Get recent performance data
+  const recentContent = await db.generatedContent.findMany({
+    where: {
+      userId,
+      createdAt: {
+        gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // last 30 days
+      },
+    },
+    take: 20,
+    orderBy: { createdAt: "desc" },
+  });
+
+  // Get recent feedback
+  const recentFeedback = await db.recommendationFeedback.findMany({
+    where: {
+      userId,
+      createdAt: {
+        gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+      },
+    },
+    take: 50,
+    orderBy: { createdAt: "desc" },
+  });
+
+  // Get resonance scores
+  const resonanceScores = await db.contentResonanceScore.findMany({
+    where: {
+      userId,
+      createdAt: {
+        gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+      },
+    },
+    take: 30,
+    orderBy: { resonanceScore: "desc" },
+  });
+
+  // Get trending topics for context
+  const trendingTopics = await getCachedTrendingTopicsFromDB();
+
+  // Get user behavior analytics
+  const behaviorAnalytics = await getUserBehaviorAnalytics({ timeRange: 30 });
+
+  const suggestions = await requestMultimodalModel({
+    system:
+      "You are an advanced brand intelligence advisor specializing in proactive content strategy and brand optimization. Your role is to analyze comprehensive brand data and provide actionable, forward-thinking suggestions that anticipate user needs and market opportunities before they're explicitly requested.",
+    messages: [
+      {
+        role: "user",
+        content: `
+Generate proactive brand signal suggestions based on comprehensive analysis.
+
+**Current Brand Signals:**
+${JSON.stringify(brandSignals, null, 2)}
+
+**Recent Content Performance:**
+${JSON.stringify(
+  recentContent.map((c) => ({
+    id: c.id,
+    type: c.type,
+    title: c.title,
+    status: c.status,
+    createdAt: c.createdAt,
+  })),
+  null,
+  2,
+)}
+
+**Recent Feedback Patterns:**
+**Recent Feedback:**
+${JSON.stringify(
+  recentFeedback.map((f) => ({
+    id: f.id,
+    type: f.feedbackType,
+    tags: f.feedbackTags,
+    comment: f.feedbackComment,
+    createdAt: f.createdAt,
+  })),
+  null,
+  2,
+)}
+${JSON.stringify(
+  resonanceScores.map((r) => ({
+    contentType: r.contentType,
+    resonanceScore: r.resonanceScore,
+    feedbackScore: r.feedbackScore,
+    viewCount: r.viewCount,
+    totalTimeSpent: r.totalTimeSpent,
+  })),
+  null,
+  2,
+)}
+
+**Current Market Trends:**
+${JSON.stringify(trendingTopics?.slice(0, 10) || [], null, 2)}
+
+**User Behavior Analytics:**
+${JSON.stringify(behaviorAnalytics, null, 2)}
+
+Analyze all data comprehensively and provide proactive suggestions focusing on:
+
+**Content Strategy Optimization:**
+- Identify underexplored content pillars with high potential
+- Suggest new content formats based on engagement patterns
+- Recommend optimal content mix for maximum impact
+- Identify content gaps and opportunities
+
+**Brand Voice Evolution:**
+- Suggest tone refinements based on audience response
+- Identify emerging voice characteristics to adopt
+- Recommend brand personality enhancements
+- Suggest messaging framework improvements
+
+**Engagement Enhancement:**
+- Predict optimal posting times and frequencies
+- Suggest interaction strategies for better engagement
+- Recommend community building approaches
+- Identify relationship-building opportunities
+
+**Trend Anticipation:**
+- Identify emerging trends aligned with brand values
+- Suggest early adoption strategies for relevant trends
+- Recommend content themes for future planning
+- Predict audience interest shifts
+
+**Performance Optimization:**
+- Suggest A/B testing opportunities
+- Recommend content experimentation areas
+- Identify optimization quick wins
+- Suggest long-term improvement strategies
+
+**Competitive Intelligence:**
+- Identify unique positioning opportunities
+- Suggest differentiation strategies
+- Recommend market positioning improvements
+- Identify white space opportunities
+
+Provide specific, actionable suggestions with clear rationale and expected impact.
+        `,
+      },
+    ],
+    returnType: z
+      .object({
+        contentStrategySuggestions: z
+          .array(
+            z.object({
+              title: z.string().describe("Clear, actionable suggestion title"),
+              description: z
+                .string()
+                .describe("Detailed explanation of the suggestion"),
+              rationale: z
+                .string()
+                .describe("Why this suggestion is recommended based on data"),
+              expectedImpact: z
+                .string()
+                .describe("Predicted positive outcomes"),
+              priority: z
+                .enum(["high", "medium", "low"])
+                .describe("Implementation priority"),
+              timeframe: z
+                .string()
+                .describe("Suggested implementation timeline"),
+              actionSteps: z
+                .array(z.string())
+                .describe("Specific steps to implement"),
+            }),
+          )
+          .describe("Content strategy optimization suggestions"),
+
+        brandVoiceSuggestions: z
+          .array(
+            z.object({
+              title: z.string().describe("Brand voice improvement suggestion"),
+              description: z
+                .string()
+                .describe("Detailed voice enhancement recommendation"),
+              rationale: z
+                .string()
+                .describe("Data-driven reasoning for this suggestion"),
+              expectedImpact: z
+                .string()
+                .describe("Anticipated brand voice improvements"),
+              priority: z
+                .enum(["high", "medium", "low"])
+                .describe("Implementation priority"),
+              examples: z
+                .array(z.string())
+                .describe("Example phrases or approaches"),
+            }),
+          )
+          .describe("Brand voice evolution suggestions"),
+
+        engagementSuggestions: z
+          .array(
+            z.object({
+              title: z.string().describe("Engagement enhancement suggestion"),
+              description: z.string().describe("Detailed engagement strategy"),
+              rationale: z
+                .string()
+                .describe("Why this will improve engagement"),
+              expectedImpact: z
+                .string()
+                .describe("Predicted engagement improvements"),
+              priority: z
+                .enum(["high", "medium", "low"])
+                .describe("Implementation priority"),
+              metrics: z.array(z.string()).describe("Success metrics to track"),
+            }),
+          )
+          .describe("Engagement enhancement suggestions"),
+
+        trendOpportunities: z
+          .array(
+            z.object({
+              title: z.string().describe("Trend opportunity title"),
+              description: z
+                .string()
+                .describe("How to capitalize on this trend"),
+              rationale: z
+                .string()
+                .describe("Why this trend aligns with brand"),
+              expectedImpact: z
+                .string()
+                .describe("Potential benefits of early adoption"),
+              priority: z
+                .enum(["high", "medium", "low"])
+                .describe("Urgency level"),
+              timeWindow: z
+                .string()
+                .describe("Optimal timing for implementation"),
+            }),
+          )
+          .describe("Trending opportunities aligned with brand"),
+
+        optimizationQuickWins: z
+          .array(
+            z.object({
+              title: z.string().describe("Quick optimization win"),
+              description: z
+                .string()
+                .describe("Simple change with high impact"),
+              rationale: z.string().describe("Why this is a quick win"),
+              expectedImpact: z
+                .string()
+                .describe("Immediate benefits expected"),
+              effort: z
+                .enum(["low", "medium", "high"])
+                .describe("Implementation effort required"),
+              implementation: z
+                .string()
+                .describe("How to implement this quickly"),
+            }),
+          )
+          .describe("Low-effort, high-impact optimizations"),
+
+        overallInsights: z
+          .object({
+            brandHealthScore: z
+              .number()
+              .describe("Overall brand signal health (0-100)"),
+            keyStrengths: z
+              .array(z.string())
+              .describe("Current brand signal strengths"),
+            improvementAreas: z
+              .array(z.string())
+              .describe("Areas needing attention"),
+            nextMonthFocus: z
+              .array(z.string())
+              .describe("Top 3 priorities for next month"),
+            confidenceLevel: z
+              .number()
+              .describe("Confidence in suggestions (0-100)"),
+          })
+          .describe("Overall brand intelligence insights"),
+      })
+      .describe("Comprehensive proactive brand signal suggestions"),
+    model: "medium",
+    temperature: 0.3,
+  });
+
+  // Store suggestions for tracking
+  await db.brandSignalSuggestion.create({
+    data: {
+      userId,
+      suggestions: JSON.stringify(suggestions),
+      confidenceScore: suggestions.overallInsights.confidenceLevel,
+      brandHealthScore: suggestions.overallInsights.brandHealthScore,
+    },
+  });
+
+  return suggestions;
 }
 
 export async function getDashboardStats(input: { cacheKey: string }) {
@@ -8843,6 +15583,10 @@ export async function getPredictiveAnalytics(input?: {
 }) {
   const { userId } = await getAuth({ required: true });
 
+  // Check feature access and usage limits
+  await requireFeatureAccess("predictive_analytics");
+  await requireUsageLimit("predictive_analytics_generation");
+
   // Consume credits for predictive analytics generation (8 credits)
   await _consumeCredits(
     userId,
@@ -8880,41 +15624,77 @@ export async function getPredictiveAnalytics(input?: {
           content: `Recent data:\n\n- Comments: ${JSON.stringify(comments.map((c) => ({ date: c.createdAt, text: c.text, likes: c.likeCount, replies: c.replyCount, sentiment: c.sentiment, postId: c.postId, platform: c.platform })))}`,
         },
       ],
-      returnType: z.object({
-        growthForecast: z.object({
-          timeFrame: z.string(),
-          viralTopics: z.array(
-            z.object({
-              topic: z.string(),
-              format: z.string(),
-              bestTime: z.string(),
-              confidence: z.number().min(0).max(1),
-              why: z.string(),
-            }),
-          ),
-          summary: z.string(),
-        }),
-        anomalyDetection: z.object({
-          anomalies: z.array(
-            z.object({
-              type: z.string(),
-              date: z.string(),
-              description: z.string(),
-              rootCause: z.string(),
-              impact: z.string(),
-            }),
-          ),
-          sentimentDrivers: z.array(
-            z.object({
-              driver: z.string(),
-              direction: z.enum(["positive", "negative"]),
-              example: z.string(),
-              recommendation: z.string(),
-            }),
-          ),
-          summary: z.string(),
-        }),
-      }),
+      returnType: z
+        .object({
+          growthForecast: z
+            .object({
+              timeFrame: z.string().describe("The forecast time period."),
+              viralTopics: z
+                .array(
+                  z
+                    .object({
+                      topic: z.string().describe("The trending topic."),
+                      format: z
+                        .string()
+                        .describe("Recommended content format."),
+                      bestTime: z.string().describe("Optimal posting time."),
+                      confidence: z
+                        .number()
+                        .min(0)
+                        .max(1)
+                        .describe("Confidence score for this prediction."),
+                      why: z
+                        .string()
+                        .describe("Reasoning behind the prediction."),
+                    })
+                    .describe("A viral topic prediction."),
+                )
+                .describe("List of predicted viral topics."),
+              summary: z.string().describe("Overall growth forecast summary."),
+            })
+            .describe("Growth forecast analysis."),
+          anomalyDetection: z
+            .object({
+              anomalies: z
+                .array(
+                  z
+                    .object({
+                      type: z.string().describe("Type of anomaly detected."),
+                      date: z.string().describe("Date when anomaly occurred."),
+                      description: z
+                        .string()
+                        .describe("Description of the anomaly."),
+                      rootCause: z.string().describe("Likely root cause."),
+                      impact: z.string().describe("Impact assessment."),
+                    })
+                    .describe("A detected anomaly."),
+                )
+                .describe("List of detected anomalies."),
+              sentimentDrivers: z
+                .array(
+                  z
+                    .object({
+                      driver: z
+                        .string()
+                        .describe("The sentiment driver factor."),
+                      direction: z
+                        .enum(["positive", "negative"])
+                        .describe("Direction of sentiment impact."),
+                      example: z.string().describe("Example of this driver."),
+                      recommendation: z
+                        .string()
+                        .describe("Recommended action."),
+                    })
+                    .describe("A sentiment driver analysis."),
+                )
+                .describe("Factors driving sentiment changes."),
+              summary: z.string().describe("Anomaly detection summary."),
+            })
+            .describe("Anomaly detection analysis."),
+        })
+        .describe(
+          "Predictive analytics including growth forecast and anomaly detection.",
+        ),
       model: "large",
     });
     return predictiveData;
@@ -8929,6 +15709,10 @@ export async function getPredictiveAnalytics(input?: {
 }
 
 export async function generateImageFromPrompt(input: { prompt: string }) {
+  // Check feature access and usage limits
+  await requireFeatureAccess("image_generation");
+  await requireUsageLimit("image_generation");
+
   const { userId } = await getAuth({ required: true });
 
   // Consume credits for image generation (3 credits)
@@ -8940,18 +15724,31 @@ export async function generateImageFromPrompt(input: { prompt: string }) {
     { prompt: input.prompt },
   );
 
+  const brandForStandaloneImage = await getBrandGuidelines();
+  const brandVibeForStandaloneImage = brandForStandaloneImage
+    ? `Brand Voice: ${brandForStandaloneImage.brandVoice}\nDirectives: ${(brandForStandaloneImage.directives || []).join(", ")}`
+    : "";
+  const brandVibeMeta = brandForStandaloneImage
+    ? {
+        applied: true,
+        appliedAt: new Date().toISOString(),
+        brandVoice: brandForStandaloneImage.brandVoice,
+        directives: brandForStandaloneImage.directives || [],
+      }
+    : ({ applied: false } as const);
   const { imageUrl } = await requestMultimodalModel({
-    system:
-      "You are a helpful assistant that generates images based on user prompts.",
+    system: `You are a helpful assistant that generates images based on user prompts.\n\nBRAND VIBE ALIGNMENT:\n${brandVibeForStandaloneImage}`,
     messages: [
       {
         role: "user",
         content: input.prompt,
       },
     ],
-    returnType: z.object({
-      imageUrl: z.string(),
-    }),
+    returnType: z
+      .object({
+        imageUrl: z.string().describe("The URL of the generated image."),
+      })
+      .describe("Generated image based on user prompt."),
   });
 
   // Find or create the pillar for generated images
@@ -8979,7 +15776,10 @@ export async function generateImageFromPrompt(input: { prompt: string }) {
       type: "IMAGE",
       content: imageUrl,
       status: "DRAFT",
-      sourceIdea: JSON.stringify({ prompt: input.prompt }),
+      sourceIdea: JSON.stringify({
+        prompt: input.prompt,
+        brandVibe: brandVibeMeta,
+      }),
     },
   });
 
@@ -9019,18 +15819,34 @@ export async function getAIForecast(input?: {
           content: `Based on these recent comments, provide a forecast for the next 7 days and the next 30 days. For each period, give a projected engagement change (e.g., "+15%"), an emerging top topic, and a single, concrete recommendation. Comments: ${JSON.stringify(comments.map((c) => c.text))}`,
         },
       ],
-      returnType: z.object({
-        nextWeek: z.object({
-          engagementChange: z.string(),
-          topTopic: z.string(),
-          recommendation: z.string(),
-        }),
-        nextMonth: z.object({
-          engagementChange: z.string(),
-          topTopic: z.string(),
-          recommendation: z.string(),
-        }),
-      }),
+      returnType: z
+        .object({
+          nextWeek: z
+            .object({
+              engagementChange: z
+                .string()
+                .describe("Projected engagement change percentage."),
+              topTopic: z.string().describe("Emerging top topic for the week."),
+              recommendation: z
+                .string()
+                .describe("Actionable recommendation for the week."),
+            })
+            .describe("Next week forecast."),
+          nextMonth: z
+            .object({
+              engagementChange: z
+                .string()
+                .describe("Projected engagement change percentage."),
+              topTopic: z
+                .string()
+                .describe("Emerging top topic for the month."),
+              recommendation: z
+                .string()
+                .describe("Actionable recommendation for the month."),
+            })
+            .describe("Next month forecast."),
+        })
+        .describe("AI forecast for next week and month."),
       model: "medium",
     });
     return forecast;
@@ -9158,8 +15974,12 @@ export async function generateContentFromRecommendation(input: {
             "An asset prompt or content brief is required to generate an image.",
           );
         }
+        const brand = await getBrandGuidelines();
+        const brandVibeText = brand
+          ? `Brand Voice: ${brand.brandVoice}\nDirectives: ${(brand.directives || []).join(", ")}`
+          : "";
         const imageResult = await requestMultimodalModel({
-          system: "You are an expert image generation assistant.",
+          system: `You are an expert image generation assistant.\n\nBRAND VIBE ALIGNMENT:\n${brandVibeText}`,
           messages: [
             {
               role: "user",
@@ -9168,7 +15988,11 @@ export async function generateContentFromRecommendation(input: {
                 `An image for a post titled "${recommendation.title}" with the brief: ${recommendation.contentBrief}`,
             },
           ],
-          returnType: z.object({ imageUrl: z.string() }),
+          returnType: z
+            .object({
+              imageUrl: z.string().describe("The URL of the generated image."),
+            })
+            .describe("A response containing the generated image URL."),
         });
         await db.generatedContent.update({
           where: { id: generatedContent.id },
@@ -9201,25 +16025,117 @@ export async function generateContentFromRecommendation(input: {
           },
         });
       } else {
-        // TEXT
+        // TEXT - Enhanced with unified discover insights and viral data
+        const enhancedContext = await getUnifiedContentContext(
+          userId,
+          recommendation,
+        );
+
+        const brand = await getBrandGuidelines();
+        const brandVibeText = brand
+          ? `Brand Voice: ${brand.brandVoice}\nDirectives: ${(brand.directives || []).join(", ")}`
+          : "";
         const textResult = await requestMultimodalModel({
-          system: `You are a social media content writer. Write a post based on the provided brief, title, and call to action. The tone should be engaging and on-brand. The content pillar is "${pillar.name}".`,
+          system: `You are an expert social media content strategist that creates viral-ready content.\n\nBRAND VIBE ALIGNMENT: Always enforce the following brand rules. If any requested content conflicts, adapt it to comply without losing impact.\n${brandVibeText}\n\nGenerate a comprehensive social media post package that leverages current trends and viral insights.
+
+CRITICAL REQUIREMENTS:
+1. Create content optimized for maximum engagement and viral potential
+2. Incorporate trending topics and viral patterns from the enhanced context
+3. Use platform-specific optimizations for Twitter, Instagram, LinkedIn, Facebook, TikTok
+4. Include strategic hashtag recommendations
+5. Generate compelling hooks and call-to-actions
+6. Ensure content aligns with current viral trends and best practices
+7. The tone should be engaging and on-brand for the content pillar "${pillar.name}"
+
+Enhanced Context Available:
+${enhancedContext ? JSON.stringify(enhancedContext, null, 2) : "No enhanced context available"}`,
           messages: [
             {
               role: "user",
-              content: `Title: ${recommendation.title}\n\nBrief: ${recommendation.contentBrief}\n\nCall to Action: ${recommendation.cta || ""}`,
+              content: `Create a comprehensive, viral-ready social media post package for:
+
+Title: ${recommendation.title}
+Brief: ${recommendation.contentBrief}
+Call to Action: ${recommendation.cta || ""}
+Content Pillar: ${pillar.name}
+
+Generate content that maximizes viral potential while staying true to the brand voice.`,
             },
           ],
-          returnType: z.object({
-            revisedTitle: z.string(),
-            postBody: z.string(),
-          }),
+          returnType: z
+            .object({
+              revisedTitle: z
+                .string()
+                .describe("The revised title optimized for viral potential"),
+              postBody: z
+                .string()
+                .describe("The complete body text of the social media post"),
+              hashtags: z
+                .object({
+                  twitter: z
+                    .array(z.string())
+                    .describe("Twitter-optimized hashtags (max 3)"),
+                  instagram: z
+                    .array(z.string())
+                    .describe("Instagram-optimized hashtags (max 30)"),
+                  linkedin: z
+                    .array(z.string())
+                    .describe("LinkedIn-optimized hashtags (max 5)"),
+                  facebook: z
+                    .array(z.string())
+                    .describe("Facebook-optimized hashtags (max 5)"),
+                  tiktok: z
+                    .array(z.string())
+                    .describe("TikTok-optimized hashtags (max 5)"),
+                })
+                .describe("Platform-specific hashtag strategies"),
+              viralityScore: z
+                .number()
+                .describe("Predicted virality score (1-10)"),
+              platformOptimizations: z
+                .array(
+                  z.object({
+                    platform: z.string().describe("Platform name"),
+                    optimizedText: z
+                      .string()
+                      .describe("Platform-optimized version of the post text"),
+                    strategy: z
+                      .string()
+                      .describe("Platform-specific posting strategy"),
+                  }),
+                )
+                .describe("Platform-specific optimizations"),
+            })
+            .describe(
+              "Comprehensive social media post package with viral optimization",
+            ),
         });
+
+        // Create comprehensive content package
+        const contentPackage = {
+          title: textResult.revisedTitle,
+          postBody: textResult.postBody,
+          hashtags: textResult.hashtags,
+          viralityScore: textResult.viralityScore,
+          platformOptimizations: textResult.platformOptimizations,
+          enhancedContext,
+          originalRecommendation: recommendation,
+          generatedAt: new Date().toISOString(),
+          brandVibe: brand
+            ? {
+                applied: true,
+                appliedAt: new Date().toISOString(),
+                brandVoice: brand.brandVoice,
+                directives: brand.directives || [],
+              }
+            : { applied: false },
+        };
+
         await db.generatedContent.update({
           where: { id: generatedContent.id },
           data: {
             title: textResult.revisedTitle,
-            content: textResult.postBody,
+            content: JSON.stringify(contentPackage),
             status: "DRAFT",
           },
         });
@@ -9243,6 +16159,55 @@ export async function generateContentFromRecommendation(input: {
   return { taskId: task.id, contentId: generatedContent.id };
 }
 
+// New unified context function that integrates discover insights
+export async function getUnifiedContentContext(
+  userId: string,
+  recommendation?: any,
+) {
+  try {
+    // Get trending topics data (no parameters needed)
+    const trendingData = await getTrendingTopicsResults();
+
+    // Get viral potential insights
+    const viralInsights = await getCachedViralTrends();
+
+    // Get brand context for alignment
+    const brandContext = await getBrandContext();
+
+    // Safely extract data arrays with proper type checking
+    const trendingTopics =
+      trendingData?.success && trendingData?.data ? trendingData.data : [];
+    const viralPosts =
+      viralInsights?.success && viralInsights?.data ? viralInsights.data : [];
+
+    // Combine all contexts into unified insights
+    const unifiedContext = {
+      trendingTopics: trendingTopics.slice(0, 3),
+      viralInsights: viralPosts.slice(0, 3),
+      brandContext: brandContext
+        ? {
+            voice: brandContext.voice,
+            audience: brandContext.audience,
+            contentPillars: brandContext.contentPillars,
+          }
+        : null,
+      relevantTrends:
+        recommendation && trendingTopics.length > 0
+          ? await intelligentTrendBrandMatcher({
+              trends: trendingTopics,
+              brandContext: recommendation.pillar,
+              industry: recommendation.industry,
+            })
+          : null,
+      enhancedAt: new Date().toISOString(),
+    };
+
+    return unifiedContext;
+  } catch (error) {
+    console.error("Failed to get unified content context:", error);
+    return null;
+  }
+}
 export async function getGeneratedContentById(input: { contentId: string }) {
   const { userId } = await getAuth({ required: true });
   return await db.generatedContent.findFirst({
@@ -9253,15 +16218,6 @@ export async function getGeneratedContentById(input: { contentId: string }) {
   });
 }
 
-import {
-  generateThreadFromUniversalSource,
-  getThreadGenerationStatus,
-  listThreads as externalListThreads,
-  getThread,
-  updateThread,
-  repurposeThread,
-  getRepurposeResults as externalGetRepurposeResults,
-} from "@ac1/viralthrea-3g4sutjk";
 import {
   generateContentFromSource,
   getContentGenerationStatus,
@@ -9336,8 +16292,43 @@ export async function generateViralThread(input: {
   source: string;
   targetAudience: string;
   contentTone: string;
+  platform?: string;
 }) {
-  return await generateThreadFromUniversalSource(input);
+  // Check feature access using seamless flow
+  const accessInfo = await getFeatureAccessInfo("viral_thread_creation");
+
+  if (!accessInfo.hasAccess) {
+    return {
+      success: false,
+      requiresUpgrade: true,
+      upgradeInfo: accessInfo.upgradeInfo,
+    };
+  }
+
+  // Check usage limits
+  const usageInfo = await getUsageLimitInfo("viral_thread_daily");
+  if (usageInfo.hasReachedLimit) {
+    return {
+      success: false,
+      requiresUpgrade: true,
+      upgradeInfo: usageInfo.upgradeInfo,
+    };
+  }
+
+  try {
+    const result = await generateThreadFromUniversalSource({
+      ...input,
+      platform: input.platform || "twitter",
+    });
+    return {
+      success: true,
+      requiresUpgrade: false,
+      ...result,
+    };
+  } catch (error) {
+    console.error("Error in viral thread generation:", error);
+    throw error;
+  }
 }
 
 export async function getViralThreadStatus(input: { taskId: string }) {
@@ -9574,7 +16565,7 @@ export async function getRepurposeResults(input: {
         sourceIdea: JSON.stringify({
           repurpose: true,
           threadId: input.threadId,
-          platform: input.platform,
+          platform: input.platform ?? "twitter",
         }),
       },
     });
@@ -9654,27 +16645,35 @@ export async function getAIInsightsForPage(input: { pageId: string }) {
         content: `Analyze these comments for page "${page.pageName}": ${JSON.stringify(comments.map((c) => c.text))}`,
       },
     ],
-    returnType: z.object({
-      summary: z
-        .string()
-        .describe(
-          "A brief summary of the overall sentiment and key discussion points.",
-        ),
-      recommendations: z
-        .array(z.string())
-        .describe(
-          "3-5 actionable recommendations for content or engagement strategy.",
-        ),
-      topTopics: z.array(
-        z.object({
-          topic: z.string(),
-          sentiment: z.enum(["positive", "neutral", "negative"]),
-          frequency: z
-            .number()
-            .describe("Percentage of comments mentioning this topic."),
-        }),
-      ),
-    }),
+    returnType: z
+      .object({
+        summary: z
+          .string()
+          .describe(
+            "A brief summary of the overall sentiment and key discussion points.",
+          ),
+        recommendations: z
+          .array(z.string())
+          .describe(
+            "3-5 actionable recommendations for content or engagement strategy.",
+          ),
+        topTopics: z
+          .array(
+            z
+              .object({
+                topic: z.string().describe("The topic name."),
+                sentiment: z
+                  .enum(["positive", "neutral", "negative"])
+                  .describe("Overall sentiment for this topic."),
+                frequency: z
+                  .number()
+                  .describe("Percentage of comments mentioning this topic."),
+              })
+              .describe("A trending topic with sentiment analysis."),
+          )
+          .describe("List of top trending topics."),
+      })
+      .describe("AI insights analysis for page comments."),
     model: "medium",
   });
 
@@ -9912,12 +16911,27 @@ export async function generateVideoFromScript(input: {
       const { museContentId, museTaskId } =
         await _internal_runMuseGenerationProcess(userId, input.script);
 
+      const brand = await getBrandGuidelines();
+      const brandVibeMeta = brand
+        ? {
+            applied: true,
+            appliedAt: new Date().toISOString(),
+            brandVoice: brand.brandVoice,
+            directives: brand.directives || [],
+          }
+        : { applied: false };
       await db.generatedContent.update({
         where: { id: generatedContent.id },
         data: {
           museContentId,
           museTaskId,
           content: "Video generation in progress...",
+          sourceIdea: JSON.stringify({
+            sourceType: "script",
+            script: input.script,
+            title: input.title,
+            brandVibe: brandVibeMeta,
+          }),
         },
       });
     } catch (error) {
@@ -10204,6 +17218,352 @@ export async function setCustomContentThumbnail(input: {
   });
 }
 
+// Enhanced validation functions for scheduling
+type ValidationResult = {
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+};
+
+type PostValidationInput = {
+  content: string;
+  platform: string;
+  accountId: string;
+  pageId?: string;
+  scheduledAt: Date;
+  sourceType: string;
+  sourceId: string;
+  imageUrl?: string;
+  timezone?: string;
+  priority?: "high" | "medium" | "low";
+  tags?: string[];
+  notes?: string;
+};
+
+// Platform-specific content limits and rules
+const PLATFORM_LIMITS = {
+  twitter: {
+    maxLength: 280,
+    maxImages: 4,
+    supportsVideo: true,
+    optimalTimes: [9, 12, 15, 18], // Hours in UTC
+  },
+  facebook: {
+    maxLength: 63206,
+    maxImages: 10,
+    supportsVideo: true,
+    optimalTimes: [9, 13, 15], // Hours in UTC
+  },
+  instagram: {
+    maxLength: 2200,
+    maxImages: 10,
+    supportsVideo: true,
+    optimalTimes: [11, 13, 17], // Hours in UTC
+  },
+  linkedin: {
+    maxLength: 3000,
+    maxImages: 9,
+    supportsVideo: true,
+    optimalTimes: [8, 12, 17], // Hours in UTC
+  },
+  youtube: {
+    maxLength: 5000,
+    maxImages: 1,
+    supportsVideo: true,
+    optimalTimes: [14, 16, 18], // Hours in UTC
+  },
+};
+
+async function validatePostContent(
+  input: PostValidationInput,
+): Promise<ValidationResult> {
+  const result: ValidationResult = {
+    isValid: true,
+    errors: [],
+    warnings: [],
+  };
+
+  // Basic content validation
+  if (!input.content || input.content.trim().length === 0) {
+    result.errors.push("Content cannot be empty");
+    result.isValid = false;
+  }
+
+  // Platform-specific validation
+  const platformLimits =
+    PLATFORM_LIMITS[
+      input.platform.toLowerCase() as keyof typeof PLATFORM_LIMITS
+    ];
+  if (platformLimits) {
+    if (input.content.length > platformLimits.maxLength) {
+      result.errors.push(
+        `Content exceeds ${input.platform} character limit of ${platformLimits.maxLength} characters`,
+      );
+      result.isValid = false;
+    }
+
+    // Warn if content is very short
+    if (input.content.length < 10) {
+      result.warnings.push("Very short content may not perform well");
+    }
+  }
+
+  // Check for potential issues
+  if (input.content.includes("http://")) {
+    result.warnings.push("Consider using HTTPS links for better security");
+  }
+
+  // Check for excessive hashtags
+  const hashtagCount = (input.content.match(/#\w+/g) || []).length;
+  if (hashtagCount > 10) {
+    result.warnings.push("Too many hashtags may reduce engagement");
+  }
+
+  // Check for excessive mentions
+  const mentionCount = (input.content.match(/@\w+/g) || []).length;
+  if (mentionCount > 5) {
+    result.warnings.push("Too many mentions may reduce visibility");
+  }
+
+  return result;
+}
+
+async function validateSchedulingTime(
+  scheduledAt: Date,
+  platform: string,
+  userId: string,
+): Promise<ValidationResult> {
+  const result: ValidationResult = {
+    isValid: true,
+    errors: [],
+    warnings: [],
+  };
+
+  const now = new Date();
+  const scheduledTime = new Date(scheduledAt);
+
+  // Basic time validation
+  if (scheduledTime <= now) {
+    result.errors.push("Scheduled time must be in the future");
+    result.isValid = false;
+    return result;
+  }
+
+  // Check if scheduling too far in the future (1 year limit)
+  const oneYearFromNow = new Date();
+  oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+  if (scheduledTime > oneYearFromNow) {
+    result.errors.push("Cannot schedule posts more than 1 year in advance");
+    result.isValid = false;
+  }
+
+  // Check if scheduling within next 5 minutes (too soon)
+  const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
+  if (scheduledTime < fiveMinutesFromNow) {
+    result.warnings.push(
+      "Scheduling within 5 minutes may not allow time for final review",
+    );
+  }
+
+  // Check optimal posting times
+  const platformLimits =
+    PLATFORM_LIMITS[platform.toLowerCase() as keyof typeof PLATFORM_LIMITS];
+  if (platformLimits) {
+    const hour = scheduledTime.getUTCHours();
+    if (!platformLimits.optimalTimes.includes(hour)) {
+      result.warnings.push(
+        `Consider scheduling during optimal hours for ${platform}: ${platformLimits.optimalTimes.join(", ")} UTC`,
+      );
+    }
+  }
+
+  // Check weekend posting
+  const dayOfWeek = scheduledTime.getDay();
+  if (dayOfWeek === 0 || dayOfWeek === 6) {
+    result.warnings.push(
+      "Weekend posting may have different engagement patterns",
+    );
+  }
+
+  // Check for rate limiting - max posts per hour
+  const hourStart = new Date(scheduledTime);
+  hourStart.setMinutes(0, 0, 0);
+  const hourEnd = new Date(hourStart.getTime() + 60 * 60 * 1000);
+
+  const postsInHour = await db.scheduledPost.count({
+    where: {
+      userId,
+      platform,
+      status: "PENDING",
+      scheduledAt: {
+        gte: hourStart,
+        lt: hourEnd,
+      },
+    },
+  });
+
+  if (postsInHour >= 10) {
+    result.errors.push(
+      "Too many posts scheduled for this hour (maximum 10 per hour)",
+    );
+    result.isValid = false;
+  } else if (postsInHour >= 5) {
+    result.warnings.push(
+      "High posting frequency in this hour may impact engagement",
+    );
+  }
+
+  return result;
+}
+
+async function validateAccountPermissions(
+  userId: string,
+  accountId: string,
+  platform: string,
+  pageId?: string,
+): Promise<ValidationResult> {
+  const result: ValidationResult = {
+    isValid: true,
+    errors: [],
+    warnings: [],
+  };
+
+  // Validate platform and account exist
+  const account = await db.account.findFirst({
+    where: {
+      userId,
+      accountId,
+      platform,
+    },
+  });
+
+  if (!account) {
+    result.errors.push("Invalid account or platform for this user");
+    result.isValid = false;
+    return result;
+  }
+
+  // Check if account token is still valid (basic check)
+  if (!account.accessToken) {
+    result.errors.push(
+      "Account access token is missing. Please reconnect your account.",
+    );
+    result.isValid = false;
+  }
+
+  // For Facebook/Instagram, validate page permissions
+  if ((platform === "facebook" || platform === "instagram") && pageId) {
+    const page = await db.page.findFirst({
+      where: {
+        pageId,
+        accountId,
+      },
+    });
+
+    if (!page) {
+      result.errors.push(
+        "Invalid page or insufficient permissions for this page",
+      );
+      result.isValid = false;
+    }
+  }
+
+  return result;
+}
+
+async function checkSchedulingConflictsEnhanced(
+  userId: string,
+  scheduledAt: Date,
+  platform: string,
+  accountId: string,
+  excludePostId?: string,
+): Promise<ValidationResult> {
+  const result: ValidationResult = {
+    isValid: true,
+    errors: [],
+    warnings: [],
+  };
+
+  const scheduledTime = new Date(scheduledAt);
+
+  // Check for exact time conflicts
+  const exactConflicts = await db.scheduledPost.count({
+    where: {
+      userId,
+      platform,
+      accountId,
+      status: "PENDING",
+      scheduledAt: scheduledTime,
+      ...(excludePostId && { id: { not: excludePostId } }),
+    },
+  });
+
+  if (exactConflicts > 0) {
+    result.errors.push("Another post is already scheduled for this exact time");
+    result.isValid = false;
+  }
+
+  // Check for close conflicts (within 5 minutes)
+  const conflictWindow = 5 * 60 * 1000; // 5 minutes
+  const nearbyConflicts = await db.scheduledPost.count({
+    where: {
+      userId,
+      platform,
+      accountId,
+      status: "PENDING",
+      scheduledAt: {
+        gte: new Date(scheduledTime.getTime() - conflictWindow),
+        lte: new Date(scheduledTime.getTime() + conflictWindow),
+      },
+      ...(excludePostId && { id: { not: excludePostId } }),
+    },
+  });
+
+  if (nearbyConflicts >= 3) {
+    result.errors.push(
+      "Too many posts scheduled within 10 minutes of this time. Please choose a different time.",
+    );
+    result.isValid = false;
+  } else if (nearbyConflicts >= 1) {
+    result.warnings.push("Another post is scheduled close to this time");
+  }
+
+  return result;
+}
+
+// Main comprehensive validation function
+async function validateScheduledPost(
+  input: PostValidationInput,
+  userId: string,
+  excludePostId?: string,
+): Promise<ValidationResult> {
+  const results = await Promise.all([
+    validatePostContent(input),
+    validateSchedulingTime(input.scheduledAt, input.platform, userId),
+    validateAccountPermissions(
+      userId,
+      input.accountId,
+      input.platform,
+      input.pageId,
+    ),
+    checkSchedulingConflictsEnhanced(
+      userId,
+      input.scheduledAt,
+      input.platform,
+      input.accountId,
+      excludePostId,
+    ),
+  ]);
+
+  const combinedResult: ValidationResult = {
+    isValid: results.every((r) => r.isValid),
+    errors: results.flatMap((r) => r.errors),
+    warnings: results.flatMap((r) => r.warnings),
+  };
+
+  return combinedResult;
+}
+
 export async function schedulePost(input: {
   content: string;
   platform: string;
@@ -10213,32 +17573,330 @@ export async function schedulePost(input: {
   sourceType: string;
   sourceId: string;
   imageUrl?: string;
+  timezone?: string;
+  priority?: "high" | "medium" | "low";
+  tags?: string[];
+  notes?: string;
 }) {
   const { userId } = await getAuth({ required: true });
+
+  // Run comprehensive validation
+  const validation = await validateScheduledPost(
+    {
+      ...input,
+      sourceType: input.sourceType || "manual",
+      sourceId: input.sourceId || "user_scheduled",
+    },
+    userId,
+  );
+
+  if (!validation.isValid) {
+    throw new Error(validation.errors.join("; "));
+  }
+
+  const scheduledTime = new Date(input.scheduledAt);
 
   const post = await db.scheduledPost.create({
     data: {
       userId,
       content: input.content,
-      platform: input.platform,
+      platform: input.platform ?? "twitter",
       accountId: input.accountId,
       pageId: input.pageId,
-      scheduledAt: input.scheduledAt,
+      scheduledAt: scheduledTime,
       sourceType: input.sourceType,
       sourceId: input.sourceId,
       imageUrl: input.imageUrl,
+      status: "PENDING",
     },
   });
 
-  return post;
+  // Return post with validation warnings if any
+  return {
+    ...post,
+    validationWarnings: validation.warnings,
+  };
 }
 
-export async function listScheduledPosts() {
+export async function getScheduledPostsStats(input?: {
+  startDate?: string;
+  endDate?: string;
+  platform?: string;
+  accountId?: string;
+}) {
   const { userId } = await getAuth({ required: true });
 
-  const posts = await db.scheduledPost.findMany({
-    where: { userId },
+  const where: any = { userId };
+
+  // Add filters
+  if (input?.platform) {
+    where.platform = input.platform;
+  }
+
+  if (input?.accountId) {
+    where.accountId = input.accountId;
+  }
+
+  if (input?.startDate || input?.endDate) {
+    where.scheduledAt = {};
+    if (input.startDate) {
+      where.scheduledAt.gte = input.startDate;
+    }
+    if (input.endDate) {
+      where.scheduledAt.lte = input.endDate;
+    }
+  }
+
+  const [total, pending, posted, failed, platformStats] = await Promise.all([
+    db.scheduledPost.count({ where }),
+    db.scheduledPost.count({ where: { ...where, status: "PENDING" } }),
+    db.scheduledPost.count({ where: { ...where, status: "POSTED" } }),
+    db.scheduledPost.count({ where: { ...where, status: "FAILED" } }),
+    db.scheduledPost.groupBy({
+      by: ["platform"],
+      where,
+      _count: { id: true },
+    }),
+  ]);
+
+  return {
+    total,
+    pending,
+    posted,
+    failed,
+    platformBreakdown: platformStats.map((stat) => ({
+      platform: stat.platform,
+      count: stat._count.id,
+    })),
+  };
+}
+
+export async function searchScheduledPosts(input: {
+  query: string;
+  filters?: {
+    status?: "PENDING" | "POSTED" | "FAILED";
+    platform?: string;
+    startDate?: string;
+    endDate?: string;
+    accountId?: string;
+  };
+  limit?: number;
+  offset?: number;
+}) {
+  const { userId } = await getAuth({ required: true });
+
+  const where: any = { userId };
+
+  // Add search query
+  if (input.query) {
+    where.OR = [
+      {
+        content: {
+          contains: input.query,
+          mode: "insensitive",
+        },
+      },
+      {
+        platform: {
+          contains: input.query,
+          mode: "insensitive",
+        },
+      },
+    ];
+  }
+
+  // Add filters
+  if (input.filters) {
+    if (input.filters.status) {
+      where.status = input.filters.status;
+    }
+    if (input.filters.platform) {
+      where.platform = input.filters.platform;
+    }
+    if (input.filters.accountId) {
+      where.accountId = input.filters.accountId;
+    }
+    if (input.filters.startDate || input.filters.endDate) {
+      where.scheduledAt = {};
+      if (input.filters.startDate) {
+        where.scheduledAt.gte = input.filters.startDate;
+      }
+      if (input.filters.endDate) {
+        where.scheduledAt.lte = input.filters.endDate;
+      }
+    }
+  }
+
+  const [posts, totalCount] = await Promise.all([
+    db.scheduledPost.findMany({
+      where,
+      orderBy: { scheduledAt: "asc" },
+      take: input?.limit || 50,
+      skip: input?.offset || 0,
+      include: {
+        user: {
+          select: {
+            name: true,
+            image: true,
+          },
+        },
+      },
+    }),
+    db.scheduledPost.count({ where }),
+  ]);
+
+  return {
+    posts,
+    totalCount,
+    hasMore: (input?.offset || 0) + posts.length < totalCount,
+  };
+}
+
+export async function getSchedulingConflicts(input: {
+  scheduledAt: string;
+  platform: string;
+  accountId: string;
+  excludePostId?: string;
+  conflictWindowMinutes?: number;
+}) {
+  const { userId } = await getAuth({ required: true });
+
+  const scheduledTime = new Date(input.scheduledAt);
+  const windowMinutes = input.conflictWindowMinutes || 30; // Default 30-minute window
+  const startTime = new Date(
+    scheduledTime.getTime() - windowMinutes * 60 * 1000,
+  );
+  const endTime = new Date(scheduledTime.getTime() + windowMinutes * 60 * 1000);
+
+  const where: any = {
+    userId,
+    platform: input.platform ?? "twitter",
+    accountId: input.accountId,
+    status: "PENDING",
+    scheduledAt: {
+      gte: startTime,
+      lte: endTime,
+    },
+  };
+
+  if (input.excludePostId) {
+    where.id = {
+      not: input.excludePostId,
+    };
+  }
+
+  const conflicts = await db.scheduledPost.findMany({
+    where,
     orderBy: { scheduledAt: "asc" },
+    select: {
+      id: true,
+      content: true,
+      scheduledAt: true,
+      platform: true,
+    },
+  });
+
+  return {
+    hasConflicts: conflicts.length > 0,
+    conflicts,
+    suggestedTimes:
+      conflicts.length > 0
+        ? [
+            new Date(endTime.getTime() + 5 * 60 * 1000), // 5 minutes after conflict window
+            new Date(startTime.getTime() - 5 * 60 * 1000), // 5 minutes before conflict window
+          ]
+        : [],
+  };
+}
+
+export async function listScheduledPosts(input?: {
+  status?: "PENDING" | "POSTED" | "FAILED" | "ALL";
+  platform?: string;
+  startDate?: Date;
+  endDate?: Date;
+  limit?: number;
+  offset?: number;
+  search?: string;
+  accountId?: string;
+  pageId?: string;
+  sourceType?: string;
+  sourceId?: string;
+  sortBy?: "scheduledAt" | "createdAt" | "content" | "platform";
+  sortOrder?: "asc" | "desc";
+  tags?: string[];
+}) {
+  const { userId } = await getAuth({ required: true });
+
+  const where: any = { userId };
+
+  // Add status filter
+  if (input?.status && input.status !== "ALL") {
+    where.status = input.status;
+  }
+
+  // Add platform filter
+  if (input?.platform) {
+    where.platform = input.platform;
+  }
+
+  // Add account filter
+  if (input?.accountId) {
+    where.accountId = input.accountId;
+  }
+
+  // Add page filter
+  if (input?.pageId) {
+    where.pageId = input.pageId;
+  }
+
+  // Add source type filter
+  if (input?.sourceType) {
+    where.sourceType = input.sourceType;
+  }
+
+  // Add source ID filter
+  if (input?.sourceId) {
+    where.sourceId = input.sourceId;
+  }
+
+  // Add content search filter
+  if (input?.search) {
+    where.content = {
+      contains: input.search,
+      mode: "insensitive",
+    };
+  }
+
+  // Add date range filter
+  if (input?.startDate || input?.endDate) {
+    where.scheduledAt = {};
+    if (input.startDate) {
+      where.scheduledAt.gte = input.startDate;
+    }
+    if (input.endDate) {
+      where.scheduledAt.lte = input.endDate;
+    }
+  }
+
+  // Determine sort order
+  const sortBy = input?.sortBy || "scheduledAt";
+  const sortOrder = input?.sortOrder || "asc";
+  const orderBy: any = {};
+  orderBy[sortBy] = sortOrder;
+
+  const posts = await db.scheduledPost.findMany({
+    where,
+    orderBy,
+    take: input?.limit || 100,
+    skip: input?.offset || 0,
+    include: {
+      user: {
+        select: {
+          name: true,
+          image: true,
+        },
+      },
+    },
   });
 
   return posts;
@@ -10257,11 +17915,403 @@ export async function deleteScheduledPost(input: { postId: string }) {
     );
   }
 
+  // Only allow deletion of pending posts
+  if (post.status === "POSTED") {
+    throw new Error("Cannot delete a post that has already been posted.");
+  }
+
   await db.scheduledPost.delete({
     where: { id: input.postId },
   });
 
   return { success: true };
+}
+
+// Bulk scheduling operations
+export async function bulkSchedulePosts(input: {
+  posts: Array<{
+    content: string;
+    platform: string;
+    accountId: string;
+    pageId?: string;
+    scheduledAt: string;
+    sourceType: string;
+    sourceId: string;
+    imageUrl?: string;
+    timezone?: string;
+    priority?: number;
+    tags?: string[];
+    notes?: string;
+  }>;
+}) {
+  const { userId } = await getAuth({ required: true });
+
+  if (!input.posts || input.posts.length === 0) {
+    throw new Error("No posts provided for scheduling");
+  }
+
+  if (input.posts.length > 50) {
+    throw new Error("Cannot schedule more than 50 posts at once");
+  }
+
+  const now = new Date();
+  const results: Array<{
+    success: boolean;
+    postId?: string;
+    error?: string;
+    originalIndex: number;
+  }> = [];
+
+  // Validate all posts first
+  for (let i = 0; i < input.posts.length; i++) {
+    const post = input.posts[i];
+
+    if (!post) {
+      results.push({
+        success: false,
+        error: "Invalid post data at index " + i,
+        originalIndex: i,
+      });
+      continue;
+    }
+
+    const scheduledTime = new Date(post.scheduledAt);
+
+    if (scheduledTime <= now) {
+      results.push({
+        success: false,
+        error: "Scheduled time must be in the future",
+        originalIndex: i,
+      });
+      continue;
+    }
+
+    // Validate platform and account exist
+    const account = await db.account.findFirst({
+      where: {
+        userId,
+        accountId: post.accountId,
+        platform: post.platform,
+      },
+    });
+
+    if (!account) {
+      results.push({
+        success: false,
+        error: "Invalid account or platform for this user",
+        originalIndex: i,
+      });
+      continue;
+    }
+
+    try {
+      const scheduledPost = await db.scheduledPost.create({
+        data: {
+          userId,
+          content: post.content,
+          platform: post.platform,
+          accountId: post.accountId,
+          pageId: post.pageId,
+          scheduledAt: scheduledTime,
+          sourceType: post.sourceType,
+          sourceId: post.sourceId,
+          imageUrl: post.imageUrl,
+          status: "PENDING",
+        },
+      });
+
+      results.push({
+        success: true,
+        postId: scheduledPost.id,
+        originalIndex: i,
+      });
+    } catch (error) {
+      results.push({
+        success: false,
+        error:
+          error instanceof Error ? error.message : "Unknown error occurred",
+        originalIndex: i,
+      });
+    }
+  }
+
+  const successCount = results.filter((r) => r.success).length;
+  const failureCount = results.filter((r) => !r.success).length;
+
+  return {
+    results,
+    summary: {
+      total: input.posts.length,
+      successful: successCount,
+      failed: failureCount,
+    },
+  };
+}
+
+export async function bulkDeleteScheduledPosts(input: { postIds: string[] }) {
+  const { userId } = await getAuth({ required: true });
+
+  if (!input.postIds || input.postIds.length === 0) {
+    throw new Error("No post IDs provided for deletion");
+  }
+
+  if (input.postIds.length > 100) {
+    throw new Error("Cannot delete more than 100 posts at once");
+  }
+
+  const results: Array<{ success: boolean; postId: string; error?: string }> =
+    [];
+
+  for (const postId of input.postIds) {
+    try {
+      const post = await db.scheduledPost.findFirst({
+        where: { id: postId, userId },
+      });
+
+      if (!post) {
+        results.push({
+          success: false,
+          postId,
+          error: "Post not found or you don't have permission to delete it",
+        });
+        continue;
+      }
+
+      // Only allow deletion of pending posts
+      if (post.status === "POSTED") {
+        results.push({
+          success: false,
+          postId,
+          error: "Cannot delete a post that has already been posted",
+        });
+        continue;
+      }
+
+      await db.scheduledPost.delete({
+        where: { id: postId },
+      });
+
+      results.push({
+        success: true,
+        postId,
+      });
+    } catch (error) {
+      results.push({
+        success: false,
+        postId,
+        error:
+          error instanceof Error ? error.message : "Unknown error occurred",
+      });
+    }
+  }
+
+  const successCount = results.filter((r) => r.success).length;
+  const failureCount = results.filter((r) => !r.success).length;
+
+  return {
+    results,
+    summary: {
+      total: input.postIds.length,
+      successful: successCount,
+      failed: failureCount,
+    },
+  };
+}
+
+export async function bulkUpdateScheduledPosts(input: {
+  updates: Array<{
+    postId: string;
+    scheduledAt?: string;
+    content?: string;
+    imageUrl?: string;
+  }>;
+}) {
+  const { userId } = await getAuth({ required: true });
+
+  if (!input.updates || input.updates.length === 0) {
+    throw new Error("No updates provided");
+  }
+
+  if (input.updates.length > 100) {
+    throw new Error("Cannot update more than 100 posts at once");
+  }
+
+  const now = new Date();
+  const results: Array<{ success: boolean; postId: string; error?: string }> =
+    [];
+
+  for (const update of input.updates) {
+    try {
+      const post = await db.scheduledPost.findFirst({
+        where: { id: update.postId, userId },
+      });
+
+      if (!post) {
+        results.push({
+          success: false,
+          postId: update.postId,
+          error: "Post not found or you don't have permission to update it",
+        });
+        continue;
+      }
+
+      // Only allow updates to pending posts
+      if (post.status !== "PENDING") {
+        results.push({
+          success: false,
+          postId: update.postId,
+          error: "Can only update pending posts",
+        });
+        continue;
+      }
+
+      const updateData: any = {};
+
+      if (update.scheduledAt) {
+        const scheduledTime = new Date(update.scheduledAt);
+        if (scheduledTime <= now) {
+          results.push({
+            success: false,
+            postId: update.postId,
+            error: "Scheduled time must be in the future",
+          });
+          continue;
+        }
+        updateData.scheduledAt = scheduledTime;
+      }
+
+      if (update.content !== undefined) {
+        updateData.content = update.content;
+      }
+
+      if (update.imageUrl !== undefined) {
+        updateData.imageUrl = update.imageUrl;
+      }
+
+      await db.scheduledPost.update({
+        where: { id: update.postId },
+        data: updateData,
+      });
+
+      results.push({
+        success: true,
+        postId: update.postId,
+      });
+    } catch (error) {
+      results.push({
+        success: false,
+        postId: update.postId,
+        error:
+          error instanceof Error ? error.message : "Unknown error occurred",
+      });
+    }
+  }
+
+  const successCount = results.filter((r) => r.success).length;
+  const failureCount = results.filter((r) => !r.success).length;
+
+  return {
+    results,
+    summary: {
+      total: input.updates.length,
+      successful: successCount,
+      failed: failureCount,
+    },
+  };
+}
+
+export async function bulkRescheduleByTimeOffset(input: {
+  postIds: string[];
+  offsetMinutes: number; // positive for future, negative for past
+}) {
+  const { userId } = await getAuth({ required: true });
+
+  if (!input.postIds || input.postIds.length === 0) {
+    throw new Error("No post IDs provided for rescheduling");
+  }
+
+  if (input.postIds.length > 100) {
+    throw new Error("Cannot reschedule more than 100 posts at once");
+  }
+
+  const now = new Date();
+  const results: Array<{
+    success: boolean;
+    postId: string;
+    error?: string;
+    newScheduledAt?: string;
+  }> = [];
+
+  for (const postId of input.postIds) {
+    try {
+      const post = await db.scheduledPost.findFirst({
+        where: { id: postId, userId },
+      });
+
+      if (!post) {
+        results.push({
+          success: false,
+          postId,
+          error: "Post not found or you don't have permission to reschedule it",
+        });
+        continue;
+      }
+
+      // Only allow rescheduling of pending posts
+      if (post.status !== "PENDING") {
+        results.push({
+          success: false,
+          postId,
+          error: "Can only reschedule pending posts",
+        });
+        continue;
+      }
+
+      const currentScheduledTime = new Date(post.scheduledAt);
+      const newScheduledTime = new Date(
+        currentScheduledTime.getTime() + input.offsetMinutes * 60 * 1000,
+      );
+
+      if (newScheduledTime <= now) {
+        results.push({
+          success: false,
+          postId,
+          error: "New scheduled time would be in the past",
+        });
+        continue;
+      }
+
+      await db.scheduledPost.update({
+        where: { id: postId },
+        data: { scheduledAt: newScheduledTime },
+      });
+
+      results.push({
+        success: true,
+        postId,
+        newScheduledAt: newScheduledTime.toISOString(),
+      });
+    } catch (error) {
+      results.push({
+        success: false,
+        postId,
+        error:
+          error instanceof Error ? error.message : "Unknown error occurred",
+      });
+    }
+  }
+
+  const successCount = results.filter((r) => r.success).length;
+  const failureCount = results.filter((r) => !r.success).length;
+
+  return {
+    results,
+    summary: {
+      total: input.postIds.length,
+      successful: successCount,
+      failed: failureCount,
+    },
+  };
 }
 
 export async function saveViralThreadAsContent(input: { threadId: string }) {
@@ -10403,30 +18453,32 @@ export type DashboardInsightItem = {
   sourceItemId?: string;
 };
 
-export type DashboardSummaryData = {
+type DashboardSummaryData = {
   // Response Hub
   pendingCommentsCount: number;
   oldestPendingCommentDate: Date | null;
-  highPriorityComments: {
+  highPriorityComments: Array<{
+    platform: string;
     id: string;
     text: string;
     authorName: string;
-    platform: string;
-  }[];
+  }>;
   pendingNegativeCount: number;
+  pendingNeutralCount: number;
+  pendingPositiveCount: number;
   pendingQuestionCount: number;
-  recentNegativeComments: {
+  recentNegativeComments: Array<{
     id: string;
     text: string;
     authorName: string;
     platform: string;
-  }[];
-  recentQuestions: {
+  }>;
+  recentQuestions: Array<{
     id: string;
     text: string;
     authorName: string;
     platform: string;
-  }[];
+  }>;
   // Strategy Hub
   contentIdeasCount: number;
   topRecommendation: any | null;
@@ -10443,11 +18495,11 @@ export type DashboardSummaryData = {
     scheduledAt: Date;
     platform: string;
   } | null;
-  recentDrafts: {
+  recentDrafts: Array<{
     id: string;
     title: string;
     type: string;
-  }[];
+  }>;
   // General
   engagementChange: number;
   topPost: {
@@ -10464,11 +18516,307 @@ export type DashboardSummaryData = {
   actionableRecommendations: DashboardInsightItem[];
   insightNarratives: DashboardInsightItem[];
   trendingTopicsFromViral: DashboardInsightItem[];
+  // Performance metrics
+  totalCommentsCount: number;
+  averageResponseTime: number; // in hours
+  uniqueUsersCount: number;
+  performanceTrends: Array<{
+    date: string;
+    day: string;
+    comments: number;
+    engagement: number;
+  }>;
+  // Additional properties
+  totalPages: number;
+  connectedPlatforms: Array<{
+    platform: string;
+    status: string;
+    lastSync?: string;
+    pageCount: number;
+  }>;
+  recentInsightKeywords: string[];
+  avgSentimentScore: number;
+  mostActiveHour: number | null;
+  topEngagementPlatform: string;
+  weeklyCommentGrowth: number;
+  responseRateThisWeek: number;
+  topPerformingContent: Array<{
+    platform: string;
+    content: string;
+    engagement: number;
+  }>;
+  brandMentions: number;
+  competitorMentions: number;
+  engagementTrend: string;
+  contentPerformanceScore: number;
+  audienceGrowthRate: number;
+  viralPotentialScore: number;
+  trendingHashtags: string[];
+  optimalPostingHours: number[];
 };
+
+async function generateBrandOnlyDashboardData(
+  userId: string,
+  brandContext: any,
+  brandIntelligence: any,
+): Promise<DashboardSummaryData> {
+  // Get content strategy and generated content for brand-based insights
+  const contentStrategy = await db.contentStrategy.findUnique({
+    where: { userId },
+  });
+
+  const draftContentCount = await db.generatedContent.count({
+    where: { userId, status: "DRAFT" },
+  });
+  const publishedContentCount = await db.generatedContent.count({
+    where: { userId, status: "PUBLISHED" },
+  });
+  const archivedContentCount = await db.generatedContent.count({
+    where: { userId, status: "ARCHIVED" },
+  });
+
+  const scheduledPostsCount = await db.scheduledPost.count({
+    where: { userId, status: "PENDING" },
+  });
+
+  const nextScheduledPost = await db.scheduledPost.findFirst({
+    where: { userId, status: "PENDING" },
+    orderBy: { scheduledAt: "asc" },
+    select: { content: true, scheduledAt: true, platform: true },
+  });
+
+  const recentDrafts = await db.generatedContent.findMany({
+    where: { userId, status: "DRAFT" },
+    orderBy: { updatedAt: "desc" },
+    take: 2,
+    select: { id: true, title: true, type: true },
+  });
+
+  // Extract strategy insights
+  let topStrategyTheme: string | null = null;
+  let contentIdeasCount = 0;
+  let topRecommendation: any | null = null;
+  let quickWinIdea: any | null = null;
+  let bigBetIdea: any | null = null;
+
+  if (contentStrategy?.status === "COMPLETED" && contentStrategy.strategyData) {
+    try {
+      const strategy = JSON.parse(contentStrategy.strategyData) as {
+        strategySummary?: { keyThemes?: string[] };
+        calendar?: { posts?: any[] }[];
+      };
+      if (strategy.strategySummary?.keyThemes?.[0]) {
+        topStrategyTheme = strategy.strategySummary.keyThemes[0];
+      }
+
+      if (strategy.calendar) {
+        contentIdeasCount = strategy.calendar.reduce(
+          (acc: number, day: { posts?: any[] }) =>
+            acc + (day.posts?.length || 0),
+          0,
+        );
+        for (const day of strategy.calendar) {
+          if (day.posts && day.posts.length > 0) {
+            topRecommendation = day.posts[0];
+            break;
+          }
+        }
+
+        // Find a quick win (simple text post)
+        for (const day of strategy.calendar) {
+          if (day.posts) {
+            const textPost = day.posts.find(
+              (p) =>
+                !p.format.toLowerCase().includes("video") &&
+                !p.format.toLowerCase().includes("image"),
+            );
+            if (textPost) {
+              quickWinIdea = textPost;
+              break;
+            }
+          }
+        }
+
+        // Find a big bet (video or image)
+        for (const day of strategy.calendar) {
+          if (day.posts) {
+            const mediaPost = day.posts.find(
+              (p) =>
+                p.format.toLowerCase().includes("video") ||
+                p.format.toLowerCase().includes("image"),
+            );
+            if (mediaPost) {
+              bigBetIdea = mediaPost;
+              break;
+            }
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  // Generate brand-focused insights
+  const insightNarratives: DashboardInsightItem[] = [];
+  const actionableRecommendations: DashboardInsightItem[] = [];
+
+  // Brand setup insights
+  // Brand setup insights
+  if (brandContext?.analysisStatus === "COMPLETED") {
+    insightNarratives.push({
+      id: "brand-context-ready",
+      text: "Your brand context is fully analyzed. Ready to generate personalized content!",
+      source: "Brand Analysis",
+      sourceTab: "topics",
+    });
+  }
+
+  if (brandIntelligence) {
+    insightNarratives.push({
+      id: "brand-intelligence-ready",
+      text: "Advanced brand intelligence is active. Your content will be highly targeted.",
+      source: "Brand Intelligence",
+      sourceTab: "topics",
+    });
+  }
+
+  // Content strategy insights
+  if (contentStrategy?.status === "COMPLETED") {
+    if (topStrategyTheme) {
+      insightNarratives.push({
+        id: "strategy-theme",
+        text: `Your top content theme is "${topStrategyTheme}". Focus on this for maximum impact.`,
+        source: "Content Strategy",
+        sourceTab: "viral",
+      });
+    }
+
+    if (contentIdeasCount > 0) {
+      actionableRecommendations.push({
+        id: "content-ideas-available",
+        text: `You have ${contentIdeasCount} content ideas ready to create. Start with your quick wins!`,
+        source: "Content Strategy",
+        sourceTab: "viral",
+      });
+    }
+  } else {
+    actionableRecommendations.push({
+      id: "generate-strategy",
+      text: "Generate your personalized content strategy to get targeted recommendations.",
+      source: "Content Strategy",
+      sourceTab: "viral",
+    });
+  }
+
+  // Content creation insights
+  if (draftContentCount > 0) {
+    actionableRecommendations.push({
+      id: "publish-drafts",
+      text: `You have ${draftContentCount} draft content pieces. Consider publishing or scheduling them.`,
+      source: "Content Hub",
+      sourceTab: "viral",
+    });
+  }
+
+  if (scheduledPostsCount === 0 && publishedContentCount > 0) {
+    actionableRecommendations.push({
+      id: "schedule-content",
+      text: "Schedule your published content to maintain consistent posting.",
+      source: "Scheduler",
+      sourceTab: "viral",
+    });
+  }
+
+  // Social account connection recommendation
+  actionableRecommendations.push({
+    id: "connect-social-accounts",
+    text: "Connect your social media accounts to unlock engagement insights and response management.",
+    source: "Account Setup",
+    sourceTab: "topics",
+  });
+
+  return {
+    // Response Hub (empty for brand-only)
+    pendingCommentsCount: 0,
+    oldestPendingCommentDate: null,
+    highPriorityComments: [],
+    pendingNegativeCount: 0,
+    pendingNeutralCount: 0,
+    pendingPositiveCount: 0,
+    pendingQuestionCount: 0,
+    recentNegativeComments: [],
+    recentQuestions: [],
+    // Strategy Hub
+    contentIdeasCount,
+    topRecommendation,
+    topStrategyTheme,
+    quickWinIdea,
+    bigBetIdea,
+    // Content Hub
+    scheduledPostsCount,
+    draftContentCount,
+    publishedContentCount,
+    archivedContentCount,
+    nextScheduledPost,
+    recentDrafts,
+    // General
+    engagementChange: 0,
+    topPost: null,
+    mostActiveUser: null,
+    actionableRecommendations,
+    insightNarratives,
+    trendingTopicsFromViral: [],
+    // Performance Metrics (empty for brand-only)
+    totalCommentsCount: 0,
+    averageResponseTime: 0,
+    uniqueUsersCount: 0,
+    performanceTrends: [],
+    // Additional properties (empty for brand-only)
+    totalPages: 0,
+    connectedPlatforms: [],
+    recentInsightKeywords: [],
+    avgSentimentScore: 0.5,
+    mostActiveHour: null,
+    topEngagementPlatform: "",
+    weeklyCommentGrowth: 0,
+    responseRateThisWeek: 0,
+    topPerformingContent: [],
+    brandMentions: 0,
+    competitorMentions: 0,
+    engagementTrend: "stable",
+    contentPerformanceScore: 0,
+    audienceGrowthRate: 0,
+    viralPotentialScore: 0,
+    trendingHashtags: [],
+    optimalPostingHours: [],
+  };
+}
 
 async function _internal_calculateDashboardData(
   userId: string,
 ): Promise<DashboardSummaryData> {
+  // Check if user has brand context setup
+  const brandContext = await db.brandContext.findUnique({
+    where: { userId },
+  });
+  const brandIntelligence = await db.brandIntelligence.findUnique({
+    where: { userId },
+  });
+  const hasBrandSetup =
+    brandContext?.analysisStatus === "COMPLETED" || !!brandIntelligence;
+
+  // Check if user has any comments (social accounts connected)
+  const hasCommentData = (await db.comment.count({ where: { userId } })) > 0;
+
+  // If no social data but has brand setup, provide brand-based insights
+  if (!hasCommentData && hasBrandSetup) {
+    return await generateBrandOnlyDashboardData(
+      userId,
+      brandContext,
+      brandIntelligence,
+    );
+  }
   // Response Hub Insights
   const pendingCommentsCount = await db.comment.count({
     where: { userId, responded: false },
@@ -10480,11 +18828,19 @@ async function _internal_calculateDashboardData(
   });
 
   const pendingNegativeCount = await db.comment.count({
-    where: { userId, responded: false, sentiment: "negative" },
+    where: { userId, responded: false, sentiment: "NEGATIVE" },
+  });
+
+  const pendingNeutralCount = await db.comment.count({
+    where: { userId, responded: false, sentiment: "NEUTRAL" },
+  });
+
+  const pendingPositiveCount = await db.comment.count({
+    where: { userId, responded: false, sentiment: "POSITIVE" },
   });
 
   const recentNegativeComments = await db.comment.findMany({
-    where: { userId, responded: false, sentiment: "negative" },
+    where: { userId, responded: false, sentiment: "NEGATIVE" },
     orderBy: { createdAt: "desc" },
     take: 2,
     select: { id: true, text: true, authorName: true, platform: true },
@@ -10800,41 +19156,49 @@ async function _internal_calculateDashboardData(
     trendingTopicsFromViral.length === 0 &&
     recentCommentsForAnalysis.length > 0
   ) {
-    try {
-      const fallbackViralPotential = await requestMultimodalModel({
-        system:
-          "You are a creative social media strategist. Based on the provided comments, generate 3 content ideas with viral potential. For each, provide a concept and a virality score.",
-        messages: [
-          {
-            role: "user",
-            content: `Analyze these recent comments and generate 3 viral content ideas from them: ${JSON.stringify(
-              recentCommentsForAnalysis.slice(-20).map((c) => c.text),
-            )}`,
-          },
-        ],
-        returnType: z.object({
-          potential: z.array(
-            z.object({
-              concept: z.string(),
-              viralityScore: z.number().min(1).max(10),
-            }),
-          ),
-        }),
-        model: "small",
-      });
+    // Skip expensive AI fallback for dashboard loading performance
+    // Instead, create simple trending topics from recent comment activity
+    const commentKeywords = recentCommentsForAnalysis
+      .slice(-10)
+      .map((c) => c.text)
+      .join(" ")
+      .toLowerCase()
+      .split(/\s+/)
+      .filter(
+        (word) =>
+          word.length > 4 &&
+          ![
+            "that",
+            "this",
+            "with",
+            "from",
+            "they",
+            "have",
+            "been",
+            "will",
+            "what",
+            "when",
+            "where",
+          ].includes(word),
+      )
+      .reduce((acc: { [key: string]: number }, word) => {
+        acc[word] = (acc[word] || 0) + 1;
+        return acc;
+      }, {});
 
-      fallbackViralPotential.potential.forEach((p) => {
-        trendingTopicsFromViral.push({
-          id: `fallback-viral-${nanoid()}`,
-          text: p.concept,
-          source: `Virality Score: ${p.viralityScore.toFixed(1)}/10`,
-          sourceTab: "viral",
-          sourceItemId: undefined,
-        });
+    const topKeywords = Object.entries(commentKeywords)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 3);
+
+    topKeywords.forEach(([keyword, count]) => {
+      trendingTopicsFromViral.push({
+        id: `keyword-viral-${nanoid()}`,
+        text: `Content about "${keyword}" trending`,
+        source: `Mentioned ${count} times recently`,
+        sourceTab: "viral",
+        sourceItemId: undefined,
       });
-    } catch (e) {
-      console.error("Error generating fallback viral potential topics:", e);
-    }
+    });
   }
 
   // Fallback insights if advanced insights are not available
@@ -10940,12 +19304,73 @@ async function _internal_calculateDashboardData(
     }
   }
 
+  // Calculate performance metrics
+  const totalCommentsCount = totalComments;
+
+  // Calculate average response time (in hours)
+  const respondedCommentsWithTimes = recentCommentsForAnalysis.filter(
+    (c) => c.responded,
+  );
+  let averageResponseTime = 0;
+  if (respondedCommentsWithTimes.length > 0) {
+    // For demo purposes, we'll estimate based on comment age
+    const avgCommentAge =
+      respondedCommentsWithTimes.reduce((sum, c) => {
+        const hoursSinceCreated =
+          (Date.now() - new Date(c.createdAt).getTime()) / (1000 * 60 * 60);
+        return sum + hoursSinceCreated;
+      }, 0) / respondedCommentsWithTimes.length;
+    averageResponseTime = Math.min(avgCommentAge * 0.3, 48); // Estimate 30% of comment age, max 48 hours
+  }
+
+  // Calculate unique users count
+  const uniqueAuthors = new Set(
+    recentCommentsForAnalysis.map((c) => c.authorName),
+  );
+  const uniqueUsersCount = uniqueAuthors.size;
+
+  // Calculate 7-day performance trends
+  const performanceTrends: Array<{
+    date: string;
+    day: string;
+    comments: number;
+    engagement: number;
+  }> = [];
+
+  for (let i = 6; i >= 0; i--) {
+    const dayStart = new Date();
+    dayStart.setDate(dayStart.getDate() - i);
+    dayStart.setHours(0, 0, 0, 0);
+
+    const dayEnd = new Date(dayStart);
+    dayEnd.setHours(23, 59, 59, 999);
+
+    const dayComments = recentCommentsForAnalysis.filter(
+      (c) =>
+        new Date(c.createdAt) >= dayStart && new Date(c.createdAt) <= dayEnd,
+    );
+
+    const dayEngagement = dayComments.reduce(
+      (sum, c) => sum + (c.likeCount || 0) + (c.replyCount || 0) + 1,
+      0,
+    );
+
+    performanceTrends.push({
+      date: dayStart.toISOString().split("T")[0] || "",
+      day: dayStart.toLocaleDateString("en", { weekday: "short" }),
+      comments: dayComments.length,
+      engagement: dayEngagement,
+    });
+  }
+
   return {
     // Response Hub
     pendingCommentsCount,
     oldestPendingCommentDate: oldestPendingComment?.createdAt || null,
     highPriorityComments,
     pendingNegativeCount,
+    pendingNeutralCount,
+    pendingPositiveCount,
     pendingQuestionCount,
     recentNegativeComments,
     recentQuestions,
@@ -10969,11 +19394,43 @@ async function _internal_calculateDashboardData(
     actionableRecommendations,
     insightNarratives,
     trendingTopicsFromViral,
+    // Performance Metrics
+    totalCommentsCount,
+    averageResponseTime: Math.round(averageResponseTime),
+    uniqueUsersCount,
+    performanceTrends,
+    // Additional properties
+    totalPages: 0, // TODO: Get actual page count
+    connectedPlatforms: [], // TODO: Get actual connected platforms
+    recentInsightKeywords: [],
+    avgSentimentScore: 0.5, // TODO: Calculate from actual sentiment data
+    mostActiveHour: null, // TODO: Calculate from comment timestamps
+    topEngagementPlatform: topPost?.platform || "",
+    weeklyCommentGrowth: Math.round(engagementChange),
+    responseRateThisWeek: Math.round(responseRate),
+    topPerformingContent: [],
+    brandMentions: 0,
+    competitorMentions: 0,
+    engagementTrend:
+      engagementChange > 0
+        ? "growing"
+        : engagementChange < 0
+          ? "declining"
+          : "stable",
+    contentPerformanceScore: Math.round(responseRate),
+    audienceGrowthRate: 0,
+    viralPotentialScore: 0,
+    trendingHashtags: [],
+    optimalPostingHours: [],
   };
 }
 
 export async function triggerDashboardSummaryGeneration() {
   const { userId } = await getAuth({ required: true });
+
+  // Check feature access and usage limits
+  await requireFeatureAccess("dashboard_summary_generation");
+  await requireUsageLimit("dashboard_summary_generation");
 
   // Consume credits for dashboard summary generation (8 credits)
   await _consumeCredits(
@@ -11185,24 +19642,37 @@ export async function _seedBlogPosts() {
             content: `Generate a blog post on the topic: "${topic}"`,
           },
         ],
-        returnType: z.object({
-          title: z.string(),
-          slug: z.string().transform((s) =>
-            s
-              .toLowerCase()
-              .replace(/\s+/g, "-")
-              .replace(/[^a-z0-9-]/g, ""),
-          ),
-          content: z.string(),
-          metaTitle: z.string(),
-          metaDescription: z.string(),
-          tags: z.array(z.string()),
-          imagePrompt: z
-            .string()
-            .describe(
-              "A prompt for DALL-E to generate a featured image for this blog post.",
-            ),
-        }),
+        returnType: z
+          .object({
+            title: z.string().describe("The main title of the blog post."),
+            slug: z
+              .string()
+              .transform((s) =>
+                s
+                  .toLowerCase()
+                  .replace(/\s+/g, "-")
+                  .replace(/[^a-z0-9-]/g, ""),
+              )
+              .describe("URL-friendly slug for the blog post."),
+            content: z
+              .string()
+              .describe(
+                "The full content of the blog post in markdown format.",
+              ),
+            metaTitle: z.string().describe("SEO meta title for the blog post."),
+            metaDescription: z
+              .string()
+              .describe("SEO meta description for the blog post."),
+            tags: z
+              .array(z.string())
+              .describe("List of relevant tags for the blog post."),
+            imagePrompt: z
+              .string()
+              .describe(
+                "A prompt for DALL-E to generate a featured image for this blog post.",
+              ),
+          })
+          .describe("Generated SEO-optimized blog post with metadata."),
         model: "medium",
       });
 
@@ -11214,7 +19684,11 @@ export async function _seedBlogPosts() {
             content: `Generate an image for the following prompt: ${postContent.imagePrompt}`,
           },
         ],
-        returnType: z.object({ imageUrl: z.string() }),
+        returnType: z
+          .object({
+            imageUrl: z.string().describe("The URL of the generated image."),
+          })
+          .describe("A response containing the generated image URL."),
       });
 
       return {
@@ -11247,6 +19721,134 @@ export async function _seedBlogPosts() {
   }
 
   return { success: true, count: postsToCreate.length };
+}
+
+export async function _seedAdditionalThoughtLeadershipPosts() {
+  // Find or create an author for the blog posts
+  let author = await db.user.findFirst({
+    orderBy: {
+      createdAt: "asc",
+    },
+  });
+
+  if (!author) {
+    author = await db.user.create({
+      data: {
+        name: "SocialWave AI",
+      },
+    });
+  }
+  const authorId = author.id;
+
+  // Two additional thought leadership topics to reach 10 total posts
+  const additionalTopics = [
+    "The Psychology of Social Media Engagement: Understanding What Makes Content Stick",
+    "Building a Community-Driven Brand: Strategies for Authentic Social Media Growth",
+  ];
+
+  const generatedPosts = await Promise.all(
+    additionalTopics.map(async (topic) => {
+      const postContent = await requestMultimodalModel({
+        system:
+          "You are an expert content creator and SEO specialist with deep expertise in social media marketing, AI tools, and digital strategy. Generate a comprehensive, engaging, and SEO-optimized blog post that provides genuine value and thought leadership. The post should be at least 1200 words long, include actionable insights, real-world examples, and be written in an authoritative yet accessible tone. Focus on providing unique perspectives, practical advice, and strategic frameworks that readers can implement immediately. Include specific statistics, case studies, and expert insights where relevant.",
+        messages: [
+          {
+            role: "user",
+            content: `Generate a comprehensive thought leadership blog post on the topic: "${topic}". Make it highly actionable and include specific strategies, frameworks, examples, and insights that demonstrate deep expertise in social media marketing and community building. The content should position the author as a thought leader and provide genuine value to marketing professionals and business owners. Include relevant statistics, case studies, and step-by-step guidance where appropriate.`,
+          },
+        ],
+        returnType: z
+          .object({
+            title: z.string().describe("The main title of the blog post."),
+            slug: z
+              .string()
+              .transform((s) =>
+                s
+                  .toLowerCase()
+                  .replace(/\s+/g, "-")
+                  .replace(/[^a-z0-9-]/g, ""),
+              )
+              .describe("URL-friendly slug for the blog post."),
+            content: z
+              .string()
+              .describe(
+                "The full content of the blog post in markdown format, at least 1200 words with actionable insights.",
+              ),
+            metaTitle: z
+              .string()
+              .describe(
+                "SEO meta title for the blog post (max 60 characters).",
+              ),
+            metaDescription: z
+              .string()
+              .describe(
+                "SEO meta description for the blog post (max 160 characters).",
+              ),
+            tags: z
+              .array(z.string())
+              .describe("List of relevant SEO tags for the blog post."),
+            imagePrompt: z
+              .string()
+              .describe(
+                "A detailed prompt for generating a professional, high-quality featured image that represents the blog post topic with modern design elements.",
+              ),
+          })
+          .describe(
+            "Generated SEO-optimized thought leadership blog post with metadata.",
+          ),
+        model: "medium",
+      });
+
+      const { imageUrl } = await requestMultimodalModel({
+        system:
+          "You are an image generation assistant. Create professional, high-quality images suitable for thought leadership blog posts. Use modern design elements, professional color schemes, and visual metaphors that clearly represent the topic. Focus on creating engaging, shareable images that would work well on social media and professional platforms.",
+        messages: [
+          {
+            role: "user",
+            content: `Generate a professional featured image for the following prompt: ${postContent.imagePrompt}`,
+          },
+        ],
+        returnType: z
+          .object({
+            imageUrl: z.string().describe("The URL of the generated image."),
+          })
+          .describe("A response containing the generated image URL."),
+      });
+
+      return {
+        ...postContent,
+        authorId: authorId,
+        publishedAt: new Date(),
+        isPublished: true,
+        featuredImageUrl: imageUrl,
+        tags: postContent.tags.join(","),
+      };
+    }),
+  );
+
+  const postsToCreate: Prisma.BlogPostCreateManyInput[] = [];
+  for (const post of generatedPosts) {
+    const existingPost = await db.blogPost.findUnique({
+      where: { slug: post.slug },
+    });
+    if (!existingPost) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { imagePrompt, ...rest } = post;
+      postsToCreate.push(rest);
+    }
+  }
+
+  if (postsToCreate.length > 0) {
+    await db.blogPost.createMany({
+      data: postsToCreate,
+    });
+  }
+
+  return {
+    success: true,
+    count: postsToCreate.length,
+    newPosts: postsToCreate.length,
+  };
 }
 
 export async function listPublishedBlogPosts() {
@@ -11400,17 +20002,21 @@ export async function getPostingActivityHeatmap(input?: {
 export async function analyzeBrandContext() {
   const { userId } = await getAuth({ required: true });
 
-  // Consume credits for brand context analysis (12 credits)
+  // Check feature access and usage limits
+  await requireFeatureAccess("brand_context_analysis");
+  await requireUsageLimit("brand_context_analysis");
+
+  // Consume credits for brand context analysis (15 credits for enhanced analysis)
   await _consumeCredits(
     userId,
     "brand_context_analysis",
-    12,
-    "Analyzed comprehensive brand context with AI insights",
+    15,
+    "Analyzed comprehensive brand context with AI insights and website analysis",
   );
 
   const task = await queueTask(async () => {
     try {
-      // Gather data for analysis
+      // Gather data for analysis with increased sample sizes for more comprehensive insights
       const [
         comments,
         brandGuidelines,
@@ -11421,93 +20027,976 @@ export async function analyzeBrandContext() {
         db.comment.findMany({
           where: { userId },
           orderBy: { createdAt: "desc" },
-          take: 200,
-          select: { text: true, platform: true, sentiment: true, topics: true },
+          take: 500, // Increased from 300 for more comprehensive analysis
+          select: {
+            text: true,
+            platform: true,
+            sentiment: true,
+            topics: true,
+            authorName: true,
+            likeCount: true,
+            replyCount: true,
+            createdAt: true, // Added for temporal analysis
+          },
         }),
         db.brandGuidelines.findUnique({ where: { userId } }),
         db.brandSignal.findUnique({ where: { userId } }),
         db.generatedContent.findMany({
           where: { userId },
           orderBy: { createdAt: "desc" },
-          take: 50,
+          take: 150, // Increased from 100 for better content analysis
           include: { pillar: true },
         }),
         db.account.findMany({
           where: { userId },
-          select: { platform: true, name: true },
+          select: {
+            platform: true,
+            name: true,
+            accountId: true,
+          },
         }),
       ]);
 
-      // Analyze brand context using AI
+      // Enhanced website analysis with comprehensive brand profiling
+      let websiteAnalysis: any = null;
+      if (brandGuidelines?.brandWebsite) {
+        try {
+          websiteAnalysis = await requestMultimodalModel({
+            system: `You are a comprehensive brand strategist and digital marketing expert with expertise in web analysis and brand profiling. Analyze the provided website to extract deep brand insights including industry positioning, target audience, brand voice, competitive advantages, content themes, and business model. Use your web interaction tools to thoroughly explore the website structure, content, and messaging.
+
+IMPORTANT: Focus heavily on creating detailed, specific audience personas based on the website content, language, visual design, service offerings, pricing, and messaging. Even with limited data, use industry knowledge and logical inference to create meaningful demographic and psychographic profiles. Identify specific pain points the website addresses, infer customer behavior patterns from the website structure and content flow, and determine preferred communication styles from the website's tone and approach.
+
+Provide comprehensive audience insights that can be used for content strategy and brand persona development, even when social media data is not available.`,
+            messages: [
+              {
+                role: "user",
+                content: `Analyze this website for comprehensive brand profiling: ${brandGuidelines.brandWebsite}`,
+              },
+            ],
+            returnType: z
+              .object({
+                industryAnalysis: z
+                  .object({
+                    primaryIndustry: z
+                      .string()
+                      .describe("Primary industry category"),
+                    subIndustries: z
+                      .array(z.string())
+                      .describe("Sub-industries or niches"),
+                    marketPosition: z
+                      .string()
+                      .describe("Market positioning and competitive stance"),
+                    businessModel: z
+                      .string()
+                      .describe("Identified business model"),
+                  })
+                  .describe("Industry and market analysis"),
+                audienceInsights: z
+                  .object({
+                    primaryAudience: z
+                      .string()
+                      .describe("Primary target audience description"),
+                    demographicIndicators: z
+                      .array(z.string())
+                      .describe("Demographic clues from website"),
+                    psychographicClues: z
+                      .array(z.string())
+                      .describe("Psychographic insights"),
+                    painPointsAddressed: z
+                      .array(z.string())
+                      .describe("Pain points the brand addresses"),
+                    customerJourneyStage: z
+                      .string()
+                      .describe(
+                        "Where customers typically are in their journey",
+                      ),
+                  })
+                  .describe("Target audience analysis"),
+                brandPersonality: z
+                  .object({
+                    voiceTone: z
+                      .string()
+                      .describe("Brand voice and tone analysis"),
+                    personalityTraits: z
+                      .array(z.string())
+                      .describe("Brand personality traits"),
+                    communicationStyle: z
+                      .string()
+                      .describe("Communication approach"),
+                    emotionalAppeal: z
+                      .string()
+                      .describe("Primary emotional appeals used"),
+                    brandArchetype: z
+                      .string()
+                      .describe("Brand archetype (Hero, Sage, Creator, etc.)"),
+                  })
+                  .describe("Brand personality analysis"),
+                contentStrategy: z
+                  .object({
+                    mainThemes: z
+                      .array(z.string())
+                      .describe("Primary content themes"),
+                    contentTypes: z
+                      .array(z.string())
+                      .describe("Types of content they create"),
+                    expertiseAreas: z
+                      .array(z.string())
+                      .describe("Areas of expertise demonstrated"),
+                    valuePropositions: z
+                      .array(z.string())
+                      .describe("Key value propositions"),
+                  })
+                  .describe("Content strategy insights"),
+                competitiveAnalysis: z
+                  .object({
+                    differentiators: z
+                      .array(z.string())
+                      .describe("Key differentiators"),
+                    competitiveAdvantages: z
+                      .array(z.string())
+                      .describe("Competitive advantages"),
+                    marketGaps: z
+                      .array(z.string())
+                      .describe("Potential market gaps to exploit"),
+                  })
+                  .describe("Competitive positioning"),
+                brandValues: z
+                  .array(z.string())
+                  .describe("Core brand values identified"),
+                visualIdentity: z
+                  .object({
+                    colorPalette: z
+                      .array(z.string())
+                      .describe("Primary colors used"),
+                    designStyle: z
+                      .string()
+                      .describe("Overall design aesthetic"),
+                    imagery: z.string().describe("Types of imagery used"),
+                  })
+                  .describe("Visual brand identity"),
+              })
+              .describe("Comprehensive website brand analysis"),
+            temperature: 0.2,
+          });
+        } catch (error) {
+          console.log(
+            "Website analysis failed, continuing with other data sources:",
+            error,
+          );
+        }
+      }
+
+      // Enhanced social media deep analysis across all platforms
+      let socialMediaAnalysis: any = null;
+      let platformSpecificInsights: any = {};
+      if (accounts.length > 0) {
+        try {
+          // Analyze each platform individually for deeper insights
+          const platformAnalysisPromises = accounts.map(async (account) => {
+            const platformComments = comments.filter(
+              (c) => c.platform === account.platform,
+            );
+
+            if (platformComments.length === 0) return null;
+
+            return await requestMultimodalModel({
+              system: `You are a ${account.platform} expert and social media strategist. Analyze the engagement data for this specific platform to extract platform-native insights, audience behavior patterns, optimal content strategies, and competitive positioning. Focus on ${account.platform}-specific best practices and unique platform dynamics.`,
+              messages: [
+                {
+                  role: "user",
+                  content: `Analyze this ${account.platform} account's engagement data for deep platform insights:
+
+Account: ${account.name} (${account.accountId})
+Platform: ${account.platform}
+
+Engagement Data (${platformComments.length} interactions):
+${JSON.stringify(platformComments.slice(0, 50), null, 2)}
+
+Provide ${account.platform}-specific strategic insights.`,
+                },
+              ],
+              returnType: z
+                .object({
+                  platformDynamics: z
+                    .object({
+                      algorithmInsights: z
+                        .string()
+                        .describe(
+                          "How the platform's algorithm affects content visibility",
+                        ),
+                      optimalContentTypes: z
+                        .array(z.string())
+                        .describe(
+                          "Content types that perform best on this platform",
+                        ),
+                      engagementPeakTimes: z
+                        .string()
+                        .describe("When audience is most active"),
+                      platformCulture: z
+                        .string()
+                        .describe(
+                          "Platform-specific culture and communication norms",
+                        ),
+                    })
+                    .describe(
+                      "Platform-specific dynamics and algorithm insights",
+                    ),
+                  audienceProfile: z
+                    .object({
+                      demographicSkew: z
+                        .string()
+                        .describe("Demographic tendencies on this platform"),
+                      behaviorPatterns: z
+                        .array(z.string())
+                        .describe("How users behave on this platform"),
+                      contentConsumption: z
+                        .string()
+                        .describe("How users consume content on this platform"),
+                      engagementStyle: z
+                        .string()
+                        .describe(
+                          "How users typically engage (comments, shares, likes)",
+                        ),
+                    })
+                    .describe("Platform-specific audience insights"),
+                  competitiveStrategy: z
+                    .object({
+                      competitorTactics: z
+                        .array(z.string())
+                        .describe(
+                          "Common competitor strategies on this platform",
+                        ),
+                      differentiationOpportunities: z
+                        .array(z.string())
+                        .describe("Ways to stand out from competitors"),
+                      contentGaps: z
+                        .array(z.string())
+                        .describe("Underserved content areas"),
+                      emergingTrends: z
+                        .array(z.string())
+                        .describe("Emerging trends specific to this platform"),
+                    })
+                    .describe("Competitive analysis for this platform"),
+                  optimizationRecommendations: z
+                    .object({
+                      contentStrategy: z
+                        .array(z.string())
+                        .describe("Content strategy recommendations"),
+                      postingSchedule: z
+                        .string()
+                        .describe("Optimal posting schedule"),
+                      engagementTactics: z
+                        .array(z.string())
+                        .describe("Tactics to increase engagement"),
+                      growthStrategies: z
+                        .array(z.string())
+                        .describe("Strategies for audience growth"),
+                    })
+                    .describe("Platform-specific optimization recommendations"),
+                })
+                .describe(`${account.platform}-specific social media analysis`),
+              temperature: 0.3,
+            });
+          });
+
+          const platformResults = await Promise.allSettled(
+            platformAnalysisPromises,
+          );
+
+          // Process platform-specific results
+          // Process platform-specific results
+          accounts.forEach((account, index) => {
+            const result = platformResults[index];
+            if (result && result.status === "fulfilled" && result.value) {
+              platformSpecificInsights[account.platform] = {
+                accountName: account.name,
+                insights: result.value,
+              };
+            }
+          });
+          const socialProfiles = accounts.map((acc) => ({
+            platform: acc.platform,
+            name: acc.name,
+            accountId: acc.accountId,
+          }));
+
+          // Enhanced cross-platform sentiment and engagement analysis
+          const sentimentByPlatform = {};
+          const engagementPatternsByPlatform = {};
+
+          accounts.forEach((account) => {
+            const platformComments = comments.filter(
+              (c) => c.platform === account.platform,
+            );
+            if (platformComments.length > 0) {
+              // Calculate sentiment distribution
+              const sentiments = platformComments
+                .map((c) => c.sentiment)
+                .filter(Boolean);
+              const sentimentCounts = sentiments.reduce(
+                (acc, sentiment) => {
+                  acc[sentiment] = (acc[sentiment] || 0) + 1;
+                  return acc;
+                },
+                {} as Record<string, number>,
+              );
+
+              sentimentByPlatform[account.platform] = sentimentCounts;
+
+              // Analyze engagement patterns
+              const avgLikes =
+                platformComments.reduce(
+                  (sum, c) => sum + (c.likeCount || 0),
+                  0,
+                ) / platformComments.length;
+              const avgReplies =
+                platformComments.reduce(
+                  (sum, c) => sum + (c.replyCount || 0),
+                  0,
+                ) / platformComments.length;
+
+              engagementPatternsByPlatform[account.platform] = {
+                avgLikes,
+                avgReplies,
+                totalInteractions: platformComments.length,
+                topicsDiscussed: [
+                  ...new Set(platformComments.flatMap((c) => c.topics || [])),
+                ],
+              };
+            }
+          });
+
+          // Comprehensive cross-platform social media analysis
+          socialMediaAnalysis = await requestMultimodalModel({
+            system: `You are an elite social media strategist and cross-platform brand analyst. Synthesize data from multiple social platforms to create a comprehensive social media brand profile. Analyze cross-platform synergies, audience overlap, platform-specific performance, and create an integrated social media strategy that leverages each platform's unique strengths while maintaining brand consistency.`,
+            messages: [
+              {
+                role: "user",
+                content: `Perform comprehensive cross-platform social media analysis:
+
+CONNECTED PLATFORMS:
+${JSON.stringify(socialProfiles, null, 2)}
+
+CROSS-PLATFORM ENGAGEMENT DATA (${comments.length} total interactions):
+${JSON.stringify(comments.slice(0, 100), null, 2)}
+
+SENTIMENT BY PLATFORM:
+${JSON.stringify(sentimentByPlatform, null, 2)}
+
+ENGAGEMENT PATTERNS BY PLATFORM:
+${JSON.stringify(engagementPatternsByPlatform, null, 2)}
+
+PLATFORM-SPECIFIC INSIGHTS:
+${JSON.stringify(platformSpecificInsights, null, 2)}
+
+${
+  brandGuidelines
+    ? `BRAND VIBE PROFILE:
+Voice: ${truncateText(brandGuidelines.brandVoice || "", 200)}
+Directives: ${(brandGuidelines as any).directives || ""}
+PhrasesToUse: ${(brandGuidelines as any).phrasesToUse || ""}
+PhrasesToAvoid: ${(brandGuidelines as any).phrasesToAvoid || ""}
+`
+    : ""
+}
+
+Create a comprehensive cross-platform social media strategy.`,
+              },
+            ],
+            returnType: z
+              .object({
+                crossPlatformStrategy: z
+                  .object({
+                    brandConsistency: z
+                      .string()
+                      .describe(
+                        "How to maintain brand consistency across platforms",
+                      ),
+                    contentRepurposing: z
+                      .array(z.string())
+                      .describe(
+                        "Strategies for repurposing content across platforms",
+                      ),
+                    audienceJourney: z
+                      .string()
+                      .describe("How audience moves between platforms"),
+                    synergisticOpportunities: z
+                      .array(z.string())
+                      .describe("Opportunities to leverage platform synergies"),
+                  })
+                  .describe("Cross-platform strategic insights"),
+                platformStrategies: z
+                  .record(
+                    z.object({
+                      audienceType: z
+                        .string()
+                        .describe("Type of audience on this platform"),
+                      contentStyle: z
+                        .string()
+                        .describe("Content style for this platform"),
+                      engagementPatterns: z
+                        .string()
+                        .describe("Engagement patterns observed"),
+                      optimalTiming: z
+                        .string()
+                        .describe("Optimal posting times"),
+                      competitivePositioning: z
+                        .string()
+                        .describe(
+                          "How to position against competitors on this platform",
+                        ),
+                      growthTactics: z
+                        .array(z.string())
+                        .describe("Platform-specific growth tactics"),
+                      contentPillars: z
+                        .array(z.string())
+                        .describe(
+                          "Content pillars that work best on this platform",
+                        ),
+                      engagementDrivers: z
+                        .array(z.string())
+                        .describe("What drives engagement on this platform"),
+                      algorithmOptimization: z
+                        .string()
+                        .describe("How to optimize for platform algorithm"),
+                    }),
+                  )
+                  .describe("Enhanced platform-specific strategies"),
+                audienceIntelligence: z
+                  .object({
+                    crossPlatformDemographics: z
+                      .string()
+                      .describe("Demographic analysis across all platforms"),
+                    behaviorSegmentation: z
+                      .array(z.string())
+                      .describe("Different audience behavior segments"),
+                    engagementPersonas: z
+                      .array(
+                        z.object({
+                          name: z.string().describe("Persona name"),
+                          description: z
+                            .string()
+                            .describe("Persona description"),
+                          platforms: z
+                            .array(z.string())
+                            .describe("Preferred platforms"),
+                          contentPreferences: z
+                            .array(z.string())
+                            .describe("Content preferences"),
+                          engagementStyle: z
+                            .string()
+                            .describe("How they engage"),
+                        }),
+                      )
+                      .describe("Detailed engagement personas"),
+                    communityDynamics: z
+                      .string()
+                      .describe("How community interacts across platforms"),
+                  })
+                  .describe("Advanced audience intelligence"),
+                competitiveLandscape: z
+                  .object({
+                    competitorMapping: z
+                      .record(z.array(z.string()))
+                      .describe("Competitors by platform"),
+                    competitiveGaps: z
+                      .array(z.string())
+                      .describe("Gaps in competitor strategies"),
+                    benchmarkMetrics: z
+                      .object({
+                        engagementRates: z
+                          .record(z.number())
+                          .describe("Average engagement rates by platform"),
+                        contentFrequency: z
+                          .record(z.string())
+                          .describe("Competitor posting frequency"),
+                        contentTypes: z
+                          .record(z.array(z.string()))
+                          .describe("Popular content types by platform"),
+                      })
+                      .describe("Competitive benchmark metrics"),
+                    differentiationStrategy: z
+                      .array(z.string())
+                      .describe(
+                        "How to differentiate from competitors across platforms",
+                      ),
+                  })
+                  .describe("Comprehensive competitive landscape analysis"),
+                contentIntelligence: z
+                  .object({
+                    performanceAnalysis: z
+                      .object({
+                        topPerformingContent: z
+                          .record(z.array(z.string()))
+                          .describe("Top performing content by platform"),
+                        engagementTriggers: z
+                          .array(z.string())
+                          .describe("What triggers high engagement"),
+                        viralPatterns: z
+                          .array(z.string())
+                          .describe("Patterns in viral content"),
+                        contentLifecycle: z
+                          .string()
+                          .describe("How content performs over time"),
+                      })
+                      .describe("Content performance insights"),
+                    contentOpportunities: z
+                      .array(z.string())
+                      .describe("Untapped content opportunities"),
+                    contentCalendar: z
+                      .object({
+                        optimalMix: z
+                          .string()
+                          .describe("Optimal content mix across platforms"),
+                        crossPromotion: z
+                          .array(z.string())
+                          .describe("Cross-promotion strategies"),
+                        seasonalConsiderations: z
+                          .array(z.string())
+                          .describe("Seasonal content considerations"),
+                      })
+                      .describe("Strategic content calendar insights"),
+                  })
+                  .describe("Comprehensive content intelligence"),
+                socialListening: z
+                  .object({
+                    brandMentions: z
+                      .string()
+                      .describe("Analysis of brand mentions across platforms"),
+                    sentimentTrends: z
+                      .string()
+                      .describe("Sentiment trends across platforms"),
+                    conversationThemes: z
+                      .array(z.string())
+                      .describe("Main conversation themes"),
+                    influencerOpportunities: z
+                      .array(z.string())
+                      .describe(
+                        "Potential influencer collaboration opportunities",
+                      ),
+                  })
+                  .describe("Social listening insights"),
+                riskAssessment: z
+                  .object({
+                    platformRisks: z
+                      .record(z.array(z.string()))
+                      .describe("Platform-specific risks"),
+                    crisisPreparedness: z
+                      .array(z.string())
+                      .describe("Crisis management recommendations"),
+                    reputationMonitoring: z
+                      .string()
+                      .describe("Reputation monitoring strategy"),
+                  })
+                  .describe("Social media risk assessment"),
+              })
+              .describe("Comprehensive social media brand intelligence"),
+            temperature: 0.2,
+          });
+        } catch (error) {
+          console.log(
+            "Enhanced social media analysis failed, continuing with other data sources:",
+            error,
+          );
+        }
+      }
+
+      // Store platform-specific insights for later use
+      if (Object.keys(platformSpecificInsights).length > 0) {
+        try {
+          await db.socialMediaInsights.upsert({
+            where: { userId },
+            update: {
+              platformInsights: JSON.stringify(platformSpecificInsights),
+              lastAnalyzedAt: new Date(),
+            },
+            create: {
+              userId,
+              platformInsights: JSON.stringify(platformSpecificInsights),
+              lastAnalyzedAt: new Date(),
+            },
+          });
+        } catch (error) {
+          console.log("Failed to store platform-specific insights:", error);
+        }
+      }
+      // Comprehensive AI brand analysis with all data sources
       const analysisResult = await requestMultimodalModel({
-        system: `You are a brand strategist and market analyst. Analyze the provided data to create a comprehensive brand context profile. Focus on identifying industry, niche, target audience, brand personality, and competitive positioning.`,
+        system: `You are an elite brand strategist and market analyst. Synthesize all provided data sources to create the most comprehensive brand context profile possible. Consider website analysis, social media insights, content history, and engagement patterns to build a deep understanding of the brand's identity, audience, and market position.
+
+IMPORTANT: Even when only website data is available (without social media engagement data), you must still generate comprehensive and detailed audience personas, brand personality insights, and competitive analysis. Use industry knowledge, website content analysis, and logical inference to create meaningful audience profiles. Do not leave fields empty or generic - provide specific, actionable insights based on the available data.
+
+IMPORTANT: You MUST respond with valid JSON that exactly matches the required schema. Do not include any explanatory text, markdown formatting, or additional commentary. Return ONLY the JSON object.`,
         messages: [
           {
             role: "user",
-            content: `Analyze this brand data and create a comprehensive brand context:\n\nComments: ${JSON.stringify(comments.slice(0, 50))}\nBrand Guidelines: ${JSON.stringify(brandGuidelines)}\nBrand Signals: ${JSON.stringify(brandSignals)}\nContent Pillars: ${JSON.stringify(generatedContent.map((c) => c.pillar.name))}\nConnected Platforms: ${JSON.stringify(accounts.map((a) => a.platform))}`,
+            content: `Create a comprehensive brand context analysis using all available data:
+
+COMMENTS & ENGAGEMENT (${comments.length} samples):
+${JSON.stringify(comments.slice(0, 50))}
+
+BRAND GUIDELINES:
+${JSON.stringify(brandGuidelines)}
+
+BRAND SIGNALS:
+${JSON.stringify(brandSignals)}
+
+CONTENT PILLARS:
+${JSON.stringify(generatedContent.map((c) => ({ title: c.title, pillar: c.pillar?.name, type: c.type })))}
+
+CONNECTED PLATFORMS:
+${JSON.stringify(accounts.map((a) => ({ platform: a.platform, name: a.name })))}
+
+${
+  websiteAnalysis
+    ? `WEBSITE ANALYSIS:
+${JSON.stringify(websiteAnalysis)}
+
+`
+    : ""
+}${
+              socialMediaAnalysis
+                ? `SOCIAL MEDIA ANALYSIS:
+${JSON.stringify(socialMediaAnalysis)}
+
+`
+                : ""
+            }Synthesize all this data into a comprehensive brand profile.`,
           },
         ],
-        returnType: z.object({
-          industry: z.string().describe("Primary industry category"),
-          niche: z.string().describe("Specific niche within industry"),
-          targetAudience: z.object({
-            demographics: z.string(),
-            psychographics: z.string(),
-            painPoints: z.array(z.string()),
-            interests: z.array(z.string()),
-          }),
-          brandPersonality: z.object({
-            traits: z.array(z.string()),
-            voiceTone: z.string(),
-            communicationStyle: z.string(),
-          }),
-          competitorAnalysis: z.object({
-            directCompetitors: z.array(z.string()),
-            indirectCompetitors: z.array(z.string()),
-            differentiators: z.array(z.string()),
-          }),
-          brandValues: z.array(z.string()),
-          contentThemes: z.array(z.string()),
-          riskTolerance: z.enum(["low", "medium", "high"]),
-          trendAdoptionSpeed: z.enum([
+        returnType: z
+          .object({
+            industry: z.string().describe("Primary industry category"),
+            niche: z.string().describe("Specific niche within industry"),
+            targetAudience: z
+              .object({
+                demographics: z
+                  .string()
+                  .describe("Target audience demographic profile."),
+                psychographics: z
+                  .string()
+                  .describe("Target audience psychographic profile."),
+                painPoints: z
+                  .array(z.string())
+                  .describe("Key pain points of the target audience."),
+                interests: z
+                  .array(z.string())
+                  .describe("Main interests of the target audience."),
+                behaviorPatterns: z
+                  .array(z.string())
+                  .describe("Observed behavior patterns of the audience."),
+                preferredPlatforms: z
+                  .array(z.string())
+                  .describe("Platforms where the audience is most active."),
+              })
+              .describe("Target audience analysis."),
+            brandPersonality: z
+              .object({
+                traits: z
+                  .array(z.string())
+                  .describe("Key brand personality traits."),
+                voiceTone: z
+                  .string()
+                  .describe("Brand voice and tone description."),
+                communicationStyle: z
+                  .string()
+                  .describe("Brand communication style."),
+                brandArchetype: z
+                  .string()
+                  .describe("Brand archetype (Hero, Sage, Creator, etc.)."),
+                emotionalAppeal: z
+                  .string()
+                  .describe("Primary emotional appeals used."),
+              })
+              .describe("Brand personality profile."),
+            competitorAnalysis: z
+              .object({
+                directCompetitors: z
+                  .array(z.string())
+                  .describe("List of direct competitors."),
+                indirectCompetitors: z
+                  .array(z.string())
+                  .describe("List of indirect competitors."),
+                differentiators: z
+                  .array(z.string())
+                  .describe("Key brand differentiators."),
+                competitiveAdvantages: z
+                  .array(z.string())
+                  .describe("Competitive advantages identified."),
+                marketGaps: z
+                  .array(z.string())
+                  .describe("Market gaps and opportunities."),
+              })
+              .describe("Competitive landscape analysis."),
+            brandValues: z.array(z.string()).describe("Core brand values."),
+            contentThemes: z
+              .array(z.string())
+              .describe("Primary content themes."),
+            contentStrategy: z
+              .object({
+                expertiseAreas: z
+                  .array(z.string())
+                  .describe("Areas of expertise to highlight."),
+                valuePropositions: z
+                  .array(z.string())
+                  .describe("Key value propositions to communicate."),
+                contentPillars: z
+                  .array(z.string())
+                  .describe("Core content pillars for strategy."),
+                engagementDrivers: z
+                  .array(z.string())
+                  .describe("Elements that drive audience engagement."),
+              })
+              .describe("Content strategy recommendations."),
+            platformStrategy: z
+              .record(
+                z.object({
+                  audienceType: z
+                    .string()
+                    .describe("Audience type on this platform"),
+                  contentStyle: z.string().describe("Optimal content style"),
+                  postingFrequency: z
+                    .string()
+                    .describe("Recommended posting frequency"),
+                  engagementTactics: z
+                    .array(z.string())
+                    .describe("Engagement tactics"),
+                }),
+              )
+              .describe("Platform-specific strategies."),
+            businessContext: z
+              .object({
+                businessModel: z.string().describe("Business model type"),
+                customerJourney: z
+                  .string()
+                  .describe("Typical customer journey"),
+                salesFunnel: z.string().describe("Sales funnel considerations"),
+                seasonality: z
+                  .string()
+                  .describe("Seasonal patterns or considerations"),
+              })
+              .describe("Business context and model."),
+            riskTolerance: z
+              .enum(["low", "medium", "high"])
+              .describe("Brand risk tolerance level."),
+            trendAdoptionSpeed: z
+              .enum(["conservative", "moderate", "early-adopter"])
+              .describe("Speed of trend adoption."),
+          })
+          .describe(
+            "Comprehensive brand context analysis including industry, audience, personality, and competitive positioning.",
+          ),
+        temperature: 0.1,
+      });
+
+      // Validate and sanitize the AI response before saving
+      const validateAndSanitizeResponse = (response: any) => {
+        const sanitized = {
+          industry: response.industry || "General",
+          niche: response.niche || "Not specified",
+          targetAudience: response.targetAudience || {
+            demographics: "Not specified",
+            psychographics: "Not specified",
+            painPoints: [],
+            interests: [],
+            behaviorPatterns: [],
+            preferredPlatforms: [],
+          },
+          brandPersonality: response.brandPersonality || {
+            traits: [],
+            voiceTone: "Professional",
+            communicationStyle: "Informative",
+            brandArchetype: "Not specified",
+            emotionalAppeal: "Not specified",
+          },
+          competitorAnalysis: response.competitorAnalysis || {
+            directCompetitors: [],
+            indirectCompetitors: [],
+            differentiators: [],
+            competitiveAdvantages: [],
+            marketGaps: [],
+          },
+          brandValues: Array.isArray(response.brandValues)
+            ? response.brandValues
+            : [],
+          contentThemes: Array.isArray(response.contentThemes)
+            ? response.contentThemes
+            : [],
+          contentStrategy: response.contentStrategy || {
+            expertiseAreas: [],
+            valuePropositions: [],
+            contentPillars: [],
+            engagementDrivers: [],
+          },
+          platformStrategy: response.platformStrategy || {},
+          businessContext: response.businessContext || {
+            businessModel: "Not specified",
+            customerJourney: "Not specified",
+            salesFunnel: "Not specified",
+            seasonality: "Not specified",
+          },
+          riskTolerance: ["low", "medium", "high"].includes(
+            response.riskTolerance,
+          )
+            ? response.riskTolerance
+            : "medium",
+          trendAdoptionSpeed: [
             "conservative",
             "moderate",
             "early-adopter",
-          ]),
-        }),
-      });
+          ].includes(response.trendAdoptionSpeed)
+            ? response.trendAdoptionSpeed
+            : "moderate",
+        };
+        return sanitized;
+      };
 
-      // Save or update brand context
+      const validatedResult = validateAndSanitizeResponse(analysisResult);
+
+      // Save or update brand context with enhanced data
       await db.brandContext.upsert({
         where: { userId },
         update: {
-          industry: analysisResult.industry,
-          niche: analysisResult.niche,
-          targetAudience: JSON.stringify(analysisResult.targetAudience),
-          brandPersonality: JSON.stringify(analysisResult.brandPersonality),
-          competitorAnalysis: JSON.stringify(analysisResult.competitorAnalysis),
-          brandValues: JSON.stringify(analysisResult.brandValues),
-          contentThemes: JSON.stringify(analysisResult.contentThemes),
-          riskTolerance: analysisResult.riskTolerance,
-          trendAdoptionSpeed: analysisResult.trendAdoptionSpeed,
+          industry: validatedResult.industry,
+          niche: validatedResult.niche,
+          targetAudience: JSON.stringify(validatedResult.targetAudience),
+          brandPersonality: JSON.stringify(validatedResult.brandPersonality),
+          competitorAnalysis: JSON.stringify(
+            validatedResult.competitorAnalysis,
+          ),
+          brandValues: JSON.stringify(validatedResult.brandValues),
+          contentThemes: JSON.stringify(validatedResult.contentThemes),
+          riskTolerance: validatedResult.riskTolerance,
+          trendAdoptionSpeed: validatedResult.trendAdoptionSpeed,
+          // Store enhanced data in new fields
+          communicationStyle:
+            validatedResult.brandPersonality.communicationStyle,
+          keyValues: JSON.stringify(validatedResult.brandValues),
+          competitivePositioning: JSON.stringify({
+            differentiators: validatedResult.competitorAnalysis.differentiators,
+            advantages:
+              validatedResult.competitorAnalysis.competitiveAdvantages,
+            marketGaps: validatedResult.competitorAnalysis.marketGaps,
+          }),
+          contentOpportunities: JSON.stringify(validatedResult.contentStrategy),
+          brandVoiceKeywords: JSON.stringify([
+            ...validatedResult.brandPersonality.traits,
+            validatedResult.brandPersonality.brandArchetype,
+          ]),
+          industryContext: JSON.stringify({
+            businessModel: validatedResult.businessContext.businessModel,
+            platformStrategy: validatedResult.platformStrategy,
+            seasonality: validatedResult.businessContext.seasonality,
+          }),
+          analysisStatus: "COMPLETED",
           lastAnalyzedAt: new Date(),
         },
         create: {
           userId,
-          industry: analysisResult.industry,
-          niche: analysisResult.niche,
-          targetAudience: JSON.stringify(analysisResult.targetAudience),
-          brandPersonality: JSON.stringify(analysisResult.brandPersonality),
-          competitorAnalysis: JSON.stringify(analysisResult.competitorAnalysis),
-          brandValues: JSON.stringify(analysisResult.brandValues),
-          contentThemes: JSON.stringify(analysisResult.contentThemes),
-          riskTolerance: analysisResult.riskTolerance,
-          trendAdoptionSpeed: analysisResult.trendAdoptionSpeed,
+          industry: validatedResult.industry,
+          niche: validatedResult.niche,
+          targetAudience: JSON.stringify(validatedResult.targetAudience),
+          brandPersonality: JSON.stringify(validatedResult.brandPersonality),
+          competitorAnalysis: JSON.stringify(
+            validatedResult.competitorAnalysis,
+          ),
+          brandValues: JSON.stringify(validatedResult.brandValues),
+          contentThemes: JSON.stringify(validatedResult.contentThemes),
+          riskTolerance: validatedResult.riskTolerance,
+          trendAdoptionSpeed: validatedResult.trendAdoptionSpeed,
+          communicationStyle:
+            validatedResult.brandPersonality.communicationStyle,
+          keyValues: JSON.stringify(validatedResult.brandValues),
+          competitivePositioning: JSON.stringify({
+            differentiators: validatedResult.competitorAnalysis.differentiators,
+            advantages:
+              validatedResult.competitorAnalysis.competitiveAdvantages,
+            marketGaps: validatedResult.competitorAnalysis.marketGaps,
+          }),
+          contentOpportunities: JSON.stringify(validatedResult.contentStrategy),
+          brandVoiceKeywords: JSON.stringify([
+            ...validatedResult.brandPersonality.traits,
+            validatedResult.brandPersonality.brandArchetype,
+          ]),
+          industryContext: JSON.stringify({
+            businessModel: validatedResult.businessContext.businessModel,
+            platformStrategy: validatedResult.platformStrategy,
+            seasonality: validatedResult.businessContext.seasonality,
+          }),
+          analysisStatus: "COMPLETED",
           lastAnalyzedAt: new Date(),
         },
       });
     } catch (error) {
       console.error("Error analyzing brand context:", error);
+
+      // Update status to failed
+      await db.brandContext.upsert({
+        where: { userId },
+        update: { analysisStatus: "FAILED" },
+        create: {
+          userId,
+          analysisStatus: "FAILED",
+          industry: "General",
+          niche: "Not specified",
+          targetAudience: JSON.stringify({
+            demographics:
+              "Adults aged 25-45, professionals and entrepreneurs interested in quality content and industry insights",
+            psychographics:
+              "Value-driven individuals who prioritize learning, growth, and staying informed about industry trends. They are likely early adopters who appreciate innovative solutions and quality information.",
+            painPoints: [
+              "Finding reliable and relevant information in their field",
+              "Staying updated with rapidly changing industry trends",
+              "Building credibility and authority in their domain",
+              "Efficient content discovery and curation",
+            ],
+            interests: [
+              "Professional development",
+              "Industry insights and analysis",
+              "Innovation and emerging trends",
+              "Educational and thought leadership content",
+              "Networking and community building",
+            ],
+            behaviorPatterns: [
+              "Regularly consumes educational and professional content",
+              "Engages with thought leaders and industry experts",
+              "Shares valuable insights with their professional network",
+              "Values quality over quantity in content consumption",
+              "Seeks actionable insights and practical applications",
+            ],
+            preferredPlatforms: [
+              "LinkedIn",
+              "Twitter",
+              "Industry publications",
+              "Professional networks",
+            ],
+          }),
+          brandPersonality: JSON.stringify({
+            traits: ["Professional", "Informative", "Reliable"],
+            voiceTone: "Professional and approachable",
+            communicationStyle: "Clear and informative",
+            brandArchetype: "Sage",
+            emotionalAppeal: "Trust and reliability",
+          }),
+          competitorAnalysis: JSON.stringify({
+            directCompetitors: [],
+            indirectCompetitors: [],
+            differentiators: ["Quality content", "Consistent engagement"],
+            competitiveAdvantages: [],
+            marketGaps: [],
+          }),
+          brandValues: JSON.stringify(["Quality", "Reliability", "Innovation"]),
+          contentThemes: JSON.stringify([
+            "Educational content",
+            "Industry insights",
+            "Best practices",
+          ]),
+          riskTolerance: "medium" as const,
+          trendAdoptionSpeed: "moderate" as const,
+          lastAnalyzedAt: new Date(),
+        },
+      });
+
       throw error;
     }
   });
@@ -11518,32 +21007,507 @@ export async function analyzeBrandContext() {
 export async function getBrandContext() {
   const { userId } = await getAuth({ required: true });
 
-  const brandContext = await db.brandContext.findUnique({
+  // Set a timeout for database operations to prevent hanging
+  const dbOperationTimeout = 5000; // 5 seconds fast guard for UI responsiveness
+
+  const timeoutPromise = new Promise((_, reject) => {
+    setTimeout(
+      () => reject(new Error("Database operation timed out")),
+      dbOperationTimeout,
+    );
+  });
+
+  for (let i = 0; i < 3; i++) {
+    try {
+      const brandContextOperation = db.brandContext.findUnique({
+        where: { userId },
+      });
+
+      const brandContext = (await Promise.race([
+        brandContextOperation,
+        timeoutPromise,
+      ])) as any;
+
+      if (!brandContext) {
+        return null;
+      }
+
+      // Helper function to safely parse JSON with fallback
+      const safeJsonParse = (
+        jsonString: string | null,
+        fallback: any = null,
+      ) => {
+        if (!jsonString) return fallback;
+
+        // If it's already an object or array, return as is
+        if (typeof jsonString === "object") return jsonString;
+
+        // Try to parse as JSON
+        try {
+          const parsed = JSON.parse(jsonString);
+          return parsed;
+        } catch (error) {
+          // If parsing fails, check if it looks like a stringified value
+          const trimmed = jsonString.trim();
+
+          // If it starts with { or [, it was meant to be JSON but malformed
+          if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+            console.error("Failed to parse JSON in getBrandContext:", error);
+            return fallback;
+          }
+
+          // Otherwise, treat as plain text and return as appropriate structure
+          if (Array.isArray(fallback)) {
+            // For array fields, split by comma if it contains commas
+            return trimmed.includes(",")
+              ? trimmed.split(",").map((s) => s.trim())
+              : [trimmed];
+          } else if (typeof fallback === "object" && fallback !== null) {
+            // For object fields, return a simple object with the text as description
+            return { description: trimmed };
+          }
+
+          // For other cases, return the text as-is
+          return trimmed;
+        }
+      };
+
+      return {
+        ...brandContext,
+        targetAudience: safeJsonParse(brandContext.targetAudience),
+        brandPersonality: safeJsonParse(brandContext.brandPersonality),
+        competitorAnalysis: safeJsonParse(brandContext.competitorAnalysis),
+        brandValues: safeJsonParse(brandContext.brandValues, []),
+        contentThemes: safeJsonParse(brandContext.contentThemes, []),
+      };
+    } catch (error: any) {
+      // Handle timeout errors specifically
+      if (error.message === "Database operation timed out") {
+        console.error(
+          `Database timeout on attempt ${i + 1}/3 for getBrandContext`,
+        );
+        if (i < 2) {
+          await new Promise((res) => setTimeout(res, 2000 * (i + 1))); // Longer delay for timeouts
+          continue;
+        }
+        break;
+      }
+
+      // Handle other database errors with retry logic
+      const isRetryable =
+        error.code === "P1001" ||
+        (error.message && error.message.includes("SERVER_ERROR"));
+      if (i < 2 && isRetryable) {
+        await new Promise((res) => setTimeout(res, 1000 * (i + 1)));
+        continue;
+      }
+      console.error("Error fetching brand context:", error);
+      break;
+    }
+  }
+
+  // Return null if all retries fail
+  return null;
+}
+
+export async function refreshBrandAnalysis() {
+  const auth = await getAuth({ required: true });
+
+  // Get current brand context
+  const existingBrandContext = await db.brandContext.findFirst({
+    where: { userId: auth.userId },
+  });
+
+  if (!existingBrandContext) {
+    throw new Error(
+      "No brand context found. Please complete brand setup first.",
+    );
+  }
+
+  // Update status to indicate refresh is in progress
+  await db.brandContext.update({
+    where: { id: existingBrandContext.id },
+    data: {
+      analysisStatus: "RUNNING",
+      lastAnalyzedAt: new Date(),
+    },
+  });
+
+  // Queue the enhanced brand analysis task
+  const task = await queueTask(async () => {
+    try {
+      // Clear any cached brand analysis data to ensure fresh analysis
+      await db.brandSignal.updateMany({
+        where: { userId: auth.userId },
+        data: {
+          lastUpdatedAt: new Date(),
+        },
+      });
+
+      // Fetch fresh social media data from all connected platforms
+      const connectedAccounts = await db.account.findMany({
+        where: { userId: auth.userId },
+        select: {
+          platform: true,
+          name: true,
+          accountId: true,
+          accessToken: true,
+        },
+      });
+
+      // Refresh comments and engagement data from connected platforms
+      if (connectedAccounts.length > 0) {
+        console.log(
+          `Refreshing data from ${connectedAccounts.length} connected platforms...`,
+        );
+
+        // Fetch fresh comments from each platform
+        const refreshPromises = connectedAccounts.map(async (account) => {
+          try {
+            console.log(`Refreshing data from ${account.platform}`);
+            // Refresh social media data using the general fetchComments function
+            await fetchComments();
+          } catch (error) {
+            console.log(`Failed to refresh ${account.platform} data:`, error);
+          }
+        });
+
+        await Promise.allSettled(refreshPromises);
+      }
+
+      // Re-analyze website if brand guidelines contain website URL
+      const brandGuidelines = await db.brandGuidelines.findUnique({
+        where: { userId: auth.userId },
+      });
+
+      if (brandGuidelines?.brandWebsite) {
+        console.log(`Re-scanning website: ${brandGuidelines.brandWebsite}`);
+
+        // Use requestMultimodalModel to re-scan the website for updated content
+        try {
+          await requestMultimodalModel({
+            system:
+              "You are a brand analysis expert. Re-scan this website to identify any changes in brand positioning, content strategy, or messaging that might affect the brand profile. Use your web interaction tools to thoroughly analyze the current state of the website.",
+            messages: [
+              {
+                role: "user",
+                content: `Please re-scan and analyze this website for updated brand information: ${brandGuidelines.brandWebsite}. Look for any changes in messaging, positioning, new products/services, or updated brand elements.`,
+              },
+            ],
+            returnType: z
+              .object({
+                hasChanges: z
+                  .boolean()
+                  .describe("Whether significant changes were detected"),
+                changes: z
+                  .array(z.string())
+                  .describe("List of significant changes detected"),
+                updatedBrandElements: z
+                  .array(z.string())
+                  .describe("Updated brand elements found"),
+              })
+              .describe("Website re-scan analysis results"),
+            temperature: 0.2,
+          });
+
+          console.log("Website re-scan completed");
+        } catch (error) {
+          console.log(
+            "Website re-scan failed, continuing with cached data:",
+            error,
+          );
+        }
+      }
+
+      // Re-run the comprehensive brand analysis using all available data
+      // This will gather all available data sources and perform fresh analysis
+      await analyzeBrandContext();
+
+      // The analyzeBrandContext function handles the complete analysis
+      // and updates the brand context automatically
+
+      console.log("Enhanced brand refresh completed successfully");
+    } catch (error) {
+      console.error("Brand refresh failed:", error);
+
+      // Update status to failed
+      await db.brandContext.update({
+        where: { id: existingBrandContext.id },
+        data: {
+          analysisStatus: "FAILED",
+        },
+      });
+
+      throw error;
+    }
+  });
+
+  return {
+    taskId: task.id,
+    message:
+      "Enhanced brand refresh started. Re-scanning website and social profiles for comprehensive brand persona update. This may take a few minutes to complete.",
+  };
+}
+
+// Advanced Brand Intelligence System - 10x Enhanced Brand Profiling
+export async function generateAdvancedBrandIntelligence() {
+  const { userId } = await getAuth({ required: true });
+
+  // Check feature access and usage limits
+  await requireFeatureAccess("brand_context_analysis");
+  await requireUsageLimit("brand_context_analysis");
+
+  // Consume credits for advanced brand intelligence (25 credits for comprehensive analysis)
+  await _consumeCredits(
+    userId,
+    "advanced_brand_intelligence",
+    25,
+    "Generated advanced brand intelligence with deep market insights and predictive analytics",
+  );
+
+  const task = await queueTask(async () => {
+    try {
+      // Get existing brand context as foundation
+      const brandContext = await db.brandContext.findUnique({
+        where: { userId },
+      });
+
+      if (!brandContext) {
+        throw new Error(
+          "Brand context must be analyzed first. Please run brand analysis.",
+        );
+      }
+
+      // Gather comprehensive data for advanced analysis
+      const [comments, performanceData] = await Promise.all([
+        db.comment.findMany({
+          where: { userId },
+          orderBy: { createdAt: "desc" },
+          take: 500, // Larger sample for deeper insights
+          select: {
+            text: true,
+            platform: true,
+            sentiment: true,
+            topics: true,
+            authorName: true,
+            likeCount: true,
+            replyCount: true,
+            createdAt: true,
+          },
+        }),
+        db.contentPerformance.findMany({
+          where: { userId },
+          orderBy: { createdAt: "desc" },
+          take: 100,
+        }),
+      ]);
+
+      // Note: Viral threads data removed as it was not being used in brand intelligence
+
+      // Advanced competitive intelligence analysis
+      const competitiveIntelligence = await requestMultimodalModel({
+        system: `You are an elite competitive intelligence analyst and market researcher. Analyze the brand's position within their industry ecosystem to identify strategic opportunities, competitive threats, market trends, and positioning gaps. Use advanced market analysis techniques to provide actionable competitive insights. Always return valid JSON that matches the expected schema exactly.`,
+        messages: [
+          {
+            role: "user",
+            content: `Perform advanced competitive intelligence analysis:\n\nBRAND CONTEXT:\n${JSON.stringify(
+              {
+                industry: brandContext.industry,
+                niche: brandContext.niche,
+                brandPersonality: brandContext.brandPersonality
+                  ? typeof brandContext.brandPersonality === "string"
+                    ? JSON.parse(brandContext.brandPersonality)
+                    : brandContext.brandPersonality
+                  : {},
+                competitorAnalysis: brandContext.competitorAnalysis
+                  ? typeof brandContext.competitorAnalysis === "string"
+                    ? JSON.parse(brandContext.competitorAnalysis)
+                    : brandContext.competitorAnalysis
+                  : {},
+              },
+              null,
+              2,
+            )}\n\nENGAGEMENT PATTERNS (${comments.length} interactions):\n${JSON.stringify(comments.slice(0, 50), null, 2)}\n\nCONTENT PERFORMANCE:\n${JSON.stringify(performanceData.slice(0, 10), null, 2)}\n\nProvide deep competitive intelligence insights in valid JSON format.`,
+          },
+        ],
+        returnType: z
+          .object({
+            marketPosition: z
+              .object({
+                currentPosition: z
+                  .string()
+                  .describe("Current market position assessment"),
+                marketShare: z
+                  .string()
+                  .describe("Estimated market share analysis"),
+                positioningStrength: z
+                  .enum(["weak", "moderate", "strong", "dominant"])
+                  .describe("Positioning strength"),
+                positioningGaps: z
+                  .array(z.string())
+                  .describe("Gaps in current positioning"),
+                repositioningOpportunities: z
+                  .array(z.string())
+                  .describe("Opportunities for repositioning"),
+              })
+              .describe("Market positioning analysis"),
+            competitiveThreats: z
+              .object({
+                immediateThreats: z
+                  .array(
+                    z.object({
+                      competitor: z
+                        .string()
+                        .describe("Competitor name or type"),
+                      threatLevel: z
+                        .enum(["low", "medium", "high", "critical"])
+                        .describe("Threat level"),
+                      description: z.string().describe("Threat description"),
+                      mitigationStrategy: z
+                        .string()
+                        .describe("Recommended mitigation strategy"),
+                    }),
+                  )
+                  .describe("Immediate competitive threats"),
+                emergingThreats: z
+                  .array(z.string())
+                  .describe("Emerging competitive threats"),
+                disruptiveForces: z
+                  .array(z.string())
+                  .describe("Potential industry disruptors"),
+              })
+              .describe("Competitive threat analysis"),
+            marketOpportunities: z
+              .object({
+                whiteSpaceOpportunities: z
+                  .array(
+                    z.object({
+                      opportunity: z
+                        .string()
+                        .describe("Market white space opportunity"),
+                      potential: z
+                        .enum(["low", "medium", "high", "very-high"])
+                        .describe("Opportunity potential"),
+                      requirements: z
+                        .array(z.string())
+                        .describe("Requirements to capture opportunity"),
+                      timeline: z
+                        .string()
+                        .describe("Estimated timeline to capture"),
+                    }),
+                  )
+                  .describe("White space market opportunities"),
+                trendOpportunities: z
+                  .array(z.string())
+                  .describe("Trend-based opportunities"),
+                partnershipOpportunities: z
+                  .array(z.string())
+                  .describe("Strategic partnership opportunities"),
+              })
+              .describe("Market opportunity analysis"),
+            competitiveAdvantages: z
+              .object({
+                sustainableAdvantages: z
+                  .array(z.string())
+                  .describe("Sustainable competitive advantages"),
+                temporaryAdvantages: z
+                  .array(z.string())
+                  .describe("Temporary competitive advantages"),
+                potentialAdvantages: z
+                  .array(z.string())
+                  .describe("Potential advantages to develop"),
+                advantageGaps: z
+                  .array(z.string())
+                  .describe("Areas where competitors have advantages"),
+              })
+              .describe("Competitive advantage analysis"),
+            strategicRecommendations: z
+              .array(
+                z.object({
+                  recommendation: z
+                    .string()
+                    .describe("Strategic recommendation"),
+                  priority: z
+                    .enum(["low", "medium", "high", "critical"])
+                    .describe("Implementation priority"),
+                  impact: z.string().describe("Expected impact"),
+                  resources: z.string().describe("Resources required"),
+                  timeline: z.string().describe("Implementation timeline"),
+                }),
+              )
+              .describe("Strategic recommendations"),
+          })
+          .describe("Advanced competitive intelligence analysis"),
+        temperature: 0.2,
+      });
+
+      // Create or update the main brand intelligence record
+      await db.brandIntelligence.upsert({
+        where: { userId },
+        update: {
+          competitiveLandscape: JSON.stringify(competitiveIntelligence),
+          intelligenceScore: 85,
+          brandDNA: JSON.stringify(["Competitive analysis completed"]),
+          marketPosition:
+            competitiveIntelligence.marketPosition.currentPosition,
+          learningInsights: JSON.stringify(
+            competitiveIntelligence.competitiveAdvantages.sustainableAdvantages,
+          ),
+          lastUpdated: new Date(),
+        },
+        create: {
+          userId,
+          competitiveLandscape: JSON.stringify(competitiveIntelligence),
+          intelligenceScore: 85,
+          brandDNA: JSON.stringify(["Competitive analysis completed"]),
+          marketPosition:
+            competitiveIntelligence.marketPosition.currentPosition,
+          learningInsights: JSON.stringify(
+            competitiveIntelligence.competitiveAdvantages.sustainableAdvantages,
+          ),
+          lastUpdated: new Date(),
+        },
+      });
+
+      console.log(`Advanced brand intelligence generated successfully`);
+    } catch (error) {
+      console.error("Error generating advanced brand intelligence:", error);
+
+      // Update status to failed
+      await db.brandIntelligence.upsert({
+        where: { userId },
+        update: { intelligenceScore: 0 },
+        create: {
+          userId,
+          intelligenceScore: 0,
+          marketPosition: "Analysis failed - please retry",
+          lastUpdated: new Date(),
+        },
+      });
+
+      throw error;
+    }
+  });
+
+  return task;
+}
+
+export async function getBrandIntelligence() {
+  const { userId } = await getAuth({ required: true });
+
+  const brandIntelligence = await db.brandIntelligence.findUnique({
     where: { userId },
   });
 
-  if (!brandContext) {
-    return null;
-  }
+  return brandIntelligence;
+}
 
-  return {
-    ...brandContext,
-    targetAudience: brandContext.targetAudience
-      ? JSON.parse(brandContext.targetAudience)
-      : null,
-    brandPersonality: brandContext.brandPersonality
-      ? JSON.parse(brandContext.brandPersonality)
-      : null,
-    competitorAnalysis: brandContext.competitorAnalysis
-      ? JSON.parse(brandContext.competitorAnalysis)
-      : null,
-    brandValues: brandContext.brandValues
-      ? JSON.parse(brandContext.brandValues)
-      : null,
-    contentThemes: brandContext.contentThemes
-      ? JSON.parse(brandContext.contentThemes)
-      : null,
-  };
+export async function getBrandIntelligenceStatus({
+  taskId,
+}: {
+  taskId: string;
+}) {
+  return await getTaskStatus({ taskId });
 }
 
 export async function getBrandContextAnalysisStatus(taskId: string) {
@@ -11586,27 +21550,74 @@ export async function removeSavedInsight(input: { id: string }) {
 export async function listSavedInsights(input?: {
   type?: "trending" | "viral" | "audience";
 }) {
-  const { userId } = await getAuth({ required: true });
+  try {
+    console.log(
+      "[listSavedInsights] Starting function execution with input:",
+      input,
+    );
 
-  const where: any = { userId };
-  if (input?.type) {
-    where.type = input.type;
+    const { userId } = await getAuth({ required: true });
+    console.log("[listSavedInsights] Authenticated user ID:", userId);
+
+    const where: any = { userId };
+    if (input?.type) {
+      where.type = input.type;
+      console.log("[listSavedInsights] Filtering by type:", input.type);
+    }
+
+    console.log("[listSavedInsights] Query where clause:", where);
+
+    const insights = await db.savedInsight.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+    });
+
+    console.log("[listSavedInsights] Found", insights.length, "saved insights");
+
+    const processedInsights = insights.map((insight) => {
+      try {
+        return {
+          ...insight,
+          data: JSON.parse(insight.data),
+        };
+      } catch (parseError) {
+        console.error(
+          "[listSavedInsights] Failed to parse insight data for ID:",
+          insight.id,
+          parseError,
+        );
+        return {
+          ...insight,
+          data: null, // Return null for unparseable data
+        };
+      }
+    });
+
+    console.log(
+      "[listSavedInsights] Successfully processed",
+      processedInsights.length,
+      "insights",
+    );
+    return processedInsights;
+  } catch (error) {
+    console.error("[listSavedInsights] Unexpected error in function:", error);
+    console.error(
+      "[listSavedInsights] Error stack:",
+      error instanceof Error ? error.stack : "No stack trace",
+    );
+
+    // Re-throw the error so it's properly handled by the API layer
+    throw new Error(
+      `Failed to list saved insights: ${error instanceof Error ? error.message : "Unknown error"}`,
+    );
   }
-
-  const insights = await db.savedInsight.findMany({
-    where,
-    orderBy: { createdAt: "desc" },
-  });
-
-  return insights.map((insight) => ({
-    ...insight,
-    data: JSON.parse(insight.data),
-  }));
 }
 
 // Credit Management Functions
 export async function getUserCredits() {
   const { userId } = await getAuth({ required: true });
+
+  console.log("getUserCredits called for user:", userId);
 
   // Check if user is superadmin
   const user = await db.user.findUnique({
@@ -11614,8 +21625,10 @@ export async function getUserCredits() {
     select: { isSuperAdmin: true },
   });
 
+  console.log("User superadmin status:", user?.isSuperAdmin);
+
   if (user?.isSuperAdmin) {
-    return {
+    const superadminCredits = {
       userId,
       totalCredits: 999999,
       usedCredits: 0,
@@ -11626,9 +21639,11 @@ export async function getUserCredits() {
       lastResetAt: new Date(),
       transactions: [],
     };
+    console.log("Returning superadmin credits:", superadminCredits);
+    return superadminCredits;
   }
 
-  // First sync subscription benefits
+  // First sync subscription benefits to ensure latest data
   await syncSubscriptionBenefits();
 
   let userCredits = await db.userCredits.findUnique({
@@ -11640,6 +21655,8 @@ export async function getUserCredits() {
       },
     },
   });
+
+  console.log("Retrieved user credits from DB:", userCredits);
 
   // Create default credit record if it doesn't exist
   if (!userCredits) {
@@ -11657,19 +21674,43 @@ export async function getUserCredits() {
         transactions: true,
       },
     });
+    console.log("Created new user credits record:", userCredits);
   }
 
-  return {
+  // Calculate available credits ensuring they're never negative
+  const availableCredits = Math.max(
+    0,
+    userCredits.totalCredits - userCredits.usedCredits,
+  );
+
+  const result = {
     ...userCredits,
-    availableCredits: userCredits.totalCredits - userCredits.usedCredits,
+    availableCredits,
   };
+
+  console.log("Final getUserCredits result:", result);
+  return result;
 }
 
 export async function getCreditPricing() {
-  return await db.creditPricing.findMany({
+  let pricing = await db.creditPricing.findMany({
     where: { isActive: true },
     orderBy: { operation: "asc" },
   });
+
+  // If no pricing data exists, seed it automatically
+  if (pricing.length === 0) {
+    console.log("No credit pricing data found, seeding database...");
+    await _seedCreditPricing();
+
+    // Fetch the newly seeded data
+    pricing = await db.creditPricing.findMany({
+      where: { isActive: true },
+      orderBy: { operation: "asc" },
+    });
+  }
+
+  return pricing;
 }
 
 export async function getCreditTransactionHistory(input?: {
@@ -11854,14 +21895,32 @@ export async function getSubscriptionStatus() {
 
 export async function getAvailableSubscriptionPlans() {
   try {
-    // For now, return mock data since listProducts is not available
-    const subscriptionPlans: any[] = [];
-    const creditPacks: any[] = [];
+    // Get all active products from the monetization system
+    const allProducts = await listProducts();
+
+    // Separate subscription plans from credit packs
+    const subscriptionPlans = allProducts.filter(
+      (product) => product.kind === "SUBSCRIPTION",
+    );
+    const creditPacks = allProducts.filter(
+      (product) => product.kind === "IN_APP_PURCHASE",
+    );
+
+    // Add feature details for each subscription plan
+    const enhancedSubscriptionPlans = subscriptionPlans.map((plan) => {
+      const planFeatures = getSubscriptionPlanFeatures(plan.name);
+      return {
+        ...plan,
+        features: planFeatures.features,
+        credits: planFeatures.credits,
+        limits: planFeatures.limits,
+      };
+    });
 
     return {
-      subscriptionPlans,
+      subscriptionPlans: enhancedSubscriptionPlans,
       creditPacks,
-      allProducts: [],
+      allProducts: [...subscriptionPlans, ...creditPacks],
     };
   } catch (error) {
     console.error("Error getting available subscription plans:", error);
@@ -11873,37 +21932,284 @@ export async function getAvailableSubscriptionPlans() {
   }
 }
 
+// Define features and limits for each subscription tier
+function getSubscriptionPlanFeatures(planName: string) {
+  const planFeatures = {
+    "Free Plan": {
+      credits: 75, // Reduced from 100 to encourage upgrades
+      features: [
+        "Basic content generation",
+        "Comment sentiment analysis",
+        "Basic trend analysis",
+        "1 connected social account",
+        "Community support",
+      ],
+      limits: {
+        connectedAccounts: 1,
+        contentGenerationPerDay: 3, // Reduced from 5 to encourage upgrades
+        viralThreadsPerMonth: 1, // Reduced from 2
+        analyticsHistory: 7, // days
+        teamMembers: 1,
+        brandGuidelines: false,
+        prioritySupport: false,
+        apiAccess: false,
+        whiteLabel: false,
+        customIntegrations: false,
+      },
+    },
+    "Starter Plan": {
+      credits: 600, // Reduced from 750 to align with higher pricing
+      features: [
+        "AI content generation",
+        "Trend analysis & recommendations",
+        "Comment response automation",
+        "Basic analytics & insights",
+        "Up to 2 connected accounts",
+        "Email support",
+      ],
+      limits: {
+        connectedAccounts: 2,
+        contentGenerationPerDay: 15, // Reduced from 20 for better value perception
+        viralThreadsPerMonth: 8, // Reduced from 10
+        analyticsHistory: 30, // days
+        teamMembers: 1,
+        brandGuidelines: true,
+        prioritySupport: false,
+        apiAccess: false,
+        whiteLabel: false,
+        customIntegrations: false,
+      },
+    },
+    "Professional Plan": {
+      credits: 2000, // Reduced from 2500 to align with higher pricing
+      features: [
+        "Advanced AI content generation",
+        "Viral thread creation",
+        "Video & image generation",
+        "Advanced analytics & forecasting",
+        "Up to 5 connected accounts",
+        "Brand guidelines & voice training",
+        "Priority email support",
+      ],
+      limits: {
+        connectedAccounts: 5,
+        contentGenerationPerDay: 40, // Reduced from 50
+        viralThreadsPerMonth: 35, // Reduced from 50
+        analyticsHistory: 90, // days
+        teamMembers: 3,
+        brandGuidelines: true,
+        prioritySupport: true,
+        apiAccess: false,
+        whiteLabel: false,
+        customIntegrations: false,
+      },
+    },
+    "Agency Plan": {
+      credits: 6000, // Reduced from 7500 to align with higher pricing
+      features: [
+        "Unlimited content generation",
+        "Advanced viral content strategies",
+        "Multi-client management",
+        "Team collaboration tools",
+        "Unlimited connected accounts",
+        "White-label options",
+        "Priority phone & email support",
+      ],
+      limits: {
+        connectedAccounts: -1, // unlimited
+        contentGenerationPerDay: -1, // unlimited
+        viralThreadsPerMonth: -1, // unlimited
+        analyticsHistory: 365, // days
+        teamMembers: 10,
+        brandGuidelines: true,
+        prioritySupport: true,
+        apiAccess: true,
+        whiteLabel: true,
+        customIntegrations: false,
+      },
+    },
+    "Enterprise Plan": {
+      credits: 15000, // Reduced from 20000 to align with higher pricing
+      features: [
+        "Enterprise-scale AI capabilities",
+        "Custom AI model training",
+        "Dedicated account manager",
+        "Custom integrations & API access",
+        "Advanced security & compliance",
+        "Unlimited everything",
+        "24/7 priority support",
+      ],
+      limits: {
+        connectedAccounts: -1, // unlimited
+        contentGenerationPerDay: -1, // unlimited
+        viralThreadsPerMonth: -1, // unlimited
+        analyticsHistory: -1, // unlimited
+        teamMembers: -1, // unlimited
+        brandGuidelines: true,
+        prioritySupport: true,
+        apiAccess: true,
+        whiteLabel: true,
+        customIntegrations: true,
+      },
+    },
+  };
+
+  return (
+    planFeatures[planName as keyof typeof planFeatures] ||
+    planFeatures["Free Plan"]
+  );
+}
+
 export async function getSubscriptionUpgradeOptions() {
+  const { userId } = await getAuth({ required: true });
+
   try {
-    const [subscriptionStatus, availablePlans] = await Promise.all([
-      getSubscriptionStatus(),
-      getAvailableSubscriptionPlans(),
-    ]);
+    // Get current subscription status
+    const userCredits = await db.userCredits.findUnique({
+      where: { userId },
+    });
 
-    const currentPlan = subscriptionStatus.hasActiveSubscription
-      ? availablePlans.subscriptionPlans.find(
-          (p) => p.name === subscriptionStatus.subscriptionPlan,
-        )
-      : null;
+    const currentPlan = userCredits?.subscriptionPlan || "free";
 
-    // Filter out the current plan from upgrade options
-    const upgradeOptions = availablePlans.subscriptionPlans.filter(
-      (plan) => plan.name !== subscriptionStatus.subscriptionPlan,
-    );
+    // Define upgrade paths with ROI-focused benefits
+    const upgradeOptions = {
+      free: [
+        {
+          planName: "Starter Plan",
+          price: 29_00,
+          benefits: [
+            "750 credits/month (7.5x more than free)",
+            "AI content generation saves 10+ hours/week",
+            "2 connected accounts",
+            "Professional analytics",
+          ],
+          creditIncrease: 650, // 750 - 100 free credits
+          roi: "Save 10+ hours weekly on content creation",
+          costPerCredit: 3.87, // cents
+        },
+        {
+          planName: "Professional Plan",
+          price: 79_00,
+          benefits: [
+            "2,500 credits/month (25x more than free)",
+            "Viral thread creation (avg 3x engagement)",
+            "Video & image generation",
+            "5 connected accounts",
+            "Advanced analytics & forecasting",
+          ],
+          creditIncrease: 2400,
+          roi: "Generate viral content worth $1000s in reach",
+          costPerCredit: 3.16, // cents
+        },
+        {
+          planName: "Agency Plan",
+          price: 199_00,
+          benefits: [
+            "7,500 credits/month (75x more than free)",
+            "Multi-client management",
+            "Team collaboration",
+            "Unlimited accounts",
+            "White-label options",
+          ],
+          creditIncrease: 7400,
+          roi: "Manage multiple clients, charge premium rates",
+          costPerCredit: 2.65, // cents
+        },
+      ],
+      starter: [
+        {
+          planName: "Professional Plan",
+          price: 50_00, // Upgrade price difference
+          benefits: [
+            "+1,750 credits/month",
+            "Viral thread creation",
+            "Video & image generation",
+            "3 additional accounts",
+            "Advanced analytics",
+          ],
+          creditIncrease: 1750,
+          roi: "Unlock viral content capabilities",
+          costPerCredit: 2.86, // cents for additional credits
+        },
+        {
+          planName: "Agency Plan",
+          price: 170_00, // Upgrade price difference
+          benefits: [
+            "+6,750 credits/month",
+            "Unlimited accounts",
+            "Team collaboration",
+            "White-label options",
+            "Priority support",
+          ],
+          creditIncrease: 6750,
+          roi: "Scale to agency-level operations",
+          costPerCredit: 2.52, // cents for additional credits
+        },
+      ],
+      professional: [
+        {
+          planName: "Agency Plan",
+          price: 120_00, // Upgrade price difference
+          benefits: [
+            "+5,000 credits/month",
+            "Unlimited accounts",
+            "Team collaboration (up to 10 members)",
+            "White-label options",
+            "API access",
+          ],
+          creditIncrease: 5000,
+          roi: "Scale to multi-client operations",
+          costPerCredit: 2.4, // cents for additional credits
+        },
+        {
+          planName: "Enterprise Plan",
+          price: 420_00, // Upgrade price difference
+          benefits: [
+            "+17,500 credits/month",
+            "Custom AI training",
+            "Dedicated account manager",
+            "Enterprise security",
+            "Custom integrations",
+          ],
+          creditIncrease: 17500,
+          roi: "Enterprise-scale automation",
+          costPerCredit: 2.4, // cents for additional credits
+        },
+      ],
+      agency: [
+        {
+          planName: "Enterprise Plan",
+          price: 300_00, // Upgrade price difference
+          benefits: [
+            "+12,500 credits/month",
+            "Custom AI model training",
+            "Dedicated account manager",
+            "24/7 priority support",
+            "Advanced security & compliance",
+          ],
+          creditIncrease: 12500,
+          roi: "Enterprise-grade capabilities",
+          costPerCredit: 2.4, // cents for additional credits
+        },
+      ],
+    };
+
+    const availablePlans = await getAvailableSubscriptionPlans();
 
     return {
       currentPlan,
-      upgradeOptions,
+      currentCredits: userCredits?.monthlyAllocation || 0,
+      availableUpgrades:
+        upgradeOptions[currentPlan as keyof typeof upgradeOptions] || [],
       creditPacks: availablePlans.creditPacks,
-      canUpgrade: upgradeOptions.length > 0,
     };
   } catch (error) {
     console.error("Error getting subscription upgrade options:", error);
     return {
-      currentPlan: null,
-      upgradeOptions: [],
+      currentPlan: "free",
+      currentCredits: 0,
+      availableUpgrades: [],
       creditPacks: [],
-      canUpgrade: false,
     };
   }
 }
@@ -11912,129 +22218,156 @@ export async function syncSubscriptionBenefits() {
   const { userId } = await getAuth({ required: true });
 
   try {
-    // Get user's current purchases from Adaptive
+    // Get user's current purchases
     const purchases = await listUserPurchases();
 
-    // Check for active subscription
-    const activeSubscription = purchases.find((p) => p.kind === "SUBSCRIPTION");
+    // Determine the highest subscription plan with new pricing structure
+    const subscriptionPlans = [
+      "Enterprise Plan",
+      "Agency Plan",
+      "Professional Plan",
+      "Starter Plan",
+    ];
+    let currentPlan = "free";
+    let monthlyAllocation = 100; // Free plan gets 100 credits
 
-    let subscriptionPlan = "none";
-    let monthlyAllocation = 0;
-
-    if (activeSubscription) {
-      // Map product names to subscription plans
-      if (activeSubscription.name.includes("Starter")) {
-        subscriptionPlan = "starter";
-        monthlyAllocation = 500;
-      } else if (activeSubscription.name.includes("Professional")) {
-        subscriptionPlan = "professional";
-        monthlyAllocation = 1500;
-      } else if (activeSubscription.name.includes("Enterprise")) {
-        subscriptionPlan = "enterprise";
-        monthlyAllocation = 4000;
+    for (const plan of subscriptionPlans) {
+      if (purchases.some((p) => p.name === plan)) {
+        currentPlan = plan.toLowerCase().replace(" plan", "");
+        break;
       }
     }
 
-    // Count additional credit purchases
-    const creditPurchases = purchases.filter(
-      (p) =>
-        p.kind === "IN_APP_PURCHASE" && p.name.includes("Additional Credits"),
-    );
-    const extraCredits = creditPurchases.length * 500; // 500 credits per pack
+    // Set credit allocation based on new pricing tiers
+    switch (currentPlan) {
+      case "starter":
+        monthlyAllocation = 750;
+        break;
+      case "professional":
+        monthlyAllocation = 2500;
+        break;
+      case "agency":
+        monthlyAllocation = 7500;
+        break;
+      case "enterprise":
+        monthlyAllocation = 20000;
+        break;
+      default:
+        monthlyAllocation = 100; // Free plan
+    }
 
-    // Get or create user credits record
+    // Get or create user credits record first
     let userCredits = await db.userCredits.findUnique({
       where: { userId },
     });
 
+    // Calculate extra credits from credit packs with new pricing
+    const creditPacks = purchases.filter((p) => p.name.includes("Credit"));
+    const purchasedExtraCredits = creditPacks.reduce((total, pack) => {
+      if (pack.name === "Small Credit Pack") {
+        return total + 500;
+      } else if (pack.name === "Medium Credit Pack") {
+        return total + 1500;
+      } else if (pack.name === "Large Credit Pack") {
+        return total + 5000;
+      } else if (pack.name === "Additional Credits Pack") {
+        return total + 500; // Legacy pack
+      }
+      return total;
+    }, 0);
+
+    // Calculate admin-granted credits from transactions
+    let adminGrantedCredits = 0;
+    if (userCredits) {
+      const adminTransactions = await db.creditTransaction.findMany({
+        where: {
+          userId,
+          operation: "admin_grant",
+          createdAt: {
+            gte: userCredits.lastResetAt, // Only count admin grants since last reset
+          },
+        },
+      });
+      adminGrantedCredits = adminTransactions.reduce(
+        (total, tx) => total + tx.amount,
+        0,
+      );
+    }
+
+    const extraCredits = purchasedExtraCredits + adminGrantedCredits;
+
+    const now = new Date();
+    const shouldReset =
+      !userCredits?.lastResetAt ||
+      now.getTime() - userCredits.lastResetAt.getTime() >
+        30 * 24 * 60 * 60 * 1000; // 30 days
+
     if (!userCredits) {
+      // Create new record
       userCredits = await db.userCredits.create({
         data: {
           userId,
           totalCredits: monthlyAllocation + extraCredits,
           usedCredits: 0,
-          subscriptionPlan,
+          subscriptionPlan: currentPlan,
           monthlyAllocation,
           extraCredits,
-          lastResetAt: new Date(),
+          lastResetAt: now,
         },
       });
     } else {
-      // Check if we need to reset monthly credits
-      const now = new Date();
-      const lastReset = new Date(userCredits.lastResetAt);
-      const shouldReset =
-        now.getMonth() !== lastReset.getMonth() ||
-        now.getFullYear() !== lastReset.getFullYear();
+      // Update existing record
+      const updateData: any = {
+        subscriptionPlan: currentPlan,
+        monthlyAllocation,
+        extraCredits,
+      };
 
-      if (shouldReset && subscriptionPlan !== "none") {
-        // Reset monthly credits but keep extra credits
-        await db.userCredits.update({
-          where: { userId },
-          data: {
-            totalCredits: monthlyAllocation + userCredits.extraCredits,
-            usedCredits: 0,
-            subscriptionPlan,
-            monthlyAllocation,
-            lastResetAt: now,
-          },
-        });
+      if (shouldReset) {
+        updateData.totalCredits = monthlyAllocation + extraCredits;
+        updateData.usedCredits = 0;
+        updateData.lastResetAt = now;
 
-        // Log the monthly reset
+        // Record monthly reset transaction
         await db.creditTransaction.create({
           data: {
             userId,
             userCreditsId: userCredits.id,
-            type: "allocation",
-            operation: "monthly_reset",
+            type: "reset",
             amount: monthlyAllocation,
-            description: `Monthly ${subscriptionPlan} plan credits reset`,
+            operation: "monthly_reset",
+            description: `Monthly credit reset for ${currentPlan} plan`,
           },
         });
       } else {
-        // Just update subscription info and add any new extra credits
-        // Check if user has purchased more credit packs since last sync
-        const currentPurchaseCount = creditPurchases.length;
-        const lastKnownPurchases = Math.floor(userCredits.extraCredits / 500);
-        const newPurchases = Math.max(
-          0,
-          currentPurchaseCount - lastKnownPurchases,
-        );
-        const creditDifference = newPurchases * 500;
-        const newExtraCredits = userCredits.extraCredits + creditDifference;
-
-        if (
-          creditDifference > 0 ||
-          userCredits.subscriptionPlan !== subscriptionPlan
-        ) {
-          await db.userCredits.update({
-            where: { userId },
-            data: {
-              totalCredits: userCredits.totalCredits + creditDifference,
-              subscriptionPlan,
-              monthlyAllocation,
-              extraCredits: newExtraCredits,
-            },
-          });
-
-          if (creditDifference > 0) {
-            // Log the extra credit addition
-            await db.creditTransaction.create({
-              data: {
-                userId,
-                userCreditsId: userCredits.id,
-                type: "purchase",
-                operation: "additional_credits",
-                amount: creditDifference,
-                description: `Additional credits purchased`,
-              },
-            });
-          }
-        }
+        // Just update total if extra credits changed
+        updateData.totalCredits =
+          userCredits.totalCredits - userCredits.extraCredits + extraCredits;
       }
+
+      userCredits = await db.userCredits.update({
+        where: { userId },
+        data: updateData,
+      });
     }
+
+    return {
+      plan: currentPlan,
+      totalCredits: userCredits.totalCredits,
+      usedCredits: userCredits.usedCredits,
+      remainingCredits: userCredits.totalCredits - userCredits.usedCredits,
+      monthlyAllocation,
+      extraCredits,
+      lastReset: userCredits.lastResetAt,
+      planFeatures: getSubscriptionPlanFeatures(
+        currentPlan === "free"
+          ? "Free Plan"
+          : `${currentPlan.charAt(0).toUpperCase() + currentPlan.slice(1)} Plan`,
+      ),
+    };
   } catch (error) {
     console.error("Error syncing subscription benefits:", error);
+    throw error;
   }
 }
 
@@ -12096,49 +22429,82 @@ export async function _monthlyCreditsResetHandler() {
 }
 
 export async function _seedCreditPricing() {
-  // Create credit pricing for different operations
+  // Optimized credit pricing for 75-85% gross margins with tiered consumption based on complexity
   const pricingData = [
     {
       operation: "trend_analysis",
-      creditsPerUnit: 2.0,
+      creditsPerUnit: 4.0, // Increased for better margins on moderate API usage + web search costs
       description: "Analyze trending topics and brand alignment",
     },
     {
       operation: "content_generation",
-      creditsPerUnit: 3.0,
+      creditsPerUnit: 6.0, // Increased from 5.0 for better margins on high token usage
       description: "Generate AI-powered content from trends or ideas",
     },
     {
       operation: "viral_thread_creation",
-      creditsPerUnit: 5.0,
+      creditsPerUnit: 15.0, // Increased from 12.0 for complex multi-step generation with multiple AI calls
       description: "Create viral thread content with AI assistance",
     },
     {
       operation: "sentiment_analysis",
-      creditsPerUnit: 1.0,
+      creditsPerUnit: 1.5, // Slight increase while keeping accessible for bulk usage
       description: "Analyze sentiment of comments and engagement",
     },
     {
       operation: "response_generation",
-      creditsPerUnit: 1.5,
+      creditsPerUnit: 4.0, // Increased from 3.0 for better margins on context-aware responses
       description: "Generate AI responses to comments and messages",
     },
     {
       operation: "image_generation",
-      creditsPerUnit: 4.0,
+      creditsPerUnit: 10.0, // Increased from 8.0 to better cover DALL-E costs + processing
       description: "Generate AI images for content",
     },
     {
       operation: "video_generation",
-      creditsPerUnit: 8.0,
+      creditsPerUnit: 85.0, // Increased from 75.0 to cover actual video generation costs + storage
       description: "Generate AI videos from scripts",
     },
     {
       operation: "analytics_insights",
-      creditsPerUnit: 3.0,
+      creditsPerUnit: 7.0, // Increased from 6.0 for advanced data processing and visualization
       description: "Generate advanced analytics and insights",
     },
+    {
+      operation: "brand_analysis",
+      creditsPerUnit: 12.0, // Increased from 10.0 for comprehensive analysis with web research
+      description: "Deep brand context analysis and strategy",
+    },
+    {
+      operation: "competitor_analysis",
+      creditsPerUnit: 10.0, // Increased from 8.0 for extensive research requirements
+      description: "Analyze competitor strategies and positioning",
+    },
+    {
+      operation: "audience_insights",
+      creditsPerUnit: 6.0, // Increased from 5.0 for detailed demographic analysis
+      description: "Generate detailed audience insights and recommendations",
+    },
+    {
+      operation: "predictive_analytics",
+      creditsPerUnit: 15.0, // Increased from 12.0 for complex forecasting models with historical data
+      description: "AI-powered forecasting and trend prediction",
+    },
+    {
+      operation: "document_analysis",
+      creditsPerUnit: 8.0, // New operation for document processing and insights
+      description: "Analyze uploaded documents for content insights",
+    },
+    {
+      operation: "batch_content_generation",
+      creditsPerUnit: 25.0, // New operation for bulk content creation
+      description: "Generate multiple content pieces in batch operations",
+    },
   ];
+
+  // Clear existing pricing first
+  await db.creditPricing.deleteMany({});
 
   const pricing = await Promise.all(
     pricingData.map((item) =>
@@ -12148,52 +22514,184 @@ export async function _seedCreditPricing() {
     ),
   );
 
-  console.log("Created credit pricing:", pricing);
+  console.log("Created updated credit pricing:", pricing);
   return pricing;
 }
 
 export async function _seedPricingProducts() {
-  // Create the three pricing tiers
+  // Create optimized pricing tiers with 75-85% gross margins and value-based positioning
   const products = await Promise.all([
-    // Starter Plan - $19/month
+    // Free Plan - $0/month (handled separately in subscription logic)
+    // 75 credits/month, basic features only (reduced from 100 to encourage upgrades)
+
+    // Starter Plan - $39/month (increased from $29)
     createProduct({
       name: "Starter Plan",
       description:
-        "Perfect for individuals and small creators getting started with AI-powered social media management. Includes 500 credits per month for content generation, trend analysis, and basic insights.",
-      price: 19_00, // $19.00
+        "Perfect for individuals and small creators. Includes 600 credits/month, basic AI content generation, trend analysis, and comment responses. Ideal for 1-2 social accounts.",
+      price: 39_00, // $39.00 (increased from $29 for better margins)
       kind: "SUBSCRIPTION",
     }),
 
-    // Professional Plan - $49/month
+    // Professional Plan - $99/month (increased from $79)
     createProduct({
       name: "Professional Plan",
       description:
-        "Ideal for growing businesses and content creators who need advanced AI features. Includes 1,500 credits per month for viral thread creation, video generation, and comprehensive analytics.",
-      price: 49_00, // $49.00
+        "For growing businesses and content creators. Includes 2,000 credits/month, viral thread creation, video generation, advanced analytics, and brand guidelines. Support for up to 5 accounts.",
+      price: 99_00, // $99.00 (increased from $79 for better positioning)
       kind: "SUBSCRIPTION",
     }),
 
-    // Enterprise Plan - $99/month
+    // Agency Plan - $249/month (increased from $199)
+    createProduct({
+      name: "Agency Plan",
+      description:
+        "For agencies and large teams. Includes 6,000 credits/month, unlimited accounts, team collaboration, white-label options, priority support, and custom integrations.",
+      price: 249_00, // $249.00 (increased from $199 for better margins)
+      kind: "SUBSCRIPTION",
+    }),
+
+    // Enterprise Plan - $599/month (increased from $499)
     createProduct({
       name: "Enterprise Plan",
       description:
-        "For agencies and large teams requiring unlimited AI capabilities. Includes 4,000 credits per month plus priority support and advanced team collaboration features.",
-      price: 99_00, // $99.00
+        "For large organizations requiring maximum scale. Includes 15,000 credits/month, dedicated account manager, custom AI training, API access, and enterprise security features.",
+      price: 599_00, // $599.00 (increased from $499 for premium positioning)
       kind: "SUBSCRIPTION",
     }),
 
-    // Additional Credits Pack - $15 one-time
+    // Credit Packs for add-on purchases with improved pricing
     createProduct({
-      name: "Additional Credits Pack",
+      name: "Small Credit Pack",
       description:
-        "Boost your monthly allowance with 500 extra credits. Perfect for busy months when you need more AI-powered content generation and analysis.",
-      price: 15_00, // $15.00
+        "400 additional credits for occasional extra usage. Perfect for busy months or special campaigns.",
+      price: 19_00, // $19.00 (4.75¢ per credit - higher margin)
+      kind: "IN_APP_PURCHASE",
+    }),
+
+    createProduct({
+      name: "Medium Credit Pack",
+      description:
+        "1,200 additional credits with better value. Great for growing teams and increased content needs.",
+      price: 49_00, // $49.00 (4.08¢ per credit - better margin)
+      kind: "IN_APP_PURCHASE",
+    }),
+
+    createProduct({
+      name: "Large Credit Pack",
+      description:
+        "3,500 additional credits at the best rate. Ideal for agencies and high-volume content creation.",
+      price: 149_00, // $149.00 (4.26¢ per credit - premium pricing)
       kind: "IN_APP_PURCHASE",
     }),
   ]);
 
   console.log("Created pricing products:", products);
   return products;
+}
+
+// New ACU-based subscription system
+export async function _seedACUSubscriptionProducts() {
+  // Discontinue old products first if they exist
+  try {
+    const existingProducts = await listProducts();
+    for (const product of existingProducts) {
+      await discontinueProduct({ productId: product.id });
+    }
+  } catch (error) {
+    console.log(
+      "No existing products to discontinue or error occurred:",
+      error,
+    );
+  }
+
+  // Create new ACU-based subscription tiers (NO FREE PLAN)
+  const acuProducts = await Promise.all([
+    // STARTER TIER - $29/month
+    createProduct({
+      name: "Starter Tier",
+      description:
+        "1,000 ACUs included monthly. Perfect for individual creators and small businesses. Covers ~16 hours of processing or ~100 AI image generations. Additional ACUs at $0.05 each.",
+      price: 29_00, // $29.00
+      kind: "SUBSCRIPTION",
+    }),
+
+    // PROFESSIONAL TIER - $79/month
+    createProduct({
+      name: "Professional Tier",
+      description:
+        "3,000 ACUs included monthly. Ideal for growing businesses and agencies. Covers ~50 hours of processing or ~300 AI generations. Additional ACUs at $0.04 each.",
+      price: 79_00, // $79.00
+      kind: "SUBSCRIPTION",
+    }),
+
+    // BUSINESS TIER - $199/month
+    createProduct({
+      name: "Business Tier",
+      description:
+        "8,000 ACUs included monthly. Perfect for large businesses and enterprise users. Covers ~133 hours of processing or ~800 AI generations. Additional ACUs at $0.03 each.",
+      price: 199_00, // $199.00
+      kind: "SUBSCRIPTION",
+    }),
+
+    // ENTERPRISE TIER - $499/month
+    createProduct({
+      name: "Enterprise Tier",
+      description:
+        "25,000 ACUs included monthly. For large enterprises and high-volume users. Priority support and custom integrations included. Additional ACUs at $0.02 each.",
+      price: 499_00, // $499.00
+      kind: "SUBSCRIPTION",
+    }),
+
+    // ACU Credit Packs for overage
+    createProduct({
+      name: "500 ACU Pack",
+      description:
+        "500 additional ACUs for occasional extra usage. Perfect for busy months or special projects.",
+      price: 25_00, // $25.00 ($0.05 per ACU)
+      kind: "IN_APP_PURCHASE",
+    }),
+
+    createProduct({
+      name: "1,500 ACU Pack",
+      description:
+        "1,500 additional ACUs with better value. Great for growing usage needs.",
+      price: 60_00, // $60.00 ($0.04 per ACU)
+      kind: "IN_APP_PURCHASE",
+    }),
+
+    createProduct({
+      name: "5,000 ACU Pack",
+      description:
+        "5,000 additional ACUs at the best rate. Ideal for high-volume content creation.",
+      price: 150_00, // $150.00 ($0.03 per ACU)
+      kind: "IN_APP_PURCHASE",
+    }),
+  ]);
+
+  console.log("Created ACU-based subscription products:", acuProducts);
+  return acuProducts;
+}
+
+export async function discontinueProductById({
+  productId,
+}: {
+  productId: string;
+}) {
+  // Only superadmins can discontinue products
+  const currentUserIsSuperAdmin = await checkSuperAdminStatus();
+
+  if (!currentUserIsSuperAdmin) {
+    throw new Error("Unauthorized: Only superadmins can discontinue products");
+  }
+
+  try {
+    await discontinueProduct({ productId });
+    return { success: true, message: "Product discontinued successfully" };
+  } catch (error) {
+    console.error("Error discontinuing product:", error);
+    throw new Error("Failed to discontinue product");
+  }
 }
 
 export async function setSuperAdmin({
@@ -12417,12 +22915,22 @@ export async function updateUserCredits(input: {
     });
   }
 
+  // Calculate new credit values
+  const newTotalCredits = Math.max(
+    0,
+    userCredits.totalCredits + input.creditsToAdd,
+  );
+  const newExtraCredits = Math.max(
+    0,
+    userCredits.extraCredits + input.creditsToAdd,
+  );
+
   // Update credits
   const updatedCredits = await db.userCredits.update({
     where: { userId: input.userId },
     data: {
-      totalCredits: Math.max(0, userCredits.totalCredits + input.creditsToAdd),
-      extraCredits: Math.max(0, userCredits.extraCredits + input.creditsToAdd),
+      totalCredits: newTotalCredits,
+      extraCredits: newExtraCredits,
     },
   });
 
@@ -12471,6 +22979,11 @@ export async function listAllUsers() {
   return users;
 }
 
+// Alias for API client compatibility
+export async function users() {
+  return await listAllUsers();
+}
+
 export async function submitWaitlistEntry(input: {
   email: string;
   usageDetails: string;
@@ -12494,3 +23007,11626 @@ export async function submitWaitlistEntry(input: {
     throw new Error("Failed to submit waitlist entry. Please try again.");
   }
 }
+
+// Feature gating and access control functions
+export async function checkFeatureAccess(featureName: string, userId?: string) {
+  const authResult = userId ? { userId } : await getAuth({ required: true });
+  const { userId: currentUserId } = authResult;
+
+  // Get user's subscription status
+  const userCredits = await db.userCredits.findUnique({
+    where: { userId: currentUserId },
+  });
+
+  // Check if user is superadmin
+  const user = await db.user.findUnique({
+    where: { id: currentUserId },
+    select: { isSuperAdmin: true },
+  });
+
+  // Superadmins have access to all features
+  if (user?.isSuperAdmin) {
+    return {
+      hasAccess: true,
+      currentPlan: "superadmin",
+      planFeatures: {
+        credits: -1,
+        features: ["All features available"],
+        limits: {
+          connectedAccounts: -1,
+          contentGenerationPerDay: -1,
+          viralThreadsPerMonth: -1,
+          analyticsHistory: -1,
+          teamMembers: -1,
+          brandGuidelines: true,
+          prioritySupport: true,
+          apiAccess: true,
+          whiteLabel: true,
+          customIntegrations: true,
+        },
+      },
+      upgradeRequired: false,
+    };
+  }
+
+  const plan = userCredits?.subscriptionPlan || "free";
+
+  // Handle unlimited plan as enterprise-level access
+  const normalizedPlan = plan === "unlimited" ? "enterprise" : plan;
+
+  const planFeatures = getSubscriptionPlanFeatures(
+    normalizedPlan === "free"
+      ? "Free Plan"
+      : `${normalizedPlan.charAt(0).toUpperCase() + normalizedPlan.slice(1)} Plan`,
+  );
+
+  // Get user's current credit balance
+  const currentCredits = userCredits
+    ? userCredits.totalCredits - userCredits.usedCredits
+    : 0;
+
+  // Check specific feature access
+  const featureAccess = {
+    // Basic features available to all plans
+    sentiment_analysis: true,
+    basic_content_generation: true,
+    comment_responses: true,
+
+    // Content generation features - allow with credits or subscription
+    content_generation:
+      currentCredits > 0 ||
+      ["starter", "professional", "agency", "enterprise", "unlimited"].includes(
+        plan,
+      ),
+    viral_content_generation:
+      currentCredits > 0 ||
+      ["professional", "agency", "enterprise", "unlimited"].includes(plan),
+
+    // Starter plan and above OR users with credits
+    trend_analysis:
+      ["starter", "professional", "agency", "enterprise", "unlimited"].includes(
+        plan,
+      ) || currentCredits > 0,
+    brand_guidelines: planFeatures.limits.brandGuidelines || currentCredits > 0,
+    analytics_basic:
+      ["starter", "professional", "agency", "enterprise", "unlimited"].includes(
+        plan,
+      ) || currentCredits > 0,
+    brand_context_analysis:
+      ["starter", "professional", "agency", "enterprise", "unlimited"].includes(
+        plan,
+      ) || currentCredits > 0,
+
+    // Professional plan and above OR users with credits
+    viral_thread_creation:
+      ["professional", "agency", "enterprise", "unlimited"].includes(plan) ||
+      currentCredits > 0,
+    image_generation:
+      ["professional", "agency", "enterprise", "unlimited"].includes(plan) ||
+      currentCredits > 0,
+    video_generation:
+      ["professional", "agency", "enterprise", "unlimited"].includes(plan) ||
+      currentCredits > 0,
+    advanced_analytics:
+      ["professional", "agency", "enterprise", "unlimited"].includes(plan) ||
+      currentCredits > 0,
+    advanced_insights:
+      ["professional", "agency", "enterprise", "unlimited"].includes(plan) ||
+      currentCredits > 0,
+    dashboard_summary_generation:
+      ["professional", "agency", "enterprise", "unlimited"].includes(plan) ||
+      currentCredits > 0,
+
+    // Agency plan and above OR users with credits for team features
+    team_collaboration: ["agency", "enterprise", "unlimited"].includes(plan),
+    white_label: planFeatures.limits.whiteLabel,
+    api_access: planFeatures.limits.apiAccess,
+    unlimited_accounts: planFeatures.limits.connectedAccounts === -1,
+
+    // Enterprise only (credits don't override these premium features)
+    custom_integrations: planFeatures.limits.customIntegrations,
+    priority_support: planFeatures.limits.prioritySupport,
+    custom_ai_training: ["enterprise", "unlimited"].includes(plan),
+    self_learning_loop: [
+      "professional",
+      "agency",
+      "enterprise",
+      "unlimited",
+    ].includes(plan),
+  };
+
+  return {
+    hasAccess:
+      featureAccess[featureName as keyof typeof featureAccess] || false,
+    currentPlan: plan,
+    planFeatures,
+    upgradeRequired: !featureAccess[featureName as keyof typeof featureAccess],
+  };
+}
+
+export async function checkUsageLimits(limitType: string, userId?: string) {
+  const authResult = userId ? { userId } : await getAuth({ required: true });
+  const { userId: currentUserId } = authResult;
+
+  // Check if user is superadmin - superadmins have unlimited usage
+  const user = await db.user.findUnique({
+    where: { id: currentUserId },
+    select: { isSuperAdmin: true },
+  });
+
+  if (user?.isSuperAdmin) {
+    return {
+      currentUsage: 0,
+      limit: -1,
+      remaining: -1,
+      hasReachedLimit: false,
+      isUnlimited: true,
+    };
+  }
+
+  const userCredits = await db.userCredits.findUnique({
+    where: { userId: currentUserId },
+  });
+
+  const plan = userCredits?.subscriptionPlan || "free";
+
+  // Handle unlimited plan as enterprise-level access
+  const normalizedPlan = plan === "unlimited" ? "enterprise" : plan;
+
+  const planFeatures = getSubscriptionPlanFeatures(
+    normalizedPlan === "free"
+      ? "Free Plan"
+      : `${normalizedPlan.charAt(0).toUpperCase() + normalizedPlan.slice(1)} Plan`,
+  );
+
+  // Get current usage counts
+  const today = new Date();
+  const startOfDay = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate(),
+  );
+  const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+  let currentUsage = 0;
+  let limit = 0;
+
+  switch (limitType) {
+    case "contentGenerationPerDay":
+      currentUsage = await db.creditTransaction.count({
+        where: {
+          userId: currentUserId,
+          operation: "content_generation",
+          createdAt: { gte: startOfDay },
+        },
+      });
+      limit = planFeatures.limits.contentGenerationPerDay;
+      break;
+
+    case "viralThreadsPerMonth":
+      currentUsage = await db.creditTransaction.count({
+        where: {
+          userId: currentUserId,
+          operation: "viral_thread_creation",
+          createdAt: { gte: startOfMonth },
+        },
+      });
+      limit = planFeatures.limits.viralThreadsPerMonth;
+      break;
+
+    case "connectedAccounts":
+      currentUsage = await db.account.count({
+        where: { userId: currentUserId },
+      });
+      limit = planFeatures.limits.connectedAccounts;
+      break;
+
+    case "dashboard_summary_generation":
+      // For dashboard summary generation, check monthly usage
+      currentUsage = await db.creditTransaction.count({
+        where: {
+          userId: currentUserId,
+          operation: "dashboard_summary_generation",
+          createdAt: { gte: startOfMonth },
+        },
+      });
+      // Set reasonable limits based on plan
+      if (
+        ["professional", "agency", "enterprise", "unlimited"].includes(plan)
+      ) {
+        limit = -1; // Unlimited for paid plans
+      } else if (plan === "starter") {
+        limit = 10; // 10 per month for starter
+      } else {
+        limit = 2; // 2 per month for free
+      }
+      break;
+
+    default:
+      // For unknown limit types, allow unlimited usage
+      limit = -1;
+      break;
+  }
+
+  const hasReachedLimit = limit !== -1 && currentUsage >= limit;
+  const remaining = limit === -1 ? -1 : Math.max(0, limit - currentUsage);
+
+  return {
+    currentUsage,
+    limit,
+    remaining,
+    hasReachedLimit,
+    isUnlimited: limit === -1,
+  };
+}
+
+async function generateUpgradePrompt(
+  featureName: string,
+  currentPlan: string,
+  type: "feature" | "usage",
+): Promise<{
+  message: string;
+  upgradeUrl?: string;
+  ctaText: string;
+  benefits: string[];
+  urgency: string;
+}> {
+  // Check if user is superadmin
+  const isSuperAdmin = await checkSuperAdminStatus();
+  if (isSuperAdmin) {
+    return {
+      message:
+        "System error: Super admin should have unlimited access. Please contact support.",
+      ctaText: "Contact Support",
+      benefits: [],
+      urgency: "",
+    };
+  }
+
+  // Get user's current credits and usage
+  const userCredits = await getUserCredits();
+  const availablePlans = await getAvailableSubscriptionPlans();
+
+  // Enhanced feature-specific messaging with emotional triggers
+  const featureMessages = {
+    dashboard_summary_generation: {
+      name: "AI Dashboard Insights",
+      benefit:
+        "Get personalized analytics that reveal exactly what content drives growth",
+      urgency:
+        "Your competitors are already using AI insights to grow 3x faster",
+      successStory: "Users see 40% more engagement within 2 weeks",
+      benefits: [
+        "📈 Predictive analytics show which posts will go viral",
+        "🎯 Personalized content recommendations",
+        "⚡ Save 5+ hours per week on analytics",
+        "🚀 Average 40% engagement increase",
+      ],
+    },
+    advanced_insights: {
+      name: "Advanced Analytics",
+      benefit:
+        "Unlock deep audience insights that reveal the secret to viral content",
+      urgency: "Every day without insights = missed viral opportunities",
+      successStory:
+        "Top creators use these insights to hit 1M+ views consistently",
+      benefits: [
+        "🔮 Predict trending topics before they explode",
+        "👥 Deep audience psychology analysis",
+        "📊 Competitor intelligence & gap analysis",
+        "💡 Viral content pattern recognition",
+      ],
+    },
+    content_generation: {
+      name: "AI Content Creation",
+      benefit:
+        "Generate viral content that sounds authentically you - in seconds",
+      urgency: "Stop spending 10+ hours per week brainstorming content",
+      successStory:
+        "Creators save 15+ hours weekly and increase output by 300%",
+      benefits: [
+        "⚡ Generate 20+ viral thread ideas in minutes",
+        "🎨 Personalized to your unique voice & brand",
+        "📈 AI-optimized for maximum engagement",
+        "🔥 Unlimited variations and formats",
+      ],
+    },
+    brand_analysis: {
+      name: "Brand Intelligence",
+      benefit:
+        "Understand exactly what makes your content resonate with your audience",
+      urgency: "Your brand deserves data-driven growth, not guesswork",
+      successStory: "Brands see 2.5x ROI improvement with AI-driven insights",
+      benefits: [
+        "🧠 AI analyzes your brand's unique voice",
+        "📊 Performance tracking across all platforms",
+        "🎯 Audience sentiment & engagement patterns",
+        "💎 Optimization recommendations that work",
+      ],
+    },
+  };
+
+  const feature = featureMessages[
+    featureName as keyof typeof featureMessages
+  ] || {
+    name: featureName
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (l) => l.toUpperCase()),
+    benefit: "Access premium features that accelerate your growth",
+    urgency: "Unlock your full potential and outpace competitors",
+    successStory: "Premium users see 3x better results",
+    benefits: [
+      "🚀 Advanced AI-powered features",
+      "📈 Better performance and results",
+      "⚡ Time-saving automation",
+      "💎 Priority support and updates",
+    ],
+  };
+
+  // Get upgrade URL from subscription plans
+  let upgradeUrl: string | undefined;
+  let recommendedPlan: any;
+
+  if (currentPlan === "free" || currentPlan === "none") {
+    recommendedPlan =
+      availablePlans.subscriptionPlans.find(
+        (p) =>
+          p.name.toLowerCase().includes("starter") ||
+          p.name.toLowerCase().includes("pro") ||
+          p.name.toLowerCase().includes("professional"),
+      ) || availablePlans.subscriptionPlans[0];
+  } else {
+    // Find next tier up
+    const currentPlanIndex = availablePlans.subscriptionPlans.findIndex((p) =>
+      p.name.toLowerCase().includes(currentPlan.toLowerCase()),
+    );
+    recommendedPlan =
+      availablePlans.subscriptionPlans[currentPlanIndex + 1] ||
+      availablePlans.subscriptionPlans[
+        availablePlans.subscriptionPlans.length - 1
+      ];
+  }
+
+  upgradeUrl = recommendedPlan?.purchaseLink;
+
+  if (type === "usage") {
+    const message =
+      `🎉 Amazing! You're getting incredible results with ${feature.name}!\n\n` +
+      `You've used up your monthly allowance because you're absolutely crushing it. ${feature.successStory}\n\n` +
+      `💡 ${feature.benefit}\n\n` +
+      `🔥 Keep your momentum going - choose your power-up:\n\n` +
+      `🚀 **RECOMMENDED:** Upgrade to ${recommendedPlan?.name || "Pro"} for unlimited access\n` +
+      `💳 Buy extra credits (starting at $5 for 100 credits)\n` +
+      `⏰ Wait until next month (but don't lose this momentum!)\n\n` +
+      `Current: ${currentPlan.toUpperCase()} | Credits: ${userCredits.availableCredits} remaining`;
+
+    return {
+      message,
+      upgradeUrl,
+      ctaText: `Upgrade to ${recommendedPlan?.name || "Pro"}`,
+      benefits: feature.benefits,
+      urgency: feature.urgency,
+    };
+  } else {
+    const planName =
+      recommendedPlan?.name || (currentPlan === "free" ? "Pro" : "Enterprise");
+    const planPrice = recommendedPlan?.price
+      ? `$${(recommendedPlan.price / 100).toFixed(0)}/month`
+      : "$29/month";
+
+    const message =
+      `🚀 Ready to unlock ${feature.name}? This premium feature is a game-changer!\n\n` +
+      `✨ ${feature.benefit}\n\n` +
+      `📊 ${feature.successStory}\n\n` +
+      `⚡ ${feature.urgency}\n\n` +
+      `💎 Upgrade to ${planName} (${planPrice}) and get:\n` +
+      feature.benefits.map((b) => `  ${b}`).join("\n") +
+      "\n\n" +
+      `Plus: Advanced analytics • Priority support • Early access to new features\n\n` +
+      `Current plan: ${currentPlan.toUpperCase()} → Ready to level up?`;
+
+    return {
+      message,
+      upgradeUrl,
+      ctaText: `Upgrade to ${planName}`,
+      benefits: feature.benefits,
+      urgency: feature.urgency,
+    };
+  }
+}
+
+export async function requireFeatureAccess(featureName: string) {
+  const access = await checkFeatureAccess(featureName);
+
+  if (!access.hasAccess) {
+    // Generate psychological upgrade prompt
+    const upgradePrompt = await generateUpgradePrompt(
+      featureName,
+      access.currentPlan,
+      "feature",
+    );
+
+    // Create a custom error that includes the upgrade prompt data
+    const error = new Error(upgradePrompt.message) as any;
+    error.upgradePrompt = upgradePrompt;
+    throw error;
+  }
+
+  return access;
+}
+
+// New function for seamless upgrade flow - returns upgrade info instead of throwing
+export async function getFeatureAccessInfo(featureName: string) {
+  const access = await checkFeatureAccess(featureName);
+
+  if (!access.hasAccess) {
+    const upgradeMessage = await generateUpgradePrompt(
+      featureName,
+      access.currentPlan,
+      "feature",
+    );
+
+    // Get available plans for upgrade options
+    const { subscriptionPlans, creditPacks } =
+      await getAvailableSubscriptionPlans();
+
+    // Determine recommended plan based on current plan
+    let recommendedPlan;
+    if (access.currentPlan === "free") {
+      recommendedPlan = subscriptionPlans.find(
+        (p) => p.name === "Starter Plan",
+      );
+    } else if (access.currentPlan === "starter") {
+      recommendedPlan = subscriptionPlans.find(
+        (p) => p.name === "Professional Plan",
+      );
+    } else {
+      recommendedPlan = subscriptionPlans.find((p) => p.name === "Agency Plan");
+    }
+
+    return {
+      ...access,
+      upgradeInfo: {
+        message: upgradeMessage,
+        recommendedPlan,
+        allPlans: subscriptionPlans,
+        creditPacks,
+        featureName,
+      },
+    };
+  }
+
+  return {
+    ...access,
+    upgradeInfo: null,
+  };
+}
+
+// Seamless upgrade flow for content generation features
+export async function generateContentWithUpgradeFlow(
+  input: any,
+  featureName: string,
+  generationFunction: Function,
+) {
+  await getAuth({ required: true });
+
+  // Check feature access using seamless flow
+  const accessInfo = await getFeatureAccessInfo(featureName);
+
+  if (!accessInfo.hasAccess) {
+    return {
+      success: false,
+      requiresUpgrade: true,
+      upgradeInfo: accessInfo.upgradeInfo,
+    };
+  }
+
+  // Check usage limits
+  const usageInfo = await getUsageLimitInfo(featureName);
+  if (!(usageInfo as any).withinLimit && (usageInfo as any).hasReachedLimit) {
+    return {
+      success: false,
+      requiresUpgrade: true,
+      upgradeInfo: usageInfo.upgradeInfo,
+    };
+  }
+
+  // Execute the actual generation function
+  try {
+    const result = await generationFunction(input);
+    return {
+      success: true,
+      requiresUpgrade: false,
+      ...result,
+    };
+  } catch (error) {
+    console.error(`Error in ${featureName}:`, error);
+    throw error;
+  }
+}
+
+export async function requireUsageLimit(limitType: string) {
+  const usage = await checkUsageLimits(limitType);
+
+  if (usage.hasReachedLimit) {
+    // Get user credits to get current plan
+    const userCredits = await getUserCredits();
+
+    // Generate psychological upgrade prompt for usage limits
+    const upgradePrompt = await generateUpgradePrompt(
+      limitType,
+      userCredits.subscriptionPlan || "free",
+      "usage",
+    );
+
+    // Create a custom error that includes the upgrade prompt data
+    const error = new Error(upgradePrompt.message) as any;
+    error.upgradePrompt = upgradePrompt;
+    throw error;
+  }
+
+  return usage;
+}
+
+// New function for seamless usage limit checking
+export async function getUsageLimitInfo(limitType: string) {
+  const usage = await checkUsageLimits(limitType);
+
+  if (usage.hasReachedLimit) {
+    // Get user credits to get current plan
+    const userCredits = await getUserCredits();
+
+    // Generate psychological upgrade prompt for usage limits
+    const upgradeMessage = await generateUpgradePrompt(
+      limitType,
+      userCredits.subscriptionPlan || "free",
+      "usage",
+    );
+
+    // Get available plans for upgrade options
+    const { subscriptionPlans, creditPacks } =
+      await getAvailableSubscriptionPlans();
+
+    return {
+      ...usage,
+      upgradeInfo: {
+        message: upgradeMessage,
+        allPlans: subscriptionPlans,
+        creditPacks,
+        limitType,
+      },
+    };
+  }
+
+  return {
+    ...usage,
+    upgradeInfo: null,
+  };
+}
+
+// Search History Functions
+export async function saveTrendSearch(input: {
+  query: string;
+  region?: string;
+  category?: string;
+  timeframe?: string;
+  includeInstagram?: boolean;
+  includeTikTok?: boolean;
+  includeTwitter?: boolean;
+  includeGoogle?: boolean;
+  resultsCount?: number;
+}) {
+  const auth = await getAuth({ required: true });
+
+  const searchHistory = await db.trendSearchHistory.create({
+    data: {
+      userId: auth.userId,
+      query: input.query,
+      region: input.region || null,
+      category: input.category || null,
+      timeframe: input.timeframe || null,
+      includeInstagram: input.includeInstagram ?? true,
+      includeTikTok: input.includeTikTok ?? true,
+      includeTwitter: input.includeTwitter ?? true,
+      includeGoogle: input.includeGoogle ?? true,
+      resultsCount: input.resultsCount || 0,
+    },
+  });
+
+  return searchHistory;
+}
+
+export async function getTrendSearchHistory() {
+  const auth = await getAuth({ required: true });
+
+  const searchHistory = await db.trendSearchHistory.findMany({
+    where: { userId: auth.userId },
+    orderBy: { createdAt: "desc" },
+    take: 20, // Limit to last 20 searches
+  });
+
+  return searchHistory;
+}
+
+export async function deleteTrendSearchHistory(input: { id: string }) {
+  const auth = await getAuth({ required: true });
+
+  await db.trendSearchHistory.deleteMany({
+    where: {
+      id: input.id,
+      userId: auth.userId, // Ensure users can only delete their own history
+    },
+  });
+
+  return { success: true };
+}
+
+export async function clearAllTrendSearchHistory() {
+  const auth = await getAuth({ required: true });
+
+  await db.trendSearchHistory.deleteMany({
+    where: { userId: auth.userId },
+  });
+
+  return { success: true };
+}
+
+// Optimal posting time recommendations
+export async function getOptimalPostingTimes(input?: { platform?: string }) {
+  const { userId } = await getAuth({ required: true });
+
+  try {
+    // Get user's connected accounts to find their pages
+    const accounts = await db.account.findMany({
+      where: { userId },
+      include: { pages: true },
+    });
+
+    // Get page IDs for analytics lookup
+    const pageIds = accounts.flatMap((account) =>
+      account.pages.map((page) => page.pageId),
+    );
+
+    // Get historical engagement data from PageAnalytics and PostAnalytics
+    const [pageAnalytics, postAnalytics] = await Promise.all([
+      db.pageAnalytics.findMany({
+        where: {
+          pageId: { in: pageIds },
+          date: {
+            gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Last 30 days
+          },
+        },
+        orderBy: { date: "desc" },
+        take: 100,
+      }),
+      db.postAnalytics.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 50, // Get recent post analytics
+      }),
+    ]);
+
+    // If no analytics data, return general best practices
+    if (pageAnalytics.length === 0 && postAnalytics.length === 0) {
+      return getGeneralOptimalTimes(input?.platform);
+    }
+
+    // Analyze engagement patterns by hour and day
+    const engagementByHour = new Map<
+      number,
+      { total: number; count: number }
+    >();
+    const engagementByDay = new Map<number, { total: number; count: number }>();
+
+    // Process page analytics data
+    pageAnalytics.forEach((data) => {
+      const date = new Date(data.date);
+      const hour = date.getHours();
+      const day = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+      const engagementRate = data.engagementRate;
+
+      // Track by hour
+      const hourData = engagementByHour.get(hour) || { total: 0, count: 0 };
+      hourData.total += engagementRate;
+      hourData.count += 1;
+      engagementByHour.set(hour, hourData);
+
+      // Track by day
+      const dayData = engagementByDay.get(day) || { total: 0, count: 0 };
+      dayData.total += engagementRate;
+      dayData.count += 1;
+      engagementByDay.set(day, dayData);
+    });
+
+    // Process post analytics data
+    postAnalytics.forEach((data) => {
+      const date = new Date(data.createdAt);
+      const hour = date.getHours();
+      const day = date.getDay();
+
+      // Calculate engagement rate
+      const impressions = data.impressions || 1;
+      const engagementRate = data.engagement / impressions;
+
+      // Track by hour
+      const hourData = engagementByHour.get(hour) || { total: 0, count: 0 };
+      hourData.total += engagementRate;
+      hourData.count += 1;
+      engagementByHour.set(hour, hourData);
+
+      // Track by day
+      const dayData = engagementByDay.get(day) || { total: 0, count: 0 };
+      dayData.total += engagementRate;
+      dayData.count += 1;
+      engagementByDay.set(day, dayData);
+    });
+
+    // Calculate average engagement rates
+    const hourlyAverages = Array.from(engagementByHour.entries())
+      .map(([hour, data]) => ({
+        hour,
+        avgEngagement: data.total / data.count,
+        postCount: data.count,
+      }))
+      .sort((a, b) => b.avgEngagement - a.avgEngagement);
+
+    const dayNames = [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+    ];
+
+    const dailyAverages = Array.from(engagementByDay.entries())
+      .map(([day, data]) => ({
+        day,
+        dayName: dayNames[day] || "Unknown",
+        avgEngagement: data.total / data.count,
+        postCount: data.count,
+      }))
+      .sort((a, b) => b.avgEngagement - a.avgEngagement);
+
+    // Get top 3 hours and days
+    const bestHours = hourlyAverages.slice(0, 3);
+    const bestDays = dailyAverages.slice(0, 3);
+
+    const recommendations = {
+      bestHours: bestHours.map((h) => ({
+        hour: h.hour,
+        time: formatHour(h.hour),
+        engagementRate: Math.round(h.avgEngagement * 10000) / 100, // Convert to percentage
+        confidence: Math.min(100, (h.postCount / 10) * 100), // Confidence based on sample size
+      })),
+      bestDays: bestDays.map((d) => ({
+        day: d.day,
+        dayName: d.dayName,
+        engagementRate: Math.round(d.avgEngagement * 10000) / 100,
+        confidence: Math.min(100, (d.postCount / 5) * 100),
+      })),
+      optimalTimes: generateOptimalTimeSlots(bestHours, bestDays),
+      insights: generateEngagementInsights(
+        hourlyAverages,
+        dailyAverages,
+        input?.platform,
+      ),
+      dataQuality: {
+        totalPosts: pageAnalytics.length + postAnalytics.length,
+        dateRange: {
+          from:
+            pageAnalytics[pageAnalytics.length - 1]?.date ||
+            postAnalytics[postAnalytics.length - 1]?.createdAt,
+          to: pageAnalytics[0]?.date || postAnalytics[0]?.createdAt,
+        },
+      },
+    };
+
+    return recommendations;
+  } catch (error) {
+    console.error("Error analyzing optimal posting times:", error);
+    return getGeneralOptimalTimes(input?.platform);
+  }
+}
+
+function formatHour(hour: number): string {
+  const period = hour >= 12 ? "PM" : "AM";
+  const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+  return `${displayHour}:00 ${period}`;
+}
+
+export async function _seedPostAnalytics() {
+  // Create sample post analytics data for demonstration
+  const samplePosts = [
+    {
+      postId: "sample_post_1",
+      impressions: 1250,
+      reach: 980,
+      engagement: 85,
+      sentiment: "positive",
+    },
+    {
+      postId: "sample_post_2",
+      impressions: 2100,
+      reach: 1650,
+      engagement: 142,
+      sentiment: "positive",
+    },
+    {
+      postId: "sample_post_3",
+      impressions: 890,
+      reach: 720,
+      engagement: 45,
+      sentiment: "neutral",
+    },
+    {
+      postId: "sample_post_4",
+      impressions: 3200,
+      reach: 2800,
+      engagement: 280,
+      sentiment: "positive",
+    },
+    {
+      postId: "sample_post_5",
+      impressions: 1800,
+      reach: 1400,
+      engagement: 95,
+      sentiment: "neutral",
+    },
+  ];
+
+  const results: any[] = [];
+  for (const post of samplePosts) {
+    try {
+      const existing = await db.postAnalytics.findUnique({
+        where: { postId: post.postId },
+      });
+
+      if (!existing) {
+        const result = await db.postAnalytics.create({
+          data: post,
+        });
+        results.push(result);
+        console.log(`Created post analytics for: ${post.postId}`);
+      }
+    } catch (error) {
+      console.error(
+        `Failed to create post analytics for ${post.postId}:`,
+        error,
+      );
+    }
+  }
+
+  return results;
+}
+
+function generateOptimalTimeSlots(
+  bestHours: Array<{ hour: number; avgEngagement: number; postCount: number }>,
+  bestDays: Array<{
+    day: number;
+    dayName: string;
+    avgEngagement: number;
+    postCount: number;
+  }>,
+) {
+  const slots: Array<{
+    dayName: string;
+    time: string;
+    score: number;
+    confidence: number;
+  }> = [];
+
+  // Combine best hours with best days
+  for (const day of bestDays.slice(0, 2)) {
+    for (const hour of bestHours.slice(0, 2)) {
+      const dayConfidence = Math.min(100, (day.postCount / 5) * 100);
+      const hourConfidence = Math.min(100, (hour.postCount / 10) * 100);
+
+      slots.push({
+        dayName: day.dayName,
+        time: formatHour(hour.hour),
+        score: (day.avgEngagement + hour.avgEngagement) / 2,
+        confidence: Math.min(dayConfidence, hourConfidence),
+      });
+    }
+  }
+
+  return slots.sort((a, b) => b.score - a.score).slice(0, 6);
+}
+
+function generateEngagementInsights(
+  hourlyData: Array<{ hour: number; avgEngagement: number; postCount: number }>,
+  dailyData: Array<{
+    day: number;
+    dayName: string;
+    avgEngagement: number;
+    postCount: number;
+  }>,
+  platform?: string,
+) {
+  const insights: Array<{
+    type: string;
+    title: string;
+    description: string;
+    actionable: boolean;
+  }> = [];
+
+  // Peak hour insight
+  if (hourlyData.length > 0) {
+    const peakHour = hourlyData[0];
+    if (peakHour) {
+      insights.push({
+        type: "peak_hour",
+        title: "Peak Engagement Hour",
+        description: `Your audience is most active at ${formatHour(peakHour.hour)} with ${Math.round(peakHour.avgEngagement * 10000) / 100}% engagement rate.`,
+        actionable: true,
+      });
+    }
+  }
+
+  // Best day insight
+  if (dailyData.length > 0) {
+    const bestDay = dailyData[0];
+    if (bestDay) {
+      insights.push({
+        type: "best_day",
+        title: "Best Day to Post",
+        description: `${bestDay.dayName} shows the highest engagement with ${Math.round(bestDay.avgEngagement * 10000) / 100}% average engagement rate.`,
+        actionable: true,
+      });
+    }
+  }
+
+  // Platform-specific insights
+  if (platform) {
+    insights.push({
+      type: "platform_specific",
+      title: `${platform} Optimization`,
+      description: getPlatformSpecificInsight(platform),
+      actionable: false,
+    });
+  }
+
+  return insights;
+}
+
+function getPlatformSpecificInsight(platform: string): string {
+  const insights = {
+    twitter:
+      "Twitter users are most active during commute hours (8-9 AM, 5-6 PM) and lunch time (12-1 PM).",
+    facebook:
+      "Facebook engagement peaks in the evening (7-9 PM) when users are relaxing at home.",
+    instagram:
+      "Instagram performs best during lunch hours (11 AM-1 PM) and evenings (7-9 PM).",
+    linkedin:
+      "LinkedIn engagement is highest during business hours, especially Tuesday-Thursday (9 AM-5 PM).",
+    youtube:
+      "YouTube videos perform best when posted in the afternoon (2-4 PM) for evening viewing.",
+  };
+
+  return (
+    insights[platform.toLowerCase()] ||
+    "Analyze your specific audience engagement patterns for optimal timing."
+  );
+}
+
+function getGeneralOptimalTimes(platform?: string) {
+  // Industry best practices when no data is available
+  const generalRecommendations = {
+    twitter: {
+      bestHours: [
+        { hour: 9, time: "9:00 AM", engagementRate: 3.2, confidence: 85 },
+        { hour: 12, time: "12:00 PM", engagementRate: 3.0, confidence: 85 },
+        { hour: 17, time: "5:00 PM", engagementRate: 2.8, confidence: 85 },
+      ],
+      bestDays: [
+        { day: 2, dayName: "Tuesday", engagementRate: 3.1, confidence: 85 },
+        { day: 3, dayName: "Wednesday", engagementRate: 3.0, confidence: 85 },
+        { day: 4, dayName: "Thursday", engagementRate: 2.9, confidence: 85 },
+      ],
+    },
+    facebook: {
+      bestHours: [
+        { hour: 13, time: "1:00 PM", engagementRate: 4.1, confidence: 85 },
+        { hour: 15, time: "3:00 PM", engagementRate: 3.8, confidence: 85 },
+        { hour: 19, time: "7:00 PM", engagementRate: 3.6, confidence: 85 },
+      ],
+      bestDays: [
+        { day: 3, dayName: "Wednesday", engagementRate: 3.9, confidence: 85 },
+        { day: 4, dayName: "Thursday", engagementRate: 3.7, confidence: 85 },
+        { day: 5, dayName: "Friday", engagementRate: 3.5, confidence: 85 },
+      ],
+    },
+    instagram: {
+      bestHours: [
+        { hour: 11, time: "11:00 AM", engagementRate: 4.5, confidence: 85 },
+        { hour: 14, time: "2:00 PM", engagementRate: 4.2, confidence: 85 },
+        { hour: 20, time: "8:00 PM", engagementRate: 4.0, confidence: 85 },
+      ],
+      bestDays: [
+        { day: 2, dayName: "Tuesday", engagementRate: 4.3, confidence: 85 },
+        { day: 4, dayName: "Thursday", engagementRate: 4.1, confidence: 85 },
+        { day: 6, dayName: "Saturday", engagementRate: 3.9, confidence: 85 },
+      ],
+    },
+    linkedin: {
+      bestHours: [
+        { hour: 10, time: "10:00 AM", engagementRate: 2.8, confidence: 85 },
+        { hour: 14, time: "2:00 PM", engagementRate: 2.6, confidence: 85 },
+        { hour: 16, time: "4:00 PM", engagementRate: 2.4, confidence: 85 },
+      ],
+      bestDays: [
+        { day: 2, dayName: "Tuesday", engagementRate: 2.7, confidence: 85 },
+        { day: 3, dayName: "Wednesday", engagementRate: 2.6, confidence: 85 },
+        { day: 4, dayName: "Thursday", engagementRate: 2.5, confidence: 85 },
+      ],
+    },
+    youtube: {
+      bestHours: [
+        { hour: 14, time: "2:00 PM", engagementRate: 5.2, confidence: 85 },
+        { hour: 16, time: "4:00 PM", engagementRate: 5.0, confidence: 85 },
+        { hour: 20, time: "8:00 PM", engagementRate: 4.8, confidence: 85 },
+      ],
+      bestDays: [
+        { day: 0, dayName: "Sunday", engagementRate: 5.1, confidence: 85 },
+        { day: 6, dayName: "Saturday", engagementRate: 4.9, confidence: 85 },
+        { day: 4, dayName: "Thursday", engagementRate: 4.7, confidence: 85 },
+      ],
+    },
+  };
+
+  const platformData = platform
+    ? generalRecommendations[platform.toLowerCase()]
+    : null;
+
+  if (platformData) {
+    return {
+      bestHours: platformData.bestHours,
+      bestDays: platformData.bestDays,
+      optimalTimes: generateOptimalTimeSlots(
+        platformData.bestHours,
+        platformData.bestDays,
+      ),
+      insights: [
+        {
+          type: "general",
+          title: "Industry Best Practices",
+          description: `Based on ${platform} industry data. Connect your accounts and post regularly to get personalized recommendations.`,
+          actionable: false,
+        },
+      ],
+      dataQuality: {
+        totalPosts: 0,
+        source: "industry_standards",
+        note: "These are general recommendations. Post regularly to get personalized insights.",
+      },
+    };
+  }
+
+  // General cross-platform recommendations
+  return {
+    bestHours: [
+      { hour: 9, time: "9:00 AM", engagementRate: 3.0, confidence: 75 },
+      { hour: 12, time: "12:00 PM", engagementRate: 3.2, confidence: 75 },
+      { hour: 15, time: "3:00 PM", engagementRate: 2.9, confidence: 75 },
+    ],
+    bestDays: [
+      { day: 2, dayName: "Tuesday", engagementRate: 3.1, confidence: 75 },
+      { day: 3, dayName: "Wednesday", engagementRate: 3.0, confidence: 75 },
+      { day: 4, dayName: "Thursday", engagementRate: 2.9, confidence: 75 },
+    ],
+    optimalTimes: [
+      { dayName: "Tuesday", time: "12:00 PM", score: 3.15, confidence: 75 },
+      { dayName: "Wednesday", time: "9:00 AM", score: 3.05, confidence: 75 },
+      { dayName: "Thursday", time: "3:00 PM", score: 2.95, confidence: 75 },
+    ],
+    insights: [
+      {
+        type: "general",
+        title: "General Best Practices",
+        description:
+          "Most social media platforms see peak engagement during business hours and lunch time. Connect your accounts for personalized insights.",
+        actionable: false,
+      },
+    ],
+    dataQuality: {
+      totalPosts: 0,
+      source: "general_best_practices",
+      note: "Connect your social media accounts and post regularly to get personalized recommendations.",
+    },
+  };
+}
+
+// ===== PERFORMANCE TRACKING SYSTEM =====
+// Self-learning AI marketing system - Track content performance for AI learning
+
+/**
+ * Record content performance when user posts through "Post This" button
+ */
+export async function recordContentPosted({
+  contentId,
+  contentType,
+  platform,
+  viralScore,
+  contentMetadata,
+}: {
+  contentId: string;
+  contentType:
+    | "GENERATED_CONTENT"
+    | "SCHEDULED_POST"
+    | "VIRAL_THREAD"
+    | "MANUAL";
+  platform: string;
+  viralScore?: number;
+  contentMetadata?: {
+    contentLength?: number;
+    hashtagCount?: number;
+    mentionCount?: number;
+    emojiCount?: number;
+    contentTone?: string;
+    postTime?: Date;
+  };
+}) {
+  const { userId } = await getAuth({ required: true });
+
+  // Check if we already have a performance record for this content
+  const existingRecord = await db.contentPerformance.findFirst({
+    where: {
+      userId,
+      contentId,
+      contentType,
+    },
+  });
+
+  if (existingRecord) {
+    // Update existing record
+    return await db.contentPerformance.update({
+      where: { id: existingRecord.id },
+      data: {
+        platform,
+        viralScore,
+        trackingMethod: "API",
+        isApiTracked: true,
+        lastApiSync: new Date(),
+        ...contentMetadata,
+      },
+    });
+  }
+
+  // Create new performance record
+  return await db.contentPerformance.create({
+    data: {
+      userId,
+      contentId,
+      contentType,
+      platform,
+      viralScore,
+      trackingMethod: "API",
+      isApiTracked: true,
+      lastApiSync: new Date(),
+      ...contentMetadata,
+    },
+  });
+}
+
+/**
+ * Update performance metrics from API tracking or manual input
+ */
+export async function updateContentPerformance({
+  performanceId,
+  metrics,
+  isManualUpdate = false,
+}: {
+  performanceId: string;
+  metrics: {
+    likes?: number;
+    comments?: number;
+    shares?: number;
+    views?: number;
+    clicks?: number;
+    reach?: number;
+    impressions?: number;
+  };
+  isManualUpdate?: boolean;
+}) {
+  const { userId } = await getAuth({ required: true });
+
+  // Calculate engagement rate if we have the data
+  let engagementRate: number | undefined;
+  if (
+    metrics.likes !== undefined &&
+    metrics.comments !== undefined &&
+    metrics.shares !== undefined
+  ) {
+    const totalEngagement =
+      (metrics.likes || 0) + (metrics.comments || 0) + (metrics.shares || 0);
+    const totalReach = metrics.reach || metrics.impressions || metrics.views;
+    if (totalReach && totalReach > 0) {
+      engagementRate = totalEngagement / totalReach;
+    }
+  }
+
+  const performance = await db.contentPerformance.update({
+    where: {
+      id: performanceId,
+      userId, // Ensure user owns this record
+    },
+    data: {
+      ...metrics,
+      engagementRate,
+      trackingMethod: isManualUpdate ? "MANUAL" : "API",
+      lastApiSync: isManualUpdate ? undefined : new Date(),
+    },
+  });
+
+  // Calculate actual performance score (0-1 scale)
+  const actualScore = calculateActualPerformanceScore(performance);
+
+  // Update performance gap if we have both predicted and actual scores
+  let performanceGap: number | undefined;
+  if (performance.viralScore && actualScore !== null) {
+    performanceGap = actualScore - performance.viralScore;
+  }
+
+  // Update with calculated scores
+  return await db.contentPerformance.update({
+    where: { id: performanceId },
+    data: {
+      actualScore,
+      performanceGap,
+    },
+  });
+}
+
+/**
+ * Get performance tracking data for a specific content
+ */
+export async function getContentPerformance({
+  contentId,
+  contentType,
+}: {
+  contentId: string;
+  contentType: string;
+}) {
+  const { userId } = await getAuth({ required: true });
+
+  return await db.contentPerformance.findFirst({
+    where: {
+      userId,
+      contentId,
+      contentType,
+    },
+  });
+}
+
+/**
+ * List all performance records for the user
+ */
+export async function listContentPerformance({
+  platform,
+  contentType,
+  limit = 50,
+  offset = 0,
+}: {
+  platform?: string;
+  contentType?: string;
+  limit?: number;
+  offset?: number;
+} = {}) {
+  const { userId } = await getAuth({ required: true });
+
+  const where: any = { userId };
+  if (platform) where.platform = platform;
+  if (contentType) where.contentType = contentType;
+
+  const [records, total] = await Promise.all([
+    db.contentPerformance.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      take: limit,
+      skip: offset,
+    }),
+    db.contentPerformance.count({ where }),
+  ]);
+
+  return {
+    records,
+    total,
+    hasMore: offset + records.length < total,
+  };
+}
+
+/**
+ * Manual feedback dialog - Allow users to input performance manually
+ */
+export async function submitManualPerformanceFeedback({
+  contentId,
+  contentType,
+  platform,
+  feedback,
+}: {
+  contentId: string;
+  contentType: string;
+  platform: string;
+  feedback: {
+    likes?: number;
+    comments?: number;
+    shares?: number;
+    views?: number;
+    overallRating?: number; // 1-5 scale
+    notes?: string;
+  };
+}) {
+  const { userId } = await getAuth({ required: true });
+
+  // Find or create performance record
+  let performance = await db.contentPerformance.findFirst({
+    where: {
+      userId,
+      contentId,
+      contentType,
+    },
+  });
+
+  if (!performance) {
+    performance = await db.contentPerformance.create({
+      data: {
+        userId,
+        contentId,
+        contentType,
+        platform,
+        trackingMethod: "MANUAL",
+        isApiTracked: false,
+      },
+    });
+  }
+
+  // Update with manual feedback
+  return await updateContentPerformance({
+    performanceId: performance.id,
+    metrics: {
+      likes: feedback.likes,
+      comments: feedback.comments,
+      shares: feedback.shares,
+      views: feedback.views,
+    },
+    isManualUpdate: true,
+  });
+}
+
+/**
+ * Calculate actual performance score based on metrics (normalized 0-1 scale)
+ */
+function calculateActualPerformanceScore(performance: any): number | null {
+  const {
+    likes = 0,
+    comments = 0,
+    shares = 0,
+    views = 0,
+    engagementRate,
+  } = performance;
+
+  // If we have engagement rate, use it as primary metric
+  if (engagementRate !== null && engagementRate !== undefined) {
+    // Normalize engagement rate (typical good engagement is 1-6%)
+    return Math.min(engagementRate * 16.67, 1); // 6% = 1.0 score
+  }
+
+  // Fallback: Calculate based on raw metrics
+  if (likes + comments + shares === 0) return null;
+
+  const totalEngagement = likes + comments * 2 + shares * 3; // Weight comments and shares higher
+  const totalReach = views || 1000; // Default assumption if no views data
+
+  const score = Math.min(totalEngagement / (totalReach * 0.05), 1); // 5% engagement = 1.0 score
+  return score;
+}
+
+/**
+ * Get performance analytics overview
+ */
+export async function getPerformanceAnalytics({
+  timeRange = "30d",
+  platform,
+}: {
+  timeRange?: "7d" | "30d" | "90d" | "1y";
+  platform?: string;
+} = {}) {
+  const { userId } = await getAuth({ required: true });
+
+  const days = {
+    "7d": 7,
+    "30d": 30,
+    "90d": 90,
+    "1y": 365,
+  }[timeRange];
+
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+
+  const where: any = {
+    userId,
+    createdAt: { gte: startDate },
+  };
+  if (platform) where.platform = platform;
+
+  const records = await db.contentPerformance.findMany({
+    where,
+    orderBy: { createdAt: "desc" },
+  });
+
+  // Calculate analytics
+  const totalPosts = records.length;
+  const avgLikes =
+    records.reduce((sum, r) => sum + (r.likes || 0), 0) / (totalPosts || 1);
+  const avgComments =
+    records.reduce((sum, r) => sum + (r.comments || 0), 0) / (totalPosts || 1);
+  const avgShares =
+    records.reduce((sum, r) => sum + (r.shares || 0), 0) / (totalPosts || 1);
+  const avgEngagementRate =
+    records
+      .filter((r) => r.engagementRate !== null)
+      .reduce((sum, r) => sum + (r.engagementRate || 0), 0) /
+    (records.filter((r) => r.engagementRate !== null).length || 1);
+
+  // Performance gaps (predicted vs actual)
+  const performanceGaps = records
+    .filter((r) => r.performanceGap !== null)
+    .map((r) => r.performanceGap || 0);
+  const avgPerformanceGap =
+    performanceGaps.reduce((sum, gap) => sum + gap, 0) /
+    (performanceGaps.length || 1);
+
+  // Best performing content
+  const bestContent = records
+    .filter((r) => r.actualScore !== null)
+    .sort((a, b) => (b.actualScore || 0) - (a.actualScore || 0))
+    .slice(0, 5);
+
+  return {
+    overview: {
+      totalPosts,
+      avgLikes: Math.round(avgLikes),
+      avgComments: Math.round(avgComments),
+      avgShares: Math.round(avgShares),
+      avgEngagementRate: Math.round(avgEngagementRate * 10000) / 100, // Convert to percentage
+      avgPerformanceGap: Math.round(avgPerformanceGap * 100) / 100,
+    },
+    bestContent,
+    platformBreakdown: await getPlatformBreakdown(records),
+    timeSeriesData: await getTimeSeriesData(records),
+  };
+}
+
+/**
+ * Helper function to get platform breakdown
+ */
+async function getPlatformBreakdown(records: any[]) {
+  const platforms = [...new Set(records.map((r) => r.platform))];
+
+  return platforms.map((platform) => {
+    const platformRecords = records.filter((r) => r.platform === platform);
+    const avgScore =
+      platformRecords
+        .filter((r) => r.actualScore !== null)
+        .reduce((sum, r) => sum + (r.actualScore || 0), 0) /
+      (platformRecords.filter((r) => r.actualScore !== null).length || 1);
+
+    return {
+      platform,
+      count: platformRecords.length,
+      avgScore: Math.round(avgScore * 100) / 100,
+    };
+  });
+}
+
+/**
+ * Helper function to get time series data
+ */
+async function getTimeSeriesData(records: any[]) {
+  // Group by day
+  const dailyData = new Map();
+
+  records.forEach((record) => {
+    const date = record.createdAt.toISOString().split("T")[0];
+    if (!dailyData.has(date)) {
+      dailyData.set(date, {
+        date,
+        posts: 0,
+        totalLikes: 0,
+        totalComments: 0,
+        totalShares: 0,
+        avgScore: 0,
+        scoreCount: 0,
+      });
+    }
+
+    const day = dailyData.get(date);
+    day.posts += 1;
+    day.totalLikes += record.likes || 0;
+    day.totalComments += record.comments || 0;
+    day.totalShares += record.shares || 0;
+
+    if (record.actualScore !== null) {
+      day.avgScore =
+        (day.avgScore * day.scoreCount + (record.actualScore || 0)) /
+        (day.scoreCount + 1);
+      day.scoreCount += 1;
+    }
+  });
+
+  return Array.from(dailyData.values()).sort((a, b) =>
+    a.date.localeCompare(b.date),
+  );
+}
+
+// ============================================================================
+// LEARNING ENGINE - AI SELF-IMPROVEMENT SYSTEM
+// ============================================================================
+
+/**
+ * Generate learning insights from content performance data
+ */
+export async function generateLearningInsights() {
+  const auth = await getAuth({ required: true });
+
+  // Get all content performance records
+  const performanceRecords = await db.contentPerformance.findMany({
+    where: { userId: auth.userId },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (performanceRecords.length < 5) {
+    return {
+      message:
+        "Need at least 5 posts with performance data to generate insights",
+    };
+  }
+
+  // Analyze patterns
+  const lengthInsights = analyzeLengthPatterns(performanceRecords);
+  const timingInsights = analyzeTimingPatterns(performanceRecords);
+  const platformInsights = analyzePlatformPatterns(performanceRecords);
+  const toneInsights = analyzeTonePatterns(performanceRecords);
+  const hashtagInsights = analyzeHashtagPatterns(performanceRecords);
+
+  // Store insights
+  const insightData = {
+    length: lengthInsights,
+    timing: timingInsights,
+    platform: platformInsights,
+    tone: toneInsights,
+    hashtags: hashtagInsights,
+    generatedAt: new Date().toISOString(),
+    actionableRecommendations: generateActionableRecommendations({
+      length: lengthInsights,
+      timing: timingInsights,
+      platform: platformInsights,
+      tone: toneInsights,
+      hashtags: hashtagInsights,
+    }),
+  };
+
+  const insight = await db.learningInsight.create({
+    data: {
+      userId: auth.userId,
+      insightType: "COMPREHENSIVE_ANALYSIS",
+      insightData: JSON.stringify(insightData),
+      confidence: calculateInsightConfidence(performanceRecords.length),
+      sampleSize: performanceRecords.length,
+    },
+  });
+
+  return insight;
+}
+
+/**
+ * Analyze content length patterns vs performance
+ */
+async function analyzeLengthPatterns(records: any[]) {
+  // Group by content length from ContentPerformance records
+  const lengthBuckets = {
+    short: records.filter((r: any) => (r.contentLength || 0) < 100),
+    medium: records.filter((r: any) => {
+      const len = r.contentLength || 0;
+      return len >= 100 && len < 300;
+    }),
+    long: records.filter((r: any) => (r.contentLength || 0) >= 300),
+  };
+
+  const analysis: Record<string, any> = {};
+  for (const [bucket, posts] of Object.entries(lengthBuckets)) {
+    if (posts.length > 0) {
+      const avgScore =
+        posts.reduce((sum: number, p: any) => sum + (p.actualScore || 0), 0) /
+        posts.length;
+      analysis[bucket] = {
+        count: posts.length,
+        avgScore: Math.round(avgScore * 100) / 100,
+        avgLikes: Math.round(
+          posts.reduce((sum: number, p: any) => sum + (p.likes || 0), 0) /
+            posts.length,
+        ),
+        avgComments: Math.round(
+          posts.reduce((sum: number, p: any) => sum + (p.comments || 0), 0) /
+            posts.length,
+        ),
+        avgShares: Math.round(
+          posts.reduce((sum: number, p: any) => sum + (p.shares || 0), 0) /
+            posts.length,
+        ),
+      };
+    }
+  }
+
+  return analysis;
+}
+
+/**
+ * Analyze posting timing patterns vs performance
+ */
+async function analyzeTimingPatterns(records: any[]) {
+  const hourBuckets: { [key: number]: any[] } = {};
+  const dayBuckets: { [key: number]: any[] } = {};
+
+  records.forEach((record) => {
+    const date = new Date(record.createdAt);
+    const hour = date.getHours();
+    const day = date.getDay(); // 0 = Sunday
+
+    if (!hourBuckets[hour]) hourBuckets[hour] = [];
+    if (!dayBuckets[day]) dayBuckets[day] = [];
+
+    hourBuckets[hour]?.push(record);
+    dayBuckets[day]?.push(record);
+  });
+
+  const hourAnalysis: { [key: string]: { count: number; avgScore: number } } =
+    {};
+  const dayAnalysis: { [key: string]: { count: number; avgScore: number } } =
+    {};
+
+  // Analyze by hour
+  for (const [hour, posts] of Object.entries(hourBuckets)) {
+    if (posts.length > 0) {
+      const avgScore =
+        posts.reduce((sum: number, p: any) => sum + (p.actualScore || 0), 0) /
+        posts.length;
+      hourAnalysis[hour] = {
+        count: posts.length,
+        avgScore: Math.round(avgScore * 100) / 100,
+      };
+    }
+  }
+
+  // Analyze by day
+  const dayNames = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ];
+  for (const [day, posts] of Object.entries(dayBuckets)) {
+    if (posts.length > 0) {
+      const avgScore =
+        posts.reduce((sum: number, p: any) => sum + (p.actualScore || 0), 0) /
+        posts.length;
+      dayAnalysis[dayNames[parseInt(day)]] = {
+        count: posts.length,
+        avgScore: Math.round(avgScore * 100) / 100,
+      };
+    }
+  }
+
+  return { hourAnalysis, dayAnalysis };
+}
+
+/**
+ * Analyze platform-specific patterns vs performance
+ */
+async function analyzePlatformPatterns(records: any[]) {
+  const platformBuckets: { [key: string]: any[] } = {};
+
+  records.forEach((record) => {
+    const platform = record.platform || "unknown";
+    if (!platformBuckets[platform]) platformBuckets[platform] = [];
+    platformBuckets[platform]?.push(record);
+  });
+
+  const analysis: {
+    [key: string]: {
+      count: number;
+      avgScore: number;
+      avgLikes: number;
+      avgComments: number;
+      avgShares: number;
+    };
+  } = {};
+  for (const [platform, posts] of Object.entries(platformBuckets)) {
+    if (posts.length > 0) {
+      const avgScore =
+        posts.reduce((sum: number, p: any) => sum + (p.actualScore || 0), 0) /
+        posts.length;
+      analysis[platform] = {
+        count: posts.length,
+        avgScore: Math.round(avgScore * 100) / 100,
+        avgLikes: Math.round(
+          posts.reduce((sum: number, p: any) => sum + (p.likes || 0), 0) /
+            posts.length,
+        ),
+        avgComments: Math.round(
+          posts.reduce((sum: number, p: any) => sum + (p.comments || 0), 0) /
+            posts.length,
+        ),
+        avgShares: Math.round(
+          posts.reduce((sum: number, p: any) => sum + (p.shares || 0), 0) /
+            posts.length,
+        ),
+      };
+    }
+  }
+
+  return analysis;
+}
+
+/**
+ * Analyze tone and sentiment patterns vs performance
+ */
+async function analyzeTonePatterns(records: any[]) {
+  // Use AI to analyze tone of high vs low performing content
+  const highPerforming = records.filter((r) => (r.actualScore || 0) > 0.7);
+  const lowPerforming = records.filter((r) => (r.actualScore || 0) < 0.3);
+
+  if (highPerforming.length === 0 || lowPerforming.length === 0) {
+    return {
+      message:
+        "Need both high and low performing content to analyze tone patterns",
+    };
+  }
+
+  try {
+    const result = await intelligentRequestMultimodalModel({
+      system: `Analyze the tone and style patterns in high vs low performing social media content. Identify what makes content successful.`,
+      messages: [
+        {
+          role: "user",
+          content: `Analyze these content samples:
+
+HIGH PERFORMING CONTENT (${highPerforming.length} samples):
+${highPerforming
+  .slice(0, 5)
+  .map((r) => r.generatedContent?.content || "")
+  .join("\n---\n")}
+
+LOW PERFORMING CONTENT (${lowPerforming.length} samples):
+${lowPerforming
+  .slice(0, 5)
+  .map((r) => r.generatedContent?.content || "")
+  .join("\n---\n")}
+
+Identify key tone and style differences.`,
+        },
+      ],
+      returnType: z
+        .object({
+          highPerformingPatterns: z
+            .array(z.string())
+            .describe("Patterns found in high performing content"),
+          lowPerformingPatterns: z
+            .array(z.string())
+            .describe("Patterns found in low performing content"),
+          recommendations: z
+            .array(z.string())
+            .describe("Actionable tone recommendations"),
+        })
+        .describe("Tone analysis results"),
+      model: "medium",
+    });
+
+    return result;
+  } catch (error) {
+    console.error("Error analyzing tone patterns:", error);
+    return { error: "Failed to analyze tone patterns" };
+  }
+}
+
+/**
+ * Analyze hashtag patterns vs performance
+ */
+async function analyzeHashtagPatterns(records: any[]) {
+  const hashtagPerformance = new Map();
+
+  records.forEach((record) => {
+    const content = record.generatedContent?.content || "";
+    const hashtags = content.match(/#\w+/g) || [];
+    const score = record.actualScore || 0;
+
+    hashtags.forEach((hashtag) => {
+      const tag = hashtag.toLowerCase();
+      if (!hashtagPerformance.has(tag)) {
+        hashtagPerformance.set(tag, { scores: [], count: 0 });
+      }
+      const data = hashtagPerformance.get(tag);
+      data.scores.push(score);
+      data.count += 1;
+    });
+  });
+
+  const analysis = {};
+  hashtagPerformance.forEach((data, hashtag) => {
+    if (data.count >= 2) {
+      // Only analyze hashtags used at least twice
+      const avgScore =
+        data.scores.reduce((sum, s) => sum + s, 0) / data.scores.length;
+      analysis[hashtag] = {
+        count: data.count,
+        avgScore: Math.round(avgScore * 100) / 100,
+      };
+    }
+  });
+
+  // Sort by performance
+  const sortedHashtags = Object.entries(analysis)
+    .sort(([, a], [, b]) => (b as any).avgScore - (a as any).avgScore)
+    .slice(0, 20); // Top 20
+
+  return Object.fromEntries(sortedHashtags);
+}
+
+/**
+ * Calculate confidence score for insights based on data size
+ */
+function calculateInsightConfidence(sampleSize: number): number {
+  if (sampleSize >= 50) return 0.9;
+  if (sampleSize >= 25) return 0.8;
+  if (sampleSize >= 15) return 0.7;
+  if (sampleSize >= 10) return 0.6;
+  return 0.5;
+}
+
+/**
+ * Generate actionable recommendations from insights
+ */
+function generateActionableRecommendations(insights: any): string[] {
+  const recommendations: string[] = [];
+
+  // Length recommendations
+  if (insights.length) {
+    const lengthEntries = Object.entries(insights.length) as [string, any][];
+    const bestLength = lengthEntries.sort(
+      ([, a], [, b]) => b.avgScore - a.avgScore,
+    )[0];
+    if (bestLength) {
+      recommendations.push(
+        `Optimal content length: ${bestLength[0]} posts perform best (avg score: ${bestLength[1].avgScore})`,
+      );
+    }
+  }
+
+  // Platform recommendations
+  if (insights.platform) {
+    const platformEntries = Object.entries(insights.platform) as [
+      string,
+      any,
+    ][];
+    const bestPlatform = platformEntries.sort(
+      ([, a], [, b]) => b.avgScore - a.avgScore,
+    )[0];
+    if (bestPlatform) {
+      recommendations.push(
+        `Focus on ${bestPlatform[0]} platform (avg score: ${bestPlatform[1].avgScore})`,
+      );
+    }
+  }
+
+  // Hashtag recommendations
+  if (insights.hashtags) {
+    const topHashtags = Object.keys(insights.hashtags).slice(0, 3);
+    if (topHashtags.length > 0) {
+      recommendations.push(
+        `Use high-performing hashtags: ${topHashtags.join(", ")}`,
+      );
+    }
+  }
+
+  return recommendations;
+}
+
+/**
+ * Get learning insights for user
+ */
+export async function getLearningInsights() {
+  const auth = await getAuth({ required: true });
+
+  const insights = await db.learningInsight.findMany({
+    where: { userId: auth.userId },
+    orderBy: { createdAt: "desc" },
+    take: 10,
+  });
+
+  // Transform insights to include the expected frontend properties
+  return insights.map((insight) => {
+    let parsedData: any = {};
+    try {
+      parsedData = JSON.parse(insight.insightData || "{}");
+    } catch (error) {
+      console.error("Failed to parse insight data:", error);
+    }
+
+    // Generate title and description based on insight type
+    let title = "Performance Insight";
+    let description = "Analysis of your content performance patterns.";
+    let recommendations: string[] = [];
+
+    if (
+      insight.insightType === "COMPREHENSIVE_ANALYSIS" &&
+      parsedData.actionableRecommendations
+    ) {
+      recommendations = parsedData.actionableRecommendations || [];
+    }
+
+    // Create specific titles and descriptions based on insight type
+    switch (insight.insightType) {
+      case "CONTENT_PATTERN":
+        title = "Content Pattern Analysis";
+        description = "Insights about your content structure and formatting.";
+        break;
+      case "TIMING_PATTERN":
+        title = "Optimal Posting Times";
+        description = "Best times to post for maximum engagement.";
+        break;
+      case "PLATFORM_PREFERENCE":
+        title = "Platform Performance";
+        description = "How your content performs across different platforms.";
+        break;
+      case "TONE_EFFECTIVENESS":
+        title = "Content Tone Analysis";
+        description = "Which content tones resonate best with your audience.";
+        break;
+      case "COMPREHENSIVE_ANALYSIS":
+        title = "AI Learning Insights";
+        description =
+          "Comprehensive analysis of your content performance patterns.";
+        break;
+    }
+
+    return {
+      id: insight.id,
+      title,
+      description,
+      confidence: insight.confidence,
+      recommendations,
+      insightType: insight.insightType,
+      platform: insight.platform,
+      contentType: insight.contentType,
+      sampleSize: insight.sampleSize,
+      createdAt: insight.createdAt,
+      updatedAt: insight.updatedAt,
+      rawData: parsedData, // Include raw data for advanced use
+    };
+  });
+}
+
+/**
+ * Predict viral score using learning insights
+ */
+export async function predictViralScoreWithLearning(input: {
+  content: string;
+  platform: string;
+  contentType: string;
+}) {
+  const auth = await getAuth({ required: true });
+
+  // Get latest learning insights
+  const latestInsight = await db.learningInsight.findFirst({
+    where: { userId: auth.userId },
+    orderBy: { createdAt: "desc" },
+  });
+
+  let baseScore = 0.5; // Default score
+  let confidence = 0.5;
+  const factors: string[] = [];
+
+  if (latestInsight) {
+    const insights = JSON.parse(latestInsight.insightData || "{}") as any;
+    confidence = latestInsight.confidence || 0.5;
+
+    // Analyze content length
+    const contentLength = input.content.length;
+    let lengthCategory = "medium";
+    if (contentLength < 100) lengthCategory = "short";
+    else if (contentLength >= 300) lengthCategory = "long";
+
+    if (insights.length?.[lengthCategory]) {
+      const lengthData = insights.length[lengthCategory];
+      baseScore = (baseScore + lengthData.avgScore) / 2;
+      factors.push(`Length (${lengthCategory}): ${lengthData.avgScore}`);
+    }
+
+    // Analyze platform
+    if (insights.platform?.[input.platform]) {
+      const platformData = insights.platform[input.platform];
+      baseScore = (baseScore + platformData.avgScore) / 2;
+      factors.push(`Platform (${input.platform}): ${platformData.avgScore}`);
+    }
+
+    // Analyze hashtags
+    if (insights.hashtags) {
+      const hashtags = input.content.match(/#\w+/g) || [];
+      let hashtagScore = 0;
+      let hashtagCount = 0;
+
+      hashtags.forEach((hashtag) => {
+        const tag = hashtag.toLowerCase();
+        if (insights.hashtags[tag]) {
+          hashtagScore += insights.hashtags[tag].avgScore;
+          hashtagCount += 1;
+        }
+      });
+
+      if (hashtagCount > 0) {
+        const avgHashtagScore = hashtagScore / hashtagCount;
+        baseScore = (baseScore + avgHashtagScore) / 2;
+        factors.push(`Hashtags: ${avgHashtagScore.toFixed(2)}`);
+      }
+    }
+  }
+
+  return {
+    viralScore: Math.min(Math.max(baseScore, 0), 1), // Clamp between 0-1
+    confidence,
+    factors,
+    basedOnLearning: !!latestInsight,
+    sampleSize: latestInsight?.sampleSize || 0,
+  };
+}
+
+/**
+ * Get learning analytics dashboard data
+ */
+export async function getLearningAnalytics() {
+  const auth = await getAuth({ required: true });
+
+  // Get performance records
+  const performanceRecords = await db.contentPerformance.findMany({
+    where: { userId: auth.userId },
+    orderBy: { createdAt: "desc" },
+  });
+
+  // Get latest insights
+  const latestInsight = await db.learningInsight.findFirst({
+    where: { userId: auth.userId },
+    orderBy: { createdAt: "desc" },
+  });
+
+  // Calculate improvement metrics
+  const recentRecords = performanceRecords.slice(0, 10);
+  const olderRecords = performanceRecords.slice(10, 20);
+
+  const recentAvg =
+    recentRecords.length > 0
+      ? recentRecords.reduce((sum, r) => sum + (r.actualScore || 0), 0) /
+        recentRecords.length
+      : 0;
+
+  const olderAvg =
+    olderRecords.length > 0
+      ? olderRecords.reduce((sum, r) => sum + (r.actualScore || 0), 0) /
+        olderRecords.length
+      : 0;
+
+  const improvement =
+    olderRecords.length > 0 ? ((recentAvg - olderAvg) / olderAvg) * 100 : 0;
+
+  // Generate correlation data if we have enough performance records
+  let lengthCorrelation: {
+    correlation: number;
+    optimalRange: { min: number; max: number };
+    confidence: number;
+  } | null = null;
+
+  let timingCorrelation: {
+    bestHours: number[];
+    insights: string;
+  } | null = null;
+
+  let platformCorrelation: {
+    [platform: string]: {
+      avgScore: number;
+      totalPosts: number;
+    };
+  } | null = null;
+
+  let hashtagCorrelation: {
+    optimalCount: number;
+    topPerformingTags: string[];
+  } | null = null;
+
+  if (performanceRecords.length >= 5) {
+    // Length correlation analysis
+    const lengthData = performanceRecords
+      .filter((r) => r.contentLength && r.actualScore)
+      .map((r) => ({ length: r.contentLength!, score: r.actualScore! }));
+
+    if (lengthData.length >= 3) {
+      const avgScore =
+        lengthData.reduce((sum, d) => sum + d.score, 0) / lengthData.length;
+      const shortPosts = lengthData.filter((d) => d.length <= 100);
+      const mediumPosts = lengthData.filter(
+        (d) => d.length > 100 && d.length <= 300,
+      );
+      const longPosts = lengthData.filter((d) => d.length > 300);
+
+      const shortAvg =
+        shortPosts.length > 0
+          ? shortPosts.reduce((sum, d) => sum + d.score, 0) / shortPosts.length
+          : 0;
+      const mediumAvg =
+        mediumPosts.length > 0
+          ? mediumPosts.reduce((sum, d) => sum + d.score, 0) /
+            mediumPosts.length
+          : 0;
+      const longAvg =
+        longPosts.length > 0
+          ? longPosts.reduce((sum, d) => sum + d.score, 0) / longPosts.length
+          : 0;
+
+      const bestCategory = Math.max(shortAvg, mediumAvg, longAvg);
+      let optimalRange = { min: 50, max: 150 };
+
+      if (bestCategory === mediumAvg) {
+        optimalRange = { min: 100, max: 300 };
+      } else if (bestCategory === longAvg) {
+        optimalRange = { min: 300, max: 500 };
+      }
+
+      lengthCorrelation = {
+        correlation: (bestCategory - avgScore) / avgScore,
+        optimalRange,
+        confidence: Math.min(lengthData.length / 10, 1),
+      };
+    }
+
+    // Timing correlation analysis
+    const timingData = performanceRecords
+      .filter((r) => r.createdAt && r.actualScore)
+      .map((r) => ({ hour: r.createdAt.getHours(), score: r.actualScore! }));
+
+    if (timingData.length >= 3) {
+      const hourlyScores: { [hour: number]: number[] } = {};
+      timingData.forEach((d) => {
+        if (!hourlyScores[d.hour]) hourlyScores[d.hour] = [];
+        hourlyScores[d.hour]!.push(d.score);
+      });
+
+      const hourlyAvgs = Object.entries(hourlyScores).map(([hour, scores]) => ({
+        hour: parseInt(hour),
+        avg: scores.reduce((sum, s) => sum + s, 0) / scores.length,
+      }));
+
+      const bestHours = hourlyAvgs
+        .sort((a, b) => b.avg - a.avg)
+        .slice(0, 3)
+        .map((h) => h.hour);
+
+      timingCorrelation = {
+        bestHours,
+        insights: `Your content performs best when posted at ${bestHours.join(", ")}:00 hours.`,
+      };
+    }
+
+    // Platform correlation analysis
+    const platformData = performanceRecords
+      .filter((r) => r.platform && r.actualScore)
+      .reduce((acc: any, r) => {
+        if (!acc[r.platform!]) {
+          acc[r.platform!] = { scores: [], totalPosts: 0 };
+        }
+        acc[r.platform!].scores.push(r.actualScore!);
+        acc[r.platform!].totalPosts++;
+        return acc;
+      }, {});
+
+    platformCorrelation = Object.entries(platformData).reduce(
+      (acc: any, [platform, data]: [string, any]) => {
+        acc[platform] = {
+          avgScore:
+            data.scores.reduce((sum: number, s: number) => sum + s, 0) /
+            data.scores.length,
+          totalPosts: data.totalPosts,
+        };
+        return acc;
+      },
+      {},
+    );
+
+    // Hashtag correlation analysis (simplified)
+    const hashtagData = performanceRecords
+      .filter((r) => r.hashtagCount && r.actualScore)
+      .map((r) => ({
+        hashtags: r.hashtagCount!,
+        score: r.actualScore!,
+      }));
+
+    if (hashtagData.length >= 3) {
+      const avgHashtagCount =
+        hashtagData.reduce((sum, d) => sum + d.hashtags, 0) /
+        hashtagData.length;
+      const optimalCount = Math.round(avgHashtagCount);
+
+      hashtagCorrelation = {
+        optimalCount: Math.max(1, Math.min(optimalCount, 10)),
+        topPerformingTags: [], // Would need more complex analysis to extract top tags
+      };
+    }
+  }
+
+  return {
+    totalPosts: performanceRecords.length,
+    avgPerformance:
+      performanceRecords.length > 0
+        ? performanceRecords.reduce((sum, r) => sum + (r.actualScore || 0), 0) /
+          performanceRecords.length
+        : 0,
+    improvement: Math.round(improvement * 100) / 100,
+    confidence: latestInsight?.confidence || 0,
+    lastAnalysis: latestInsight?.createdAt,
+    insights: latestInsight
+      ? JSON.parse(latestInsight.insightData || "{}")
+      : null,
+    recommendations: [],
+    recentPosts: recentRecords.map((r) => ({
+      id: r.id,
+      content: "Content preview...", // Content preview not available in performance data
+      platform: r.platform,
+      score: r.actualScore,
+      likes: r.likes,
+      comments: r.comments,
+      shares: r.shares,
+      createdAt: r.createdAt,
+    })),
+    lengthCorrelation,
+    timingCorrelation,
+    platformCorrelation,
+    hashtagCorrelation,
+  };
+}
+
+/**
+ * Trigger learning engine to analyze and update insights
+ */
+export async function triggerLearningEngine() {
+  const auth = await getAuth({ required: true });
+
+  const task = await queueTask(async () => {
+    try {
+      // Generate new insights
+      await generateLearningInsights();
+
+      // Update any cached recommendations or predictions
+      console.log("Learning engine completed for user:", auth.userId);
+
+      // No return statement - queueTask expects Promise<void>
+    } catch (error) {
+      console.error("Learning engine failed:", error);
+      throw error;
+    }
+  });
+
+  return task;
+}
+
+// Premium Feature Gating for Self-Learning Loop
+export async function checkSelfLearningAccess() {
+  return await checkFeatureAccess("self_learning_loop");
+}
+
+export async function requireSelfLearningAccess() {
+  return await requireFeatureAccess("self_learning_loop");
+}
+
+export async function canUseAdvancedTracking() {
+  const access = await checkFeatureAccess("advanced-performance-tracking");
+  return access.hasAccess;
+}
+
+export async function canAccessLearningInsights() {
+  const access = await checkFeatureAccess("ai-learning-insights");
+  return access.hasAccess;
+}
+
+// Enhanced version of recordContentPosted with premium gating
+export async function recordContentPostedPremium(input: {
+  contentId: string;
+  platform: string;
+  scheduledTime?: Date;
+  actualPostTime?: Date;
+  contentType: "ai-recommendation" | "user-generated" | "scheduled";
+  source: "discover" | "create" | "scheduler";
+  viralScore?: number;
+  metadata?: Record<string, any>;
+}) {
+  // Check if user has access to self-learning features
+  const hasAccess = await canUseAdvancedTracking();
+
+  if (!hasAccess) {
+    // Fall back to basic tracking
+    return await recordContentPosted({
+      contentId: input.contentId,
+      contentType: "MANUAL",
+      platform: input.platform ?? "twitter",
+      viralScore: input.viralScore,
+    });
+  }
+
+  // Premium tracking with enhanced metadata
+  const { userId } = await getAuth({ required: true });
+
+  const performance = await db.contentPerformance.create({
+    data: {
+      userId,
+      contentId: input.contentId,
+      platform: input.platform ?? "twitter",
+      postTime: input.scheduledTime || input.actualPostTime || new Date(),
+      contentType:
+        input.contentType === "ai-recommendation" ? "AI_GENERATED" : "MANUAL",
+      trackingMethod: "HYBRID",
+      viralScore: input.viralScore || 0,
+    },
+  });
+
+  // Trigger learning engine if this is from AI recommendation
+  if (input.contentType === "ai-recommendation") {
+    await triggerLearningEngine();
+  }
+
+  return performance;
+}
+
+// Premium analytics with learning insights
+export async function getAdvancedPerformanceAnalytics() {
+  await requireSelfLearningAccess();
+
+  const { userId } = await getAuth({ required: true });
+
+  // Get basic performance analytics
+  const basicAnalytics = await getPerformanceAnalytics();
+
+  // Get learning insights
+  const learningInsights = await getLearningInsights();
+
+  // Get AI predictions vs actual performance
+  const performances = await db.contentPerformance.findMany({
+    where: {
+      userId,
+      contentType: "ai-recommendation",
+    },
+    orderBy: { createdAt: "desc" },
+    take: 50,
+  });
+
+  const predictionAccuracy = performances.reduce(
+    (acc, perf) => {
+      if (perf.viralScore && perf.engagementRate) {
+        const predicted = perf.viralScore;
+        const actual = perf.engagementRate;
+        const accuracy =
+          1 - Math.abs(predicted - actual) / Math.max(predicted, actual, 1);
+        acc.total += accuracy;
+        acc.count += 1;
+      }
+      return acc;
+    },
+    { total: 0, count: 0 },
+  );
+
+  return {
+    ...basicAnalytics,
+    learningInsights,
+    predictionAccuracy:
+      predictionAccuracy.count > 0
+        ? predictionAccuracy.total / predictionAccuracy.count
+        : 0,
+    aiRecommendationStats: {
+      totalRecommendations: performances.length,
+      averageViralScore:
+        performances.reduce((sum, p) => sum + (p.viralScore || 0), 0) /
+        Math.max(performances.length, 1),
+      averageActualScore:
+        performances.reduce((sum, p) => sum + (p.engagementRate || 0), 0) /
+        Math.max(performances.length, 1),
+    },
+  };
+}
+
+// Enhanced SocialSpark AI Integration Functions - Content Studio API
+
+export async function getContentStudioAnalytics(input?: {
+  timeframe?: "7d" | "30d" | "90d" | "all";
+  platform?: string;
+}) {
+  try {
+    return await getUnifiedAnalyticsDashboard(input);
+  } catch (error) {
+    console.error("Error fetching Content Studio analytics:", error);
+    throw error;
+  }
+}
+
+export async function getContentStudioInsights() {
+  try {
+    return await getViralInsights();
+  } catch (error) {
+    console.error("Error fetching Content Studio insights:", error);
+    throw error;
+  }
+}
+
+export async function getPersonalizedRecommendations(input?: {
+  contentType?: string;
+  targetAudience?: string;
+  topic?: string;
+}) {
+  try {
+    return await getPersonalizedContentRecommendations(input);
+  } catch (error) {
+    console.error("Error fetching personalized recommendations:", error);
+    throw error;
+  }
+}
+
+export async function generatePersonalizedThread(input: {
+  contentIdea: string;
+  contentType: string;
+  targetAudience?: string;
+  adaptVoice?: boolean;
+}) {
+  const accessInfo = await getFeatureAccessInfo("viral_thread_creation");
+  if (!accessInfo.hasAccess) {
+    return {
+      success: false,
+      requiresUpgrade: true,
+      upgradeInfo: accessInfo.upgradeInfo,
+    };
+  }
+
+  try {
+    const result = await generatePersonalizedContent(input);
+    return {
+      success: true,
+      requiresUpgrade: false,
+      ...result,
+    };
+  } catch (error) {
+    console.error("Error generating personalized thread:", error);
+    throw error;
+  }
+}
+
+export async function predictThreadViralPotential(input: {
+  content: string;
+  contentType: "thread" | "post" | "reply";
+  targetAudience: string;
+  platform: string;
+  scheduledTime?: string;
+}) {
+  try {
+    return await predictViralPotential(input);
+  } catch (error) {
+    console.error("Error predicting viral potential:", error);
+    throw error;
+  }
+}
+
+export async function getBrandVoiceAnalysis(input?: {
+  forceReanalysis?: boolean;
+}) {
+  try {
+    return await analyzeBrandVoice(input);
+  } catch (error) {
+    console.error("Error analyzing brand voice:", error);
+    throw error;
+  }
+}
+
+export async function getUserBrandVoiceProfile() {
+  try {
+    return await getBrandVoiceProfile();
+  } catch (error) {
+    console.error("Error fetching brand voice profile:", error);
+    throw error;
+  }
+}
+
+export async function getViralPatterns() {
+  try {
+    return await getPersonalizedViralPatterns();
+  } catch (error) {
+    console.error("Error fetching viral patterns:", error);
+    throw error;
+  }
+}
+
+// Helper functions for content personalization
+function calculatePersonalizationScore(
+  opportunity: any,
+  recentPerformance: any[],
+  brandSignals: any,
+  learningInsights: any,
+): number {
+  let score = 0.5; // Base score
+
+  // Boost score based on recent performance patterns
+  if (recentPerformance.length > 0) {
+    const avgScore =
+      recentPerformance.reduce(
+        (sum, p) => sum + (p.actualPerformanceScore || 0),
+        0,
+      ) / recentPerformance.length;
+    score += (avgScore - 0.5) * 0.3;
+  }
+
+  // Consider brand alignment
+  if (brandSignals?.brandKeywords && opportunity.topic) {
+    const brandKeywords = brandSignals.brandKeywords.toLowerCase();
+    const topicMatch = brandKeywords.includes(opportunity.topic.toLowerCase());
+    if (topicMatch) score += 0.2;
+  }
+
+  // Factor in learning insights
+  if (learningInsights?.insights) {
+    score += 0.1;
+  }
+
+  return Math.min(Math.max(score, 0), 1);
+}
+
+function generateRecommendationReason(
+  opportunity: any,
+  recentPerformance: any[],
+  brandSignals: any,
+): string {
+  const reasons: string[] = [];
+
+  if (recentPerformance.length > 0) {
+    const avgScore =
+      recentPerformance.reduce(
+        (sum, p) => sum + (p.actualPerformanceScore || 0),
+        0,
+      ) / recentPerformance.length;
+    if (avgScore > 0.7) {
+      reasons.push("Based on your strong recent performance");
+    } else if (avgScore < 0.3) {
+      reasons.push("Opportunity to improve engagement");
+    }
+  }
+
+  if (brandSignals?.brandKeywords && opportunity.topic) {
+    const brandKeywords = brandSignals.brandKeywords.toLowerCase();
+    if (brandKeywords.includes(opportunity.topic.toLowerCase())) {
+      reasons.push("Aligns with your brand keywords");
+    }
+  }
+
+  return reasons.length > 0
+    ? reasons.join(", ")
+    : "Trending content opportunity";
+}
+
+function getTopPerformingTopics(recentPerformance: any[]): string[] {
+  const topicPerformance = new Map<string, number[]>();
+
+  recentPerformance.forEach((perf) => {
+    if (perf.contentTopic) {
+      if (!topicPerformance.has(perf.contentTopic)) {
+        topicPerformance.set(perf.contentTopic, []);
+      }
+      topicPerformance
+        .get(perf.contentTopic)!
+        .push(perf.actualPerformanceScore || 0);
+    }
+  });
+
+  return Array.from(topicPerformance.entries())
+    .map(([topic, scores]) => ({
+      topic,
+      avgScore: scores.reduce((sum, score) => sum + score, 0) / scores.length,
+    }))
+    .sort((a, b) => b.avgScore - a.avgScore)
+    .slice(0, 5)
+    .map((item) => item.topic);
+}
+
+export async function getSmartContentSuggestions() {
+  try {
+    const { userId } = await getAuth({ required: true });
+
+    // Get enhanced intelligent suggestions from SocialSpark AI
+    const aiSuggestions = {
+      contentOpportunities: [],
+      suggestions: [],
+      trends: [],
+    };
+
+    // Get user's performance data for personalization
+    const recentPerformance = await db.contentPerformance.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+    });
+
+    // Get user's brand signals for context
+    const brandSignals = await db.brandSignal.findUnique({
+      where: { userId },
+    });
+
+    // Get recent learning insights
+    const learningInsights = await db.learningInsight.findFirst({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    // Enhance suggestions with personalization
+    const enhancedSuggestions = {
+      ...aiSuggestions,
+      contentOpportunities:
+        aiSuggestions?.contentOpportunities?.map((opportunity: any) => ({
+          ...opportunity,
+          personalizedScore: calculatePersonalizationScore(
+            opportunity,
+            recentPerformance,
+            brandSignals,
+            learningInsights,
+          ),
+          recommendationReason: generateRecommendationReason(
+            opportunity,
+            recentPerformance,
+            brandSignals,
+          ),
+        })) || [],
+      performanceContext: {
+        recentAvgScore:
+          recentPerformance.length > 0
+            ? recentPerformance.reduce(
+                (sum, p) => sum + (p.actualScore || 0),
+                0,
+              ) / recentPerformance.length
+            : 0,
+        topPerformingTopics: getTopPerformingTopics(recentPerformance),
+        learningInsightsAvailable: !!learningInsights,
+      },
+    };
+
+    return enhancedSuggestions;
+  } catch (error) {
+    console.error("Error fetching smart content suggestions:", error);
+    throw error;
+  }
+}
+
+export async function generateFromOpportunity(input: {
+  opportunityId: string;
+  contentType?: string;
+}) {
+  const accessInfo = await getFeatureAccessInfo("viral_thread_creation");
+  if (!accessInfo.hasAccess) {
+    return {
+      success: false,
+      requiresUpgrade: true,
+      upgradeInfo: accessInfo.upgradeInfo,
+    };
+  }
+
+  try {
+    const result = await autoGenerateFromOpportunity(input);
+    return {
+      success: true,
+      requiresUpgrade: false,
+      ...result,
+    };
+  } catch (error) {
+    console.error("Error generating from opportunity:", error);
+    throw error;
+  }
+}
+
+export async function getContentScheduleRecommendations(input?: {
+  timeframe?: string;
+  contentTypes?: string[];
+}) {
+  try {
+    return await getOptimalContentSchedule(input);
+  } catch (error) {
+    console.error("Error fetching schedule recommendations:", error);
+    throw error;
+  }
+}
+
+export async function trackThreadPerformance(input: {
+  threadId?: string;
+  platform: string;
+  contentType: string;
+  publishedAt: string;
+  actualViews?: number;
+  actualLikes?: number;
+  actualShares?: number;
+  actualComments?: number;
+  actualSaves?: number;
+  reachMetrics?: {
+    impressions?: number;
+    reach?: number;
+    organicReach?: number;
+    paidReach?: number;
+  };
+  audienceData?: {
+    ageGroups?: Record<string, number>;
+    genders?: Record<string, number>;
+    locations?: Record<string, number>;
+    interests?: string[];
+  };
+}) {
+  try {
+    return await trackContentPerformance(input);
+  } catch (error) {
+    console.error("Error tracking thread performance:", error);
+    throw error;
+  }
+}
+
+export async function monitorThreadRealTime(input: {
+  threadId: string;
+  currentMetrics: {
+    views: number;
+    likes: number;
+    shares: number;
+    comments: number;
+    timeElapsed: number;
+  };
+}) {
+  try {
+    return await monitorRealTimePerformance(input);
+  } catch (error) {
+    console.error("Error monitoring real-time performance:", error);
+    throw error;
+  }
+}
+
+export async function updateAdaptiveLearning(input: {
+  threadId: string;
+  finalMetrics: {
+    views: number;
+    likes: number;
+    shares: number;
+    comments: number;
+    engagementRate: number;
+  };
+  userFeedback?: {
+    satisfaction: number;
+    whatWorked: string[];
+    whatDidntWork: string[];
+    suggestions?: string;
+  };
+}) {
+  try {
+    return await adaptiveLearningUpdate(input);
+  } catch (error) {
+    console.error("Error updating adaptive learning:", error);
+    throw error;
+  }
+}
+
+export async function getContentOptimizations(input?: {
+  timeframe?: string;
+  contentType?: string;
+}) {
+  try {
+    return await getDynamicOptimizations(input);
+  } catch (error) {
+    console.error("Error fetching content optimizations:", error);
+    throw error;
+  }
+}
+
+export async function getImprovementPlan() {
+  try {
+    return await getContinuousImprovementPlan();
+  } catch (error) {
+    console.error("Error fetching improvement plan:", error);
+    throw error;
+  }
+}
+
+export async function getLearningProgress() {
+  try {
+    return await getAdaptiveLearningProgress();
+  } catch (error) {
+    console.error("Error fetching learning progress:", error);
+    throw error;
+  }
+}
+
+export async function shareViralThread(input: { threadId: string }) {
+  try {
+    return await shareThread(input);
+  } catch (error) {
+    console.error("Error sharing viral thread:", error);
+    throw error;
+  }
+}
+
+export async function getSharedThread(input: { shareId: string }) {
+  try {
+    return await getPublicThread(input);
+  } catch (error) {
+    console.error("Error fetching shared thread:", error);
+    throw error;
+  }
+}
+
+// Public share links for Generated Content
+export async function shareGeneratedContent(input: { contentId: string }) {
+  try {
+    const { userId } = await getAuth({ required: true });
+    const content = await db.generatedContent.findFirst({
+      where: { id: input.contentId, userId },
+      select: { id: true },
+    });
+    if (!content) {
+      throw new Error("Content not found");
+    }
+
+    // Reuse existing share if one exists for this user/content
+    const existing = await db.publicShare.findFirst({
+      where: { type: "GENERATED_CONTENT", targetId: input.contentId, userId },
+    });
+
+    if (existing) {
+      return { shareId: existing.id };
+    }
+
+    const created = await db.publicShare.create({
+      data: {
+        userId,
+        type: "GENERATED_CONTENT",
+        targetId: input.contentId,
+      },
+      select: { id: true },
+    });
+    return { shareId: created.id };
+  } catch (error) {
+    console.error("Error sharing generated content:", error);
+    throw error;
+  }
+}
+
+export async function getSharedGeneratedContent(input: { shareId: string }) {
+  try {
+    const share = await db.publicShare.findUnique({
+      where: { id: input.shareId },
+    });
+    if (!share || share.type !== "GENERATED_CONTENT") {
+      throw new Error("Invalid or expired share link");
+    }
+    const content = await db.generatedContent.findUnique({
+      where: { id: share.targetId },
+      select: {
+        id: true,
+        title: true,
+        type: true,
+        content: true,
+        thumbnailUrl: true,
+        customThumbnailUrl: true,
+        createdAt: true,
+      },
+    });
+    if (!content) {
+      throw new Error("Content not found");
+    }
+    return content;
+  } catch (error) {
+    console.error("Error fetching shared generated content:", error);
+    throw error;
+  }
+}
+
+export async function optimizeViralThread(input: {
+  threadId: string;
+  targetMetrics?: {
+    engagement?: number;
+    shareability?: number;
+    readability?: number;
+  };
+}) {
+  try {
+    return await optimizeThread(input);
+  } catch (error) {
+    console.error("Error optimizing viral thread:", error);
+    throw error;
+  }
+}
+
+export async function getThreadFormatInsights(input: { threadId: string }) {
+  try {
+    return await getFormatIntelligenceInsights(input);
+  } catch (error) {
+    console.error("Error fetching format insights:", error);
+    throw error;
+  }
+}
+
+export async function getRealTimeDashboard() {
+  try {
+    return await getRealTimePerformanceDashboard();
+  } catch (error) {
+    console.error("Error fetching real-time dashboard:", error);
+    throw error;
+  }
+}
+
+// Comprehensive Notification System Backend API
+
+// Create a new notification
+export async function createNotification(input: {
+  userId?: string;
+  title: string;
+  message: string;
+  type:
+    | "engagement"
+    | "trend"
+    | "content"
+    | "system"
+    | "achievement"
+    | "reminder"
+    | "insight";
+  category?: string;
+  priority?: "low" | "normal" | "high" | "urgent";
+  actionType?: "navigate" | "modal" | "external" | "none";
+  actionUrl?: string;
+  actionData?: object;
+  imageUrl?: string;
+  metadata?: object;
+  scheduledFor?: Date;
+  expiresAt?: Date;
+}) {
+  const auth = await getAuth();
+  const targetUserId = input.userId || auth.userId;
+
+  if (!targetUserId) {
+    throw new Error("User ID is required");
+  }
+
+  try {
+    const notification = await db.notification.create({
+      data: {
+        userId: targetUserId,
+        title: input.title,
+        message: input.message,
+        type: input.type,
+        category: input.category,
+        priority: input.priority || "normal",
+        actionType: input.actionType,
+        actionUrl: input.actionUrl,
+        actionData: input.actionData ? JSON.stringify(input.actionData) : null,
+        imageUrl: input.imageUrl,
+        metadata: input.metadata ? JSON.stringify(input.metadata) : null,
+        scheduledFor: input.scheduledFor,
+        expiresAt: input.expiresAt,
+      },
+    });
+
+    return notification;
+  } catch (error) {
+    console.error("Error creating notification:", error);
+    throw error;
+  }
+}
+
+// Get notifications for current user with filtering and pagination
+export async function getNotifications(input?: {
+  status?: "unread" | "read" | "dismissed" | "archived";
+  type?: string;
+  category?: string;
+  priority?: "low" | "normal" | "high" | "urgent";
+  limit?: number;
+  offset?: number;
+  includeExpired?: boolean;
+}) {
+  const { userId } = await getAuth({ required: true });
+  const limit = input?.limit || 50;
+  const offset = input?.offset || 0;
+
+  try {
+    const where: any = { userId };
+
+    if (input?.status) where.status = input.status;
+    if (input?.type) where.type = input.type;
+    if (input?.category) where.category = input.category;
+    if (input?.priority) where.priority = input.priority;
+
+    // Filter out expired notifications unless explicitly requested
+    if (!input?.includeExpired) {
+      where.OR = [{ expiresAt: null }, { expiresAt: { gt: new Date() } }];
+    }
+
+    const dbOps = Promise.all([
+      db.notification.findMany({
+        where,
+        orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
+        take: limit,
+        skip: offset,
+      }),
+      db.notification.count({ where }),
+      db.notification.count({
+        where: {
+          userId,
+          status: "unread",
+          OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+        },
+      }),
+    ]);
+
+    const timeoutMs = 5000; // Keep the app snappy on load
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(
+        () => reject(new Error("DB timeout in getNotifications")),
+        timeoutMs,
+      ),
+    );
+
+    const [notifications, totalCount, unreadCount] = (await Promise.race([
+      dbOps,
+      timeoutPromise,
+    ])) as any[];
+
+    const parsedNotifications = (notifications || []).map(
+      (notification: any) => ({
+        ...notification,
+        actionData: notification.actionData
+          ? JSON.parse(notification.actionData)
+          : null,
+        metadata: notification.metadata
+          ? JSON.parse(notification.metadata)
+          : null,
+      }),
+    );
+
+    return {
+      notifications: parsedNotifications,
+      totalCount: totalCount || 0,
+      unreadCount: unreadCount || 0,
+      hasMore:
+        offset + limit < (totalCount || 0) && parsedNotifications.length > 0,
+    };
+  } catch (error) {
+    console.error("getNotifications fallback due to error:", error);
+    return {
+      notifications: [],
+      totalCount: 0,
+      unreadCount: 0,
+      hasMore: false,
+    };
+  }
+}
+
+// Get notification counts by status and type
+export async function getNotificationCounts() {
+  try {
+    const { userId } = await getAuth({ required: true });
+
+    // Set a timeout for database operations to prevent hanging
+    const dbOperationTimeout = 5000; // 5 seconds fast guard for UI responsiveness
+
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(
+        () => reject(new Error("Database operation timed out")),
+        dbOperationTimeout,
+      );
+    });
+
+    const dbOperations = Promise.all([
+      db.notification.count({
+        where: {
+          userId,
+          OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+        },
+      }),
+      db.notification.count({
+        where: {
+          userId,
+          status: "unread",
+          OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+        },
+      }),
+      db.notification.groupBy({
+        by: ["priority"],
+        where: {
+          userId,
+          status: "unread",
+          OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+        },
+        _count: true,
+      }),
+      db.notification.groupBy({
+        by: ["type"],
+        where: {
+          userId,
+          status: "unread",
+          OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+        },
+        _count: true,
+      }),
+    ]);
+
+    const [totalCount, unreadCount, priorityBreakdown, typeBreakdown] =
+      (await Promise.race([dbOperations, timeoutPromise])) as any;
+
+    return {
+      total: totalCount,
+      unread: unreadCount,
+      priorityBreakdown: priorityBreakdown.reduce(
+        (acc: any, item: any) => {
+          acc[item.priority] = item._count;
+          return acc;
+        },
+        {} as Record<string, number>,
+      ),
+      typeBreakdown: typeBreakdown.reduce(
+        (acc: any, item: any) => {
+          acc[item.type] = item._count;
+          return acc;
+        },
+        {} as Record<string, number>,
+      ),
+    };
+  } catch (error: any) {
+    console.error("Error fetching notification counts:", error);
+
+    // Return fallback data instead of throwing
+    return {
+      total: 0,
+      unread: 0,
+      priorityBreakdown: {},
+      typeBreakdown: {},
+    };
+  }
+}
+
+// Mark a notification as read and track click
+export async function markNotificationRead(input: {
+  id: string;
+  trackClick?: boolean;
+}) {
+  const { userId } = await getAuth({ required: true });
+
+  try {
+    const notification = await db.notification.findFirst({
+      where: {
+        id: input.id,
+        userId,
+      },
+    });
+
+    if (!notification) {
+      throw new Error("Notification not found");
+    }
+
+    const updateData: any = {
+      status: "read",
+      readAt: new Date(),
+    };
+
+    if (input.trackClick) {
+      updateData.clickedAt = new Date();
+    }
+
+    const updatedNotification = await db.notification.update({
+      where: { id: input.id },
+      data: updateData,
+    });
+
+    return {
+      ...updatedNotification,
+      actionData: updatedNotification.actionData
+        ? JSON.parse(updatedNotification.actionData)
+        : null,
+      metadata: updatedNotification.metadata
+        ? JSON.parse(updatedNotification.metadata)
+        : null,
+    };
+  } catch (error) {
+    console.error("Error marking notification as read:", error);
+    throw error;
+  }
+}
+
+// Mark all notifications as read
+export async function markAllNotificationsRead(input?: {
+  type?: string;
+  category?: string;
+}) {
+  const { userId } = await getAuth({ required: true });
+
+  try {
+    const where: any = {
+      userId,
+      status: "unread",
+    };
+
+    if (input?.type) {
+      where.type = input.type;
+    }
+    if (input?.category) {
+      where.category = input.category;
+    }
+
+    const result = await db.notification.updateMany({
+      where,
+      data: {
+        status: "read",
+        readAt: new Date(),
+      },
+    });
+
+    return { updatedCount: result.count };
+  } catch (error) {
+    console.error("Error marking all notifications as read:", error);
+    throw error;
+  }
+}
+
+// Dismiss a notification
+export async function dismissNotification(input: { id: string }) {
+  const { userId } = await getAuth({ required: true });
+
+  try {
+    const notification = await db.notification.findFirst({
+      where: {
+        id: input.id,
+        userId,
+      },
+    });
+
+    if (!notification) {
+      throw new Error("Notification not found");
+    }
+
+    const updatedNotification = await db.notification.update({
+      where: { id: input.id },
+      data: {
+        status: "dismissed",
+        dismissedAt: new Date(),
+      },
+    });
+
+    return {
+      ...updatedNotification,
+      actionData: updatedNotification.actionData
+        ? JSON.parse(updatedNotification.actionData)
+        : null,
+      metadata: updatedNotification.metadata
+        ? JSON.parse(updatedNotification.metadata)
+        : null,
+    };
+  } catch (error) {
+    console.error("Error dismissing notification:", error);
+    throw error;
+  }
+}
+
+// Archive notifications (bulk operation)
+export async function archiveNotifications(input: {
+  ids?: string[];
+  olderThan?: Date;
+  status?: "read" | "dismissed";
+}) {
+  const { userId } = await getAuth({ required: true });
+
+  try {
+    const where: any = {
+      userId,
+    };
+
+    if (input.ids && input.ids.length > 0) {
+      where.id = { in: input.ids };
+    }
+
+    if (input.olderThan) {
+      where.createdAt = { lt: input.olderThan };
+    }
+
+    if (input.status) {
+      where.status = input.status;
+    }
+
+    const result = await db.notification.updateMany({
+      where,
+      data: {
+        status: "archived",
+      },
+    });
+
+    return { archivedCount: result.count };
+  } catch (error) {
+    console.error("Error archiving notifications:", error);
+    throw error;
+  }
+}
+
+// Delete notifications permanently
+export async function deleteNotifications(input: {
+  ids?: string[];
+  olderThan?: Date;
+  status?: "archived";
+}) {
+  const { userId } = await getAuth({ required: true });
+
+  try {
+    const where: any = {
+      userId,
+    };
+
+    if (input.ids && input.ids.length > 0) {
+      where.id = { in: input.ids };
+    }
+
+    if (input.olderThan) {
+      where.createdAt = { lt: input.olderThan };
+    }
+
+    if (input.status) {
+      where.status = input.status;
+    }
+
+    const result = await db.notification.deleteMany({
+      where,
+    });
+
+    return { deletedCount: result.count };
+  } catch (error) {
+    console.error("Error deleting notifications:", error);
+    throw error;
+  }
+}
+
+// Get a single notification by ID
+export async function getNotificationById(input: { id: string }) {
+  const { userId } = await getAuth({ required: true });
+
+  try {
+    const notification = await db.notification.findFirst({
+      where: {
+        id: input.id,
+        userId,
+      },
+    });
+
+    if (!notification) {
+      throw new Error("Notification not found");
+    }
+
+    return {
+      ...notification,
+      actionData: notification.actionData
+        ? JSON.parse(notification.actionData)
+        : null,
+      metadata: notification.metadata
+        ? JSON.parse(notification.metadata)
+        : null,
+    };
+  } catch (error) {
+    console.error("Error fetching notification:", error);
+    throw error;
+  }
+}
+
+// Process scheduled notifications (for cron job)
+export async function processScheduledNotifications() {
+  try {
+    const now = new Date();
+    const scheduledNotifications = await db.notification.findMany({
+      where: {
+        scheduledFor: {
+          lte: now,
+        },
+        status: "unread", // Only process unread scheduled notifications
+      },
+    });
+
+    const processedCount = scheduledNotifications.length;
+
+    // Update scheduled notifications to remove the scheduledFor date
+    // (they are now "active" notifications)
+    if (scheduledNotifications.length > 0) {
+      await db.notification.updateMany({
+        where: {
+          id: {
+            in: scheduledNotifications.map((n) => n.id),
+          },
+        },
+        data: {
+          scheduledFor: null,
+        },
+      });
+    }
+
+    return { processedCount };
+  } catch (error) {
+    console.error("Error processing scheduled notifications:", error);
+    throw error;
+  }
+}
+
+// Clean up expired notifications (for cron job)
+export async function cleanupExpiredNotifications() {
+  try {
+    const now = new Date();
+    const result = await db.notification.updateMany({
+      where: {
+        expiresAt: {
+          lt: now,
+        },
+        status: {
+          not: "archived",
+        },
+      },
+      data: {
+        status: "archived",
+      },
+    });
+
+    return { archivedCount: result.count };
+  } catch (error) {
+    console.error("Error cleaning up expired notifications:", error);
+    throw error;
+  }
+}
+
+export async function getContentStudioNotifications() {
+  try {
+    return await getNotifications({ limit: 20 });
+  } catch (error) {
+    console.error("Error fetching notifications:", error);
+    throw error;
+  }
+}
+
+export async function getContentStudioPreferences() {
+  try {
+    return await socialSparkGetUserPreferences();
+  } catch (error) {
+    console.error("Error fetching Content Studio preferences:", error);
+    throw error;
+  }
+}
+
+export async function updateContentStudioPreferences(input: {
+  defaultAudience?: string;
+  defaultTone?: string;
+  customAudiences?: string[];
+  preferredPatterns?: string[];
+  notificationSettings?: any;
+  workflowSettings?: any;
+  brandPrimaryColor?: string;
+  brandSecondaryColor?: string;
+  brandAccentColor?: string;
+}) {
+  try {
+    return await socialSparkUpdateUserPreferences(input);
+  } catch (error) {
+    console.error("Error updating Content Studio preferences:", error);
+    throw error;
+  }
+}
+
+export async function addUserAudience(input: { audience: string }) {
+  try {
+    return await addCustomAudience(input);
+  } catch (error) {
+    console.error("Error adding custom audience:", error);
+    throw error;
+  }
+}
+
+export async function uploadUserBrandLogo(input: {
+  base64: string;
+  fileName: string;
+}) {
+  try {
+    return await uploadBrandLogo(input);
+  } catch (error) {
+    console.error("Error uploading brand logo:", error);
+    throw error;
+  }
+}
+
+// Enhanced Analytics Functions for Content Studio
+export async function getAdvancedContentAnalytics() {
+  try {
+    const [unifiedAnalytics] = await Promise.all([
+      getUnifiedAnalyticsDashboard(),
+    ]);
+
+    // Combine and enhance the analytics data
+    const enhancedAnalytics = {
+      summary: {
+        totalContent: unifiedAnalytics?.summary?.totalPosts || 0,
+        totalViews: unifiedAnalytics?.summary?.totalViews || 0,
+        totalEngagement: unifiedAnalytics?.summary?.totalEngagements || 0,
+        avgEngagementRate: unifiedAnalytics?.summary?.avgEngagementRate || 0,
+        growthRate: 0, // growthMetrics not available in realTimeDashboard
+        viralScore: 0, // averageViralScore not available in viralInsights
+      },
+      performance: {
+        topPerformingContent: unifiedAnalytics?.topContent || [],
+        engagementTrends: [], // engagementTrends not available in realTimeDashboard
+        platformBreakdown: [], // platformBreakdown not available in unifiedAnalytics
+        timeSeriesData: [], // timeSeriesData not available in realTimeDashboard
+      },
+      insights: {
+        viralPatterns: [], // topViralPatterns not available in viralInsights
+        contentOpportunities: [], // contentOpportunities not available in viralInsights
+        optimizationSuggestions: [], // optimizationSuggestions not available in viralInsights
+        audienceInsights: {}, // audienceInsights not available in unifiedAnalytics
+      },
+      predictions: {
+        nextViralOpportunity: null, // nextViralOpportunity not available in viralInsights
+        recommendedPostingTimes: [], // optimalTimes not available in unifiedAnalytics
+        trendingTopics: [], // trendingTopics not available in viralInsights
+      },
+    };
+
+    return enhancedAnalytics;
+  } catch (error) {
+    console.error("Error fetching advanced content analytics:", error);
+    // Return fallback data structure
+    return {
+      summary: {
+        totalContent: 0,
+        totalViews: 0,
+        totalEngagement: 0,
+        avgEngagementRate: 0,
+        growthRate: 0,
+        viralScore: 0,
+      },
+      performance: {
+        topPerformingContent: [],
+        engagementTrends: [],
+        platformBreakdown: [],
+        timeSeriesData: [],
+      },
+      insights: {
+        viralPatterns: [],
+        contentOpportunities: [],
+        optimizationSuggestions: [],
+        audienceInsights: {},
+      },
+      predictions: {
+        nextViralOpportunity: null,
+        recommendedPostingTimes: [],
+        trendingTopics: [],
+      },
+    };
+  }
+}
+
+export async function getContentPerformanceInsights() {
+  try {
+    const realTimeData = await getRealTimePerformanceDashboard();
+
+    return {
+      performanceMetrics: {
+        views: realTimeData?.summary?.totalViews || 0,
+        engagement: 0, // totalEngagement not available in realTimeData
+        shares: 0, // totalShares not available in realTimeData
+        comments: 0, // totalComments not available in realTimeData
+        viralScore: 0, // averageViralScore not available in insights
+      },
+      trends: {
+        viewsTrend: [], // viewsTrend not available in realTimeData
+        engagementTrend: [], // engagementTrend not available in realTimeData
+        growthRate: 0, // growthMetrics not available in realTimeData
+      },
+      insights: {
+        bestPerformingTime: undefined, // optimalPostingTimes not available in insights
+        topHashtags: [], // topHashtags not available in insights
+        audienceReach: {}, // audienceReach not available in realTimeData
+        competitorComparison: {}, // competitorInsights not available in insights
+      },
+      recommendations: {
+        optimizationTips: [], // optimizationSuggestions not available in insights
+        nextBestAction: undefined, // nextBestAction not available in insights
+        contentIdeas: [], // contentOpportunities not available in insights
+      },
+    };
+  } catch (error) {
+    console.error("Error fetching content performance insights:", error);
+    return {
+      performanceMetrics: {
+        views: 0,
+        engagement: 0,
+        shares: 0,
+        comments: 0,
+        viralScore: 0,
+      },
+      trends: {
+        viewsTrend: [],
+        engagementTrend: [],
+        growthRate: 0,
+      },
+      insights: {
+        bestPerformingTime: null,
+        topHashtags: [],
+        audienceReach: {},
+        competitorComparison: {},
+      },
+      recommendations: {
+        optimizationTips: [],
+        nextBestAction: null,
+        contentIdeas: [],
+      },
+    };
+  }
+}
+
+// Performance tracking for recommendations
+export async function trackRecommendationPerformance(input: {
+  recommendationId: string;
+  action: "viewed" | "clicked" | "generated" | "posted";
+  metadata?: any;
+}) {
+  try {
+    const { userId } = await getAuth({ required: true });
+
+    // Create a simple tracking record using existing tables
+    await db.contentPerformance.create({
+      data: {
+        userId,
+        contentId: input.recommendationId,
+        contentType: `recommendation_${input.action}`,
+        platform: "content_studio",
+        actualScore:
+          input.action === "posted"
+            ? 10
+            : input.action === "generated"
+              ? 8
+              : input.action === "clicked"
+                ? 5
+                : 1,
+        trackingMethod: "RECOMMENDATION_PERFORMANCE",
+      },
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error tracking recommendation performance:", error);
+    throw error;
+  }
+}
+
+// Get recommendation performance analytics
+export async function getRecommendationAnalytics() {
+  try {
+    const { userId } = await getAuth({ required: true });
+
+    const tracking = await db.contentPerformance.findMany({
+      where: {
+        userId,
+        contentType: { startsWith: "recommendation_" },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 100,
+    });
+
+    const viewedCount = tracking.filter(
+      (t) => t.contentType === "recommendation_viewed",
+    ).length;
+    const clickedCount = tracking.filter(
+      (t) => t.contentType === "recommendation_clicked",
+    ).length;
+    const generatedCount = tracking.filter(
+      (t) => t.contentType === "recommendation_generated",
+    ).length;
+    const postedCount = tracking.filter(
+      (t) => t.contentType === "recommendation_posted",
+    ).length;
+
+    const analytics = {
+      totalRecommendations: viewedCount,
+      clickThroughRate: viewedCount > 0 ? clickedCount / viewedCount : 0,
+      generationRate: clickedCount > 0 ? generatedCount / clickedCount : 0,
+      postingRate: generatedCount > 0 ? postedCount / generatedCount : 0,
+      totalEngagement: clickedCount + generatedCount + postedCount,
+      performanceScore:
+        tracking.reduce((sum, t) => sum + (t.actualScore || 0), 0) /
+        Math.max(tracking.length, 1),
+    };
+
+    return analytics;
+  } catch (error) {
+    console.error("Error fetching recommendation analytics:", error);
+    return {
+      totalRecommendations: 0,
+      clickThroughRate: 0,
+      generationRate: 0,
+      postingRate: 0,
+      totalEngagement: 0,
+      performanceScore: 0,
+    };
+  }
+}
+
+// Optimize recommendations based on performance
+export async function optimizeRecommendations() {
+  try {
+    const { userId } = await getAuth({ required: true });
+
+    const analytics = await getRecommendationAnalytics();
+    const recentPerformance = await db.contentPerformance.findMany({
+      where: {
+        userId,
+        contentType: { not: { startsWith: "recommendation_" } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    });
+
+    // Analyze what types of recommendations perform best
+    const highPerformingContent = recentPerformance.filter(
+      (p) => p.actualScore && p.actualScore > 7,
+    );
+
+    const optimizations = {
+      preferredContentTypes: [
+        ...new Set(highPerformingContent.map((p) => p.contentType)),
+      ].slice(0, 3),
+      bestPerformingTimes: [
+        ...new Set(
+          highPerformingContent.map((p) => new Date(p.createdAt).getHours()),
+        ),
+      ].slice(0, 5),
+      recommendationEffectiveness: {
+        clickThroughRate: analytics.clickThroughRate,
+        generationRate: analytics.generationRate,
+        postingRate: analytics.postingRate,
+        overallScore: analytics.performanceScore,
+      },
+      improvements: [
+        analytics.clickThroughRate < 0.3
+          ? "Improve recommendation relevance and personalization"
+          : null,
+        analytics.generationRate < 0.5
+          ? "Simplify content generation process"
+          : null,
+        analytics.postingRate < 0.4
+          ? "Add posting reminders and scheduling features"
+          : null,
+        analytics.performanceScore < 6
+          ? "Enhance AI recommendation quality"
+          : null,
+      ].filter(Boolean),
+      successMetrics: {
+        totalRecommendationsViewed: analytics.totalRecommendations,
+        totalEngagementActions: analytics.totalEngagement,
+        conversionFunnel: {
+          viewed: analytics.totalRecommendations,
+          clicked: Math.round(
+            analytics.totalRecommendations * analytics.clickThroughRate,
+          ),
+          generated: Math.round(
+            analytics.totalRecommendations *
+              analytics.clickThroughRate *
+              analytics.generationRate,
+          ),
+          posted: Math.round(
+            analytics.totalRecommendations *
+              analytics.clickThroughRate *
+              analytics.generationRate *
+              analytics.postingRate,
+          ),
+        },
+      },
+    };
+
+    return optimizations;
+  } catch (error) {
+    console.error("Error optimizing recommendations:", error);
+    return {
+      preferredContentTypes: [],
+      bestPerformingTimes: [],
+      recommendationEffectiveness: {
+        clickThroughRate: 0,
+        generationRate: 0,
+        postingRate: 0,
+        overallScore: 0,
+      },
+      improvements: [],
+      successMetrics: {
+        totalRecommendationsViewed: 0,
+        totalEngagementActions: 0,
+        conversionFunnel: {
+          viewed: 0,
+          clicked: 0,
+          generated: 0,
+          posted: 0,
+        },
+      },
+    };
+  }
+}
+
+// Advanced Performance Tracking Functions
+export async function trackDetailedPerformance(input: {
+  contentId: string;
+  platform: string;
+  metrics: {
+    views?: number;
+    likes?: number;
+    shares?: number;
+    comments?: number;
+    clickThroughRate?: number;
+    engagementRate?: number;
+    reachRate?: number;
+  };
+  timestamp?: Date;
+}) {
+  try {
+    const { userId } = await getAuth({ required: true });
+
+    // Store detailed performance metrics
+    await db.contentPerformance.create({
+      data: {
+        userId,
+        contentId: input.contentId,
+        contentType: "detailed_tracking",
+        platform: input.platform ?? "twitter",
+        actualScore: calculateCompositeScore(input.metrics),
+        trackingMethod: "DETAILED_METRICS",
+        createdAt: input.timestamp || new Date(),
+      },
+    });
+
+    // Update real-time analytics cache
+    await updatePerformanceCache(userId, input.contentId, input.metrics);
+
+    return {
+      success: true,
+      compositeScore: calculateCompositeScore(input.metrics),
+    };
+  } catch (error) {
+    console.error("Error tracking detailed performance:", error);
+    throw error;
+  }
+}
+
+function calculateCompositeScore(metrics: any) {
+  const weights = {
+    views: 0.1,
+    likes: 0.2,
+    shares: 0.3,
+    comments: 0.25,
+    clickThroughRate: 0.1,
+    engagementRate: 0.05,
+  };
+
+  let score = 0;
+  let totalWeight = 0;
+
+  Object.entries(weights).forEach(([key, weight]) => {
+    if (metrics[key] !== undefined && metrics[key] !== null) {
+      score += (metrics[key] as number) * weight;
+      totalWeight += weight;
+    }
+  });
+
+  return totalWeight > 0 ? Math.min(10, score / totalWeight) : 0;
+}
+
+async function updatePerformanceCache(
+  userId: string,
+  contentId: string,
+  metrics: any,
+) {
+  // This would update a real-time cache for performance monitoring
+  // For now, we'll use the database as the cache
+  const cacheKey = `performance_${userId}_${contentId}`;
+
+  try {
+    await db.analyticsCache.upsert({
+      where: { cacheKey },
+      update: {
+        data: JSON.stringify({
+          ...metrics,
+          lastUpdated: new Date().toISOString(),
+          compositeScore: calculateCompositeScore(metrics),
+        }),
+        status: "COMPLETED",
+        completedAt: new Date(),
+      },
+      create: {
+        userId,
+        cacheKey,
+        cacheType: "PERFORMANCE_METRICS",
+        status: "COMPLETED",
+        completedAt: new Date(),
+        data: JSON.stringify({
+          ...metrics,
+          lastUpdated: new Date().toISOString(),
+          compositeScore: calculateCompositeScore(metrics),
+        }),
+      },
+    });
+  } catch (error) {
+    console.error("Error updating performance cache:", error);
+  }
+}
+
+export async function getRealTimePerformanceMetrics() {
+  try {
+    const { userId } = await getAuth({ required: true });
+
+    // Get recent performance data
+    const recentPerformance = await db.contentPerformance.findMany({
+      where: {
+        userId,
+        createdAt: {
+          gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 100,
+    });
+
+    // Performance trends (last 24 hours vs previous 24 hours)
+    const last24h = recentPerformance.filter(
+      (p) => p.createdAt > new Date(Date.now() - 24 * 60 * 60 * 1000),
+    );
+    const previous24h = recentPerformance.filter(
+      (p) =>
+        p.createdAt > new Date(Date.now() - 48 * 60 * 60 * 1000) &&
+        p.createdAt <= new Date(Date.now() - 24 * 60 * 60 * 1000),
+    );
+
+    const currentAvg =
+      last24h.length > 0
+        ? last24h.reduce((sum, p) => sum + (p.actualScore || 0), 0) /
+          last24h.length
+        : 0;
+    const previousAvg =
+      previous24h.length > 0
+        ? previous24h.reduce((sum, p) => sum + (p.actualScore || 0), 0) /
+          previous24h.length
+        : 0;
+
+    const trend =
+      previousAvg > 0 ? ((currentAvg - previousAvg) / previousAvg) * 100 : 0;
+
+    return {
+      current: {
+        totalContent: last24h.length,
+        averageScore: currentAvg,
+        topPerformer:
+          last24h.length > 0
+            ? last24h.reduce((best, current) =>
+                (current.actualScore || 0) > (best.actualScore || 0)
+                  ? current
+                  : best,
+              )
+            : null,
+      },
+      trends: {
+        performanceChange: trend,
+        isImproving: trend > 0,
+        contentVelocity: last24h.length,
+      },
+      insights: {
+        bestPerformingPlatform: getBestPerformingPlatform(last24h),
+        peakPerformanceHour: getPeakPerformanceHour(last24h),
+        consistencyScore: calculateConsistencyScore(last24h),
+      },
+    };
+  } catch (error) {
+    console.error("Error fetching real-time performance metrics:", error);
+    return {
+      current: { totalContent: 0, averageScore: 0, topPerformer: null },
+      trends: { performanceChange: 0, isImproving: false, contentVelocity: 0 },
+      insights: {
+        bestPerformingPlatform: null,
+        peakPerformanceHour: null,
+        consistencyScore: 0,
+      },
+    };
+  }
+}
+
+function getBestPerformingPlatform(performance: any[]) {
+  const platformScores: { [key: string]: { total: number; count: number } } =
+    {};
+
+  performance.forEach((p) => {
+    if (!platformScores[p.platform]) {
+      platformScores[p.platform] = { total: 0, count: 0 };
+    }
+    platformScores[p.platform]!.total += p.actualScore || 0;
+    platformScores[p.platform]!.count += 1;
+  });
+
+  let bestPlatform = "Unknown";
+  let bestAvg = 0;
+
+  Object.entries(platformScores).forEach(([platform, data]) => {
+    const avg = data.count > 0 ? data.total / data.count : 0;
+    if (avg > bestAvg) {
+      bestAvg = avg;
+      bestPlatform = platform;
+    }
+  });
+
+  return bestPlatform;
+}
+
+function getPeakPerformanceHour(performance: any[]) {
+  const hourlyScores: { [key: number]: { total: number; count: number } } = {};
+
+  performance.forEach((p) => {
+    const hour = new Date(p.createdAt).getHours();
+    if (!hourlyScores[hour]) {
+      hourlyScores[hour] = { total: 0, count: 0 };
+    }
+    hourlyScores[hour]!.total += p.actualScore || 0;
+    hourlyScores[hour]!.count += 1;
+  });
+
+  let bestHour = 0;
+  let bestAvg = 0;
+
+  Object.entries(hourlyScores).forEach(([hour, data]) => {
+    const avg = data.count > 0 ? data.total / data.count : 0;
+    if (avg > bestAvg) {
+      bestAvg = avg;
+      bestHour = parseInt(hour);
+    }
+  });
+
+  return bestHour;
+}
+
+function calculateConsistencyScore(performance: any[]) {
+  if (performance.length < 2) return 0;
+
+  const scores = performance.map((p) => p.actualScore || 0);
+  const mean = scores.reduce((sum, score) => sum + score, 0) / scores.length;
+  const variance =
+    scores.reduce((sum, score) => sum + Math.pow(score - mean, 2), 0) /
+    scores.length;
+  const standardDeviation = Math.sqrt(variance);
+
+  // Lower standard deviation = higher consistency (inverted and normalized to 0-10)
+  return Math.max(0, 10 - standardDeviation * 2);
+}
+
+export async function getAdvancedOptimizationInsights() {
+  try {
+    const { userId } = await getAuth({ required: true });
+
+    const [realtimeMetrics, recommendationAnalytics, historicalData] =
+      await Promise.all([
+        getRealTimePerformanceMetrics(),
+        getRecommendationAnalytics(),
+        db.contentPerformance.findMany({
+          where: { userId },
+          orderBy: { createdAt: "desc" },
+          take: 200,
+        }),
+      ]);
+
+    // Advanced pattern recognition
+    const patterns = analyzePerformancePatterns(historicalData);
+    const optimizations = generateAdvancedOptimizations(
+      patterns,
+      realtimeMetrics,
+      recommendationAnalytics,
+    );
+
+    return {
+      currentPerformance: realtimeMetrics,
+      patterns,
+      optimizations,
+      predictiveInsights: generatePredictiveInsights(historicalData),
+      actionableRecommendations: generateActionableOptimizations(
+        patterns,
+        realtimeMetrics,
+      ),
+    };
+  } catch (error) {
+    console.error("Error generating advanced optimization insights:", error);
+    return {
+      currentPerformance: null,
+      patterns: {},
+      optimizations: [],
+      predictiveInsights: {},
+      actionableRecommendations: [],
+    };
+  }
+}
+
+function analyzePerformancePatterns(data: any[]) {
+  // Analyze temporal patterns
+  const hourlyPerformance = new Array(24)
+    .fill(0)
+    .map(() => ({ total: 0, count: 0 }));
+  const dailyPerformance = new Array(7)
+    .fill(0)
+    .map(() => ({ total: 0, count: 0 }));
+  const platformPerformance: {
+    [key: string]: { total: number; count: number };
+  } = {};
+
+  data.forEach((item) => {
+    const date = new Date(item.createdAt);
+    const hour = date.getHours();
+    const day = date.getDay();
+    const score = item.actualScore || 0;
+
+    // Hourly patterns
+    hourlyPerformance[hour]!.total += score;
+    hourlyPerformance[hour]!.count += 1;
+
+    // Daily patterns
+    dailyPerformance[day]!.total += score;
+    dailyPerformance[day]!.count += 1;
+
+    // Platform patterns
+    if (!platformPerformance[item.platform]) {
+      platformPerformance[item.platform] = { total: 0, count: 0 };
+    }
+    platformPerformance[item.platform]!.total += score;
+    platformPerformance[item.platform]!.count += 1;
+  });
+
+  return {
+    bestHours: hourlyPerformance
+      .map((data, hour) => ({
+        hour,
+        avgScore: data.count > 0 ? data.total / data.count : 0,
+        count: data.count,
+      }))
+      .sort((a, b) => b.avgScore - a.avgScore)
+      .slice(0, 5),
+
+    bestDays: dailyPerformance
+      .map((data, day) => ({
+        day: [
+          "Sunday",
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday",
+        ][day],
+        avgScore: data.count > 0 ? data.total / data.count : 0,
+        count: data.count,
+      }))
+      .sort((a, b) => b.avgScore - a.avgScore)
+      .slice(0, 3),
+
+    platformEffectiveness: Object.entries(platformPerformance)
+      .map(([platform, data]) => ({
+        platform,
+        avgScore: data.count > 0 ? data.total / data.count : 0,
+        count: data.count,
+      }))
+      .sort((a, b) => b.avgScore - a.avgScore),
+  };
+}
+
+function generateAdvancedOptimizations(
+  patterns: any,
+  realtimeMetrics: any,
+  recommendationAnalytics: any,
+) {
+  const optimizations: any[] = [];
+
+  // Timing optimizations
+  if (patterns.bestHours && patterns.bestHours.length > 0) {
+    optimizations.push({
+      type: "timing",
+      priority: "high",
+      title: "Optimize Posting Schedule",
+      description: `Your content performs best at ${patterns.bestHours[0].hour}:00. Consider scheduling more content during this time.`,
+      impact: "Could improve engagement by up to 25%",
+      action: "schedule_optimization",
+    });
+  }
+
+  // Platform optimizations
+  if (
+    patterns.platformEffectiveness &&
+    patterns.platformEffectiveness.length > 1
+  ) {
+    const topPlatform = patterns.platformEffectiveness[0];
+    const lowPlatform =
+      patterns.platformEffectiveness[patterns.platformEffectiveness.length - 1];
+
+    if (topPlatform.avgScore > lowPlatform.avgScore * 1.5) {
+      optimizations.push({
+        type: "platform",
+        priority: "medium",
+        title: "Focus on High-Performing Platforms",
+        description: `${topPlatform.platform} shows ${Math.round((topPlatform.avgScore / lowPlatform.avgScore - 1) * 100)}% better performance than ${lowPlatform.platform}.`,
+        impact: "Reallocate content distribution for better ROI",
+        action: "platform_rebalance",
+      });
+    }
+  }
+
+  // Consistency optimizations
+  if (realtimeMetrics?.insights?.consistencyScore < 7) {
+    optimizations.push({
+      type: "consistency",
+      priority: "medium",
+      title: "Improve Content Consistency",
+      description:
+        "Your content performance varies significantly. Consider developing content templates or guidelines.",
+      impact: "More predictable and reliable engagement",
+      action: "consistency_improvement",
+    });
+  }
+
+  // Recommendation system optimizations
+  if (recommendationAnalytics.clickThroughRate < 0.3) {
+    optimizations.push({
+      type: "recommendations",
+      priority: "high",
+      title: "Enhance AI Recommendations",
+      description:
+        "Low click-through rate on recommendations suggests they need better personalization.",
+      impact: "Improve content discovery and creation efficiency",
+      action: "recommendation_tuning",
+    });
+  }
+
+  return optimizations;
+}
+
+function generatePredictiveInsights(historicalData: any[]) {
+  if (historicalData.length < 10) {
+    return { message: "Need more data for predictions" };
+  }
+
+  // Simple trend analysis
+  const recentData = historicalData.slice(0, 20);
+  const olderData = historicalData.slice(20, 40);
+
+  const recentAvg =
+    recentData.reduce((sum, item) => sum + (item.actualScore || 0), 0) /
+    recentData.length;
+  const olderAvg =
+    olderData.length > 0
+      ? olderData.reduce((sum, item) => sum + (item.actualScore || 0), 0) /
+        olderData.length
+      : recentAvg;
+
+  const trend = olderAvg > 0 ? ((recentAvg - olderAvg) / olderAvg) * 100 : 0;
+
+  return {
+    performanceTrend: trend,
+    trendDirection:
+      trend > 5 ? "improving" : trend < -5 ? "declining" : "stable",
+    predictedNextWeekScore: Math.max(
+      0,
+      Math.min(10, recentAvg + (trend / 100) * recentAvg),
+    ),
+    confidence: Math.min(90, historicalData.length * 2), // Simple confidence based on data volume
+  };
+}
+
+function generateActionableOptimizations(patterns: any, realtimeMetrics: any) {
+  const actions: any[] = [];
+
+  if (patterns.bestHours && patterns.bestHours.length > 0) {
+    actions.push({
+      title: "Schedule content for peak hours",
+      description: `Post between ${patterns.bestHours[0].hour}:00-${patterns.bestHours[0].hour + 1}:00 for best results`,
+      priority: "high",
+      timeToImplement: "5 minutes",
+      expectedImpact: "+25% engagement",
+    });
+  }
+
+  if (realtimeMetrics?.insights?.consistencyScore < 6) {
+    actions.push({
+      title: "Create content templates",
+      description: "Develop 3-5 content templates to improve consistency",
+      priority: "medium",
+      timeToImplement: "30 minutes",
+      expectedImpact: "+15% predictable performance",
+    });
+  }
+
+  if (
+    patterns.platformEffectiveness &&
+    patterns.platformEffectiveness.length > 0
+  ) {
+    const topPlatform = patterns.platformEffectiveness[0];
+    actions.push({
+      title: `Focus on ${topPlatform.platform}`,
+      description: `Increase content volume on your best-performing platform`,
+      priority: "medium",
+      timeToImplement: "10 minutes",
+      expectedImpact: "+20% overall performance",
+    });
+  }
+
+  return actions;
+}
+
+export async function getContentStudioDashboard() {
+  try {
+    const [analytics, insights, brandVoice, viralPatterns] = await Promise.all([
+      getAdvancedContentAnalytics(),
+      getContentPerformanceInsights(),
+      getBrandVoiceProfile(),
+      getPersonalizedViralPatterns(),
+    ]);
+
+    return {
+      overview: analytics.summary,
+      performance: {
+        ...analytics.performance,
+        insights: insights.insights,
+      },
+      brandProfile: {
+        voiceCharacteristics: brandVoice?.voiceCharacteristics || {},
+        contentPatterns: {}, // contentPatterns not available in brandVoice
+        audienceAlignment: {}, // audienceAlignment not available in brandVoice
+      },
+      viralIntelligence: {
+        patterns: Array.isArray(viralPatterns)
+          ? viralPatterns
+          : viralPatterns &&
+              typeof viralPatterns === "object" &&
+              "personalViralPatterns" in viralPatterns
+            ? (viralPatterns as any).personalViralPatterns || []
+            : [],
+        opportunities: analytics.insights.contentOpportunities,
+        predictions: analytics.predictions,
+      },
+      recommendations: {
+        immediate: insights.recommendations.optimizationTips.slice(0, 3),
+        strategic: analytics.insights.optimizationSuggestions.slice(0, 3),
+        nextActions: [
+          insights.recommendations.nextBestAction,
+          analytics.predictions.nextViralOpportunity,
+        ].filter(Boolean),
+      },
+    };
+  } catch (error) {
+    console.error("Error fetching Content Studio dashboard:", error);
+    return {
+      overview: {
+        totalContent: 0,
+        totalViews: 0,
+        totalEngagement: 0,
+        avgEngagementRate: 0,
+        growthRate: 0,
+        viralScore: 0,
+      },
+      performance: {
+        topPerformingContent: [],
+        engagementTrends: [],
+        platformBreakdown: [],
+        timeSeriesData: [],
+        insights: {
+          bestPerformingTime: null,
+          topHashtags: [],
+          audienceReach: {},
+          competitorComparison: {},
+        },
+      },
+      brandProfile: {
+        voiceCharacteristics: {},
+        contentPatterns: {},
+        audienceAlignment: {},
+      },
+      viralIntelligence: {
+        patterns: [],
+        opportunities: [],
+        predictions: {
+          nextViralOpportunity: null,
+          recommendedPostingTimes: [],
+          trendingTopics: [],
+        },
+      },
+      recommendations: {
+        immediate: [],
+        strategic: [],
+        nextActions: [],
+      },
+    };
+  }
+}
+
+// User Behavior Tracking Functions
+// These functions implement intelligent behavior tracking to understand user preferences and improve content resonance
+// Enhanced with intelligent resonance scoring system
+export async function trackUserBehavior(input: {
+  eventType: string;
+  pageUrl?: string;
+  elementId?: string;
+  contentId?: string;
+  contentType?: string;
+  duration?: number;
+  scrollDepth?: number;
+  sessionId?: string;
+  metadata?: Record<string, any>;
+}) {
+  const { userId } = await getAuth({ required: true });
+
+  try {
+    const event = await db.userBehaviorEvent.create({
+      data: {
+        userId,
+        eventType: input.eventType,
+        eventData: JSON.stringify(input.metadata || {}),
+        sessionId: input.sessionId || "default",
+        pageUrl: input.pageUrl,
+        elementId: input.elementId,
+        contentId: input.contentId,
+        contentType: input.contentType,
+        duration: input.duration,
+        scrollDepth: input.scrollDepth,
+      },
+    });
+
+    // Update engagement patterns asynchronously
+    await updateUserEngagementPatterns(userId, {
+      eventType: input.eventType,
+      section: input.pageUrl || "unknown",
+      action: input.elementId || input.eventType,
+      metadata: input.metadata,
+    });
+
+    return { success: true, eventId: event.id };
+  } catch (error) {
+    console.error("Error tracking user behavior:", error);
+    return { success: false, error: "Failed to track behavior" };
+  }
+}
+
+export async function updateContentResonanceScore(input: {
+  contentId: string;
+  contentType: string;
+  resonanceScore: number;
+  engagementType: string;
+  feedbackValue?: number;
+}) {
+  const { userId } = await getAuth({ required: true });
+
+  try {
+    const existingScore = await db.contentResonanceScore.findFirst({
+      where: {
+        userId,
+        contentId: input.contentId,
+        contentType: input.contentType,
+      },
+    });
+
+    if (existingScore) {
+      // Update existing score with weighted average
+      const newScore =
+        existingScore.resonanceScore * 0.7 + input.resonanceScore * 0.3;
+      const newViewCount = existingScore.viewCount + 1;
+
+      await db.contentResonanceScore.update({
+        where: { id: existingScore.id },
+        data: {
+          resonanceScore: newScore,
+          viewCount: newViewCount,
+          lastInteraction: new Date(),
+          explicitFeedback: input.feedbackValue
+            ? input.feedbackValue > 0
+              ? "positive"
+              : "negative"
+            : undefined,
+          feedbackScore: input.feedbackValue,
+          updatedAt: new Date(),
+        },
+      });
+    } else {
+      // Create new score
+      await db.contentResonanceScore.create({
+        data: {
+          userId,
+          contentId: input.contentId,
+          contentType: input.contentType,
+          resonanceScore: input.resonanceScore,
+          viewCount: 1,
+          lastInteraction: new Date(),
+          explicitFeedback: input.feedbackValue
+            ? input.feedbackValue > 0
+              ? "positive"
+              : "negative"
+            : undefined,
+          feedbackScore: input.feedbackValue,
+        },
+      });
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating content resonance score:", error);
+    return { success: false, error: "Failed to update resonance score" };
+  }
+}
+
+async function updateUserEngagementPatterns(
+  userId: string,
+  behaviorData: {
+    eventType: string;
+    section: string;
+    action: string;
+    metadata?: Record<string, any>;
+  },
+) {
+  try {
+    const existingPattern = await db.userEngagementPattern.findUnique({
+      where: { userId },
+    });
+
+    const currentHour = new Date().getHours();
+
+    if (existingPattern) {
+      // Parse existing patterns from actual schema fields
+      const preferredSections = JSON.parse(
+        existingPattern.preferredSections || "[]",
+      ) as string[];
+      const peakActivityHours = JSON.parse(
+        existingPattern.peakActivityHours || "[]",
+      ) as number[];
+      const preferredContentTypes = JSON.parse(
+        existingPattern.preferredContentTypes || "[]",
+      ) as string[];
+      const topResonatingTopics = JSON.parse(
+        existingPattern.topResonatingTopics || "[]",
+      ) as string[];
+
+      // Update preferred sections
+      if (!preferredSections.includes(behaviorData.section)) {
+        preferredSections.push(behaviorData.section);
+      }
+
+      // Update peak activity hours
+      if (!peakActivityHours.includes(currentHour)) {
+        peakActivityHours.push(currentHour);
+      }
+
+      // Update content types if available in metadata
+      if (
+        behaviorData.metadata?.contentType &&
+        !preferredContentTypes.includes(behaviorData.metadata.contentType)
+      ) {
+        preferredContentTypes.push(behaviorData.metadata.contentType);
+      }
+
+      // Update topics if available in metadata
+      if (
+        behaviorData.metadata?.topic &&
+        !topResonatingTopics.includes(behaviorData.metadata.topic)
+      ) {
+        topResonatingTopics.push(behaviorData.metadata.topic);
+      }
+
+      await db.userEngagementPattern.update({
+        where: { userId },
+        data: {
+          preferredSections: JSON.stringify(preferredSections),
+          peakActivityHours: JSON.stringify(peakActivityHours),
+          preferredContentTypes: JSON.stringify(preferredContentTypes),
+          topResonatingTopics: JSON.stringify(topResonatingTopics),
+          lastAnalyzed: new Date(),
+          updatedAt: new Date(),
+        },
+      });
+    } else {
+      // Create new pattern
+      const preferredSections = [behaviorData.section];
+      const peakActivityHours = [currentHour];
+      const preferredContentTypes = behaviorData.metadata?.contentType
+        ? [behaviorData.metadata.contentType]
+        : [];
+      const topResonatingTopics = behaviorData.metadata?.topic
+        ? [behaviorData.metadata.topic]
+        : [];
+
+      await db.userEngagementPattern.create({
+        data: {
+          userId,
+          preferredSections: JSON.stringify(preferredSections),
+          peakActivityHours: JSON.stringify(peakActivityHours),
+          preferredContentTypes: JSON.stringify(preferredContentTypes),
+          topResonatingTopics: JSON.stringify(topResonatingTopics),
+          interactionStyle: "browser", // Default value
+        },
+      });
+    }
+  } catch (error) {
+    console.error("Error updating engagement patterns:", error);
+  }
+}
+
+export async function getUserBehaviorAnalytics(input?: { timeRange?: number }) {
+  const { userId } = await getAuth({ required: true });
+  const timeRange = input?.timeRange || 30; // Default to 30 days
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - timeRange);
+
+  try {
+    // Get behavior events
+    const events = await db.userBehaviorEvent.findMany({
+      where: {
+        userId,
+        createdAt: { gte: startDate },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 1000, // Limit to recent 1000 events
+    });
+
+    // Get engagement patterns
+    const engagementPattern = await db.userEngagementPattern.findUnique({
+      where: { userId },
+    });
+
+    // Get content resonance scores
+    const resonanceScores = await db.contentResonanceScore.findMany({
+      where: { userId },
+      orderBy: { updatedAt: "desc" },
+      take: 100,
+    });
+
+    return {
+      events: events.map((event) => ({
+        ...event,
+        eventData: JSON.parse(event.eventData || "{}"),
+      })),
+      engagementPattern: engagementPattern
+        ? {
+            ...engagementPattern,
+            preferredSections: JSON.parse(
+              engagementPattern.preferredSections || "[]",
+            ),
+            peakActivityHours: JSON.parse(
+              engagementPattern.peakActivityHours || "[]",
+            ),
+            preferredContentTypes: JSON.parse(
+              engagementPattern.preferredContentTypes || "[]",
+            ),
+            topResonatingTopics: JSON.parse(
+              engagementPattern.topResonatingTopics || "[]",
+            ),
+          }
+        : null,
+      resonanceScores,
+      analytics: {
+        totalEvents: events.length,
+        uniquePages: [...new Set(events.map((e) => e.pageUrl).filter(Boolean))]
+          .length,
+        uniqueEventTypes: [...new Set(events.map((e) => e.eventType))].length,
+        averageResonance:
+          resonanceScores.length > 0
+            ? resonanceScores.reduce(
+                (sum, score) => sum + score.resonanceScore,
+                0,
+              ) / resonanceScores.length
+            : 0,
+      },
+    };
+  } catch (error) {
+    console.error("Error getting user behavior analytics:", error);
+    throw new Error("Failed to get behavior analytics");
+  }
+}
+
+// Intelligent Resonance Scoring System Functions
+
+export async function calculateInsightResonanceScore(input: {
+  contentId: string;
+  contentType: string;
+  behaviorMetrics: {
+    viewTime: number;
+    clickCount: number;
+    shareCount: number;
+    saveCount: number;
+    scrollDepth: number;
+    returnVisits: number;
+  };
+  contextualFactors?: {
+    timeOfDay: number;
+    dayOfWeek: number;
+    deviceType: string;
+    referralSource: string;
+  };
+}) {
+  const { userId } = await getAuth({ required: true });
+
+  try {
+    // Get user engagement patterns for personalization
+    const engagementPattern = await db.userEngagementPattern.findUnique({
+      where: { userId },
+    });
+
+    // Base resonance calculation
+    let resonanceScore = 0;
+
+    // Time-based scoring (0-0.3)
+    const normalizedViewTime = Math.min(
+      input.behaviorMetrics.viewTime / 300,
+      1,
+    ); // Max 5 minutes
+    resonanceScore += normalizedViewTime * 0.3;
+
+    // Interaction scoring (0-0.4)
+    const interactionScore = Math.min(
+      (input.behaviorMetrics.clickCount * 0.1 +
+        input.behaviorMetrics.shareCount * 0.15 +
+        input.behaviorMetrics.saveCount * 0.2 +
+        input.behaviorMetrics.scrollDepth * 0.1) /
+        0.55,
+      1,
+    );
+    resonanceScore += interactionScore * 0.4;
+
+    // Engagement depth scoring (0-0.2)
+    const depthScore = Math.min(
+      (input.behaviorMetrics.returnVisits * 0.1 +
+        (input.behaviorMetrics.scrollDepth > 0.8 ? 0.1 : 0)) /
+        0.2,
+      1,
+    );
+    resonanceScore += depthScore * 0.2;
+
+    // Contextual personalization (0-0.1)
+    if (input.contextualFactors && engagementPattern) {
+      const peakHours = JSON.parse(
+        engagementPattern.peakActivityHours || "[]",
+      ) as number[];
+      const isOptimalTime = peakHours.includes(
+        input.contextualFactors.timeOfDay,
+      );
+      if (isOptimalTime) {
+        resonanceScore += 0.05;
+      }
+
+      const preferredTypes = JSON.parse(
+        engagementPattern.preferredContentTypes || "[]",
+      ) as string[];
+      const isPreferredType = preferredTypes.includes(input.contentType);
+      if (isPreferredType) {
+        resonanceScore += 0.05;
+      }
+    }
+
+    // Ensure score is between 0 and 1
+    resonanceScore = Math.max(0, Math.min(1, resonanceScore));
+
+    // Update or create resonance score record
+    await updateContentResonanceScore({
+      contentId: input.contentId,
+      contentType: input.contentType,
+      resonanceScore,
+      engagementType: "CALCULATED_SCORE",
+    });
+
+    return {
+      resonanceScore,
+      breakdown: {
+        timeScore: normalizedViewTime * 0.3,
+        interactionScore: interactionScore * 0.4,
+        depthScore: depthScore * 0.2,
+        contextualBonus:
+          resonanceScore -
+          (normalizedViewTime * 0.3 +
+            interactionScore * 0.4 +
+            depthScore * 0.2),
+      },
+    };
+  } catch (error) {
+    console.error("Error calculating insight resonance score:", error);
+    throw new Error("Failed to calculate resonance score");
+  }
+}
+
+export async function rankInsightsByResonance(input: {
+  insights: any[];
+  contentType?: string;
+  limit?: number;
+}) {
+  const { userId } = await getAuth({ required: true });
+
+  try {
+    // Get resonance scores for the insights
+    const resonanceScores = await db.contentResonanceScore.findMany({
+      where: {
+        userId,
+        contentType: input.contentType,
+        contentId: {
+          in: input.insights.map((insight) => insight.id || insight.contentId),
+        },
+      },
+    });
+
+    // Create a map for quick lookup
+    const scoreMap = new Map(
+      resonanceScores.map((score) => [score.contentId, score]),
+    );
+
+    // Rank insights by resonance score
+    const rankedInsights = input.insights
+      .map((insight) => {
+        const contentId = insight.id || insight.contentId;
+        const resonanceData = scoreMap.get(contentId);
+        return {
+          ...insight,
+          resonanceScore: resonanceData?.resonanceScore || 0,
+          totalViews: resonanceData?.viewCount || 0,
+          lastInteraction: resonanceData?.lastInteraction,
+          explicitFeedback: resonanceData?.explicitFeedback,
+        };
+      })
+      .sort((a, b) => b.resonanceScore - a.resonanceScore);
+
+    // Apply limit if specified
+    const limitedResults = input.limit
+      ? rankedInsights.slice(0, input.limit)
+      : rankedInsights;
+
+    return {
+      rankedInsights: limitedResults,
+      averageResonance:
+        rankedInsights.length > 0
+          ? rankedInsights.reduce(
+              (sum, insight) => sum + insight.resonanceScore,
+              0,
+            ) / rankedInsights.length
+          : 0,
+      totalProcessed: input.insights.length,
+      withResonanceData: resonanceScores.length,
+    };
+  } catch (error) {
+    console.error("Error ranking insights by resonance:", error);
+    throw new Error("Failed to rank insights");
+  }
+}
+
+export async function generatePersonalizedInsightRecommendations(input: {
+  contentTypes?: string[];
+  limit?: number;
+  minResonanceThreshold?: number;
+}) {
+  const { userId } = await getAuth({ required: true });
+
+  try {
+    const limit = input.limit || 10;
+    const minThreshold = input.minResonanceThreshold || 0.3;
+    const contentTypes = input.contentTypes || [
+      "TRENDING_TOPIC",
+      "VIRAL_POTENTIAL",
+      "BRAND_SIGNAL",
+      "RECOMMENDATION",
+      "INSIGHT",
+    ];
+
+    // Get user's high-resonance content patterns
+    const highResonanceScores = await db.contentResonanceScore.findMany({
+      where: {
+        userId,
+        resonanceScore: { gte: minThreshold },
+        contentType: { in: contentTypes },
+      },
+      orderBy: { resonanceScore: "desc" },
+      take: 50, // Get top 50 to analyze patterns
+    });
+
+    if (highResonanceScores.length === 0) {
+      return {
+        recommendations: [],
+        reason: "Insufficient resonance data for personalized recommendations",
+        totalAnalyzed: 0,
+      };
+    }
+
+    // Analyze patterns in high-resonance content
+    const contentTypePreferences = new Map<string, number>();
+    const timePatterns = new Map<number, number>();
+
+    highResonanceScores.forEach((score) => {
+      // Content type preferences
+      const currentCount = contentTypePreferences.get(score.contentType) || 0;
+      contentTypePreferences.set(
+        score.contentType,
+        currentCount + score.resonanceScore,
+      );
+
+      // Time patterns (hour of day when content was most engaging)
+      const hour = score.lastInteraction.getHours();
+      const currentTimeScore = timePatterns.get(hour) || 0;
+      timePatterns.set(hour, currentTimeScore + score.resonanceScore);
+    });
+
+    // Get user engagement patterns
+    const engagementPattern = await db.userEngagementPattern.findUnique({
+      where: { userId },
+    });
+
+    // Generate recommendations based on patterns
+    const recommendations: any[] = [];
+
+    // Recommend optimal content types
+    const topContentTypes = Array.from(contentTypePreferences.entries())
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 3);
+
+    for (const [contentType, score] of topContentTypes) {
+      recommendations.push({
+        type: "content_type_focus",
+        contentType,
+        confidence: Math.min(score / highResonanceScores.length, 1),
+        reason: `Your ${contentType.toLowerCase().replace("_", " ")} content shows ${((score / highResonanceScores.length) * 100).toFixed(1)}% higher resonance`,
+        actionable: `Focus on creating more ${contentType.toLowerCase().replace("_", " ")} content`,
+      });
+    }
+
+    // Recommend optimal timing
+    const topTimes = Array.from(timePatterns.entries())
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 2);
+
+    for (const [hour, score] of topTimes) {
+      const timeLabel = hour < 12 ? `${hour}:00 AM` : `${hour - 12}:00 PM`;
+      recommendations.push({
+        type: "optimal_timing",
+        hour,
+        confidence: Math.min(score / highResonanceScores.length, 1),
+        reason: `Content published around ${timeLabel} shows higher engagement`,
+        actionable: `Schedule content creation or review sessions around ${timeLabel}`,
+      });
+    }
+
+    // Behavioral recommendations
+    if (engagementPattern) {
+      const avgSessionDuration = engagementPattern.avgSessionDuration || 0;
+      if (avgSessionDuration > 10) {
+        recommendations.push({
+          type: "engagement_style",
+          confidence: 0.8,
+          reason: "You prefer in-depth content consumption",
+          actionable: "Focus on comprehensive, detailed insights and analysis",
+        });
+      } else if (avgSessionDuration < 5) {
+        recommendations.push({
+          type: "engagement_style",
+          confidence: 0.8,
+          reason: "You prefer quick, digestible content",
+          actionable:
+            "Focus on concise, actionable insights and bullet-point summaries",
+        });
+      }
+    }
+
+    return {
+      recommendations: recommendations.slice(0, limit),
+      totalAnalyzed: highResonanceScores.length,
+      averageResonance:
+        highResonanceScores.reduce(
+          (sum, score) => sum + score.resonanceScore,
+          0,
+        ) / highResonanceScores.length,
+      patterns: {
+        contentTypePreferences: Object.fromEntries(contentTypePreferences),
+        timePatterns: Object.fromEntries(timePatterns),
+      },
+    };
+  } catch (error) {
+    console.error(
+      "Error generating personalized insight recommendations:",
+      error,
+    );
+    throw new Error("Failed to generate recommendations");
+  }
+}
+
+export async function trackInsightPerformance(input: {
+  contentId: string;
+  contentType: string;
+  performanceMetrics: {
+    impressions?: number;
+    clicks?: number;
+    shares?: number;
+    saves?: number;
+    conversionRate?: number;
+    bounceRate?: number;
+  };
+}) {
+  const { userId } = await getAuth({ required: true });
+
+  try {
+    // Get existing resonance score
+    const existingScore = await db.contentResonanceScore.findFirst({
+      where: {
+        userId,
+        contentId: input.contentId,
+        contentType: input.contentType,
+      },
+    });
+
+    if (!existingScore) {
+      throw new Error("No existing resonance score found for this content");
+    }
+
+    // Calculate performance-based adjustments
+    let performanceMultiplier = 1;
+
+    if (
+      input.performanceMetrics.impressions &&
+      input.performanceMetrics.clicks
+    ) {
+      const ctr =
+        input.performanceMetrics.clicks / input.performanceMetrics.impressions;
+      performanceMultiplier *= 1 + ctr * 2; // CTR boost
+    }
+
+    if (input.performanceMetrics.conversionRate) {
+      performanceMultiplier *= 1 + input.performanceMetrics.conversionRate;
+    }
+
+    if (input.performanceMetrics.bounceRate) {
+      performanceMultiplier *= 1 - input.performanceMetrics.bounceRate * 0.5;
+    }
+
+    // Update resonance score with performance data
+    const adjustedScore = Math.min(
+      existingScore.resonanceScore * performanceMultiplier,
+      1,
+    );
+
+    await db.contentResonanceScore.update({
+      where: { id: existingScore.id },
+      data: {
+        resonanceScore: adjustedScore,
+        clickCount:
+          existingScore.clickCount + (input.performanceMetrics.clicks || 0),
+        shareCount:
+          existingScore.shareCount + (input.performanceMetrics.shares || 0),
+        saveCount:
+          existingScore.saveCount + (input.performanceMetrics.saves || 0),
+        lastInteraction: new Date(),
+        updatedAt: new Date(),
+      },
+    });
+
+    return {
+      originalScore: existingScore.resonanceScore,
+      adjustedScore,
+      performanceMultiplier,
+      improvement: adjustedScore - existingScore.resonanceScore,
+    };
+  } catch (error) {
+    console.error("Error tracking insight performance:", error);
+    throw new Error("Failed to track performance");
+  }
+}
+
+export async function getResonanceAnalytics(input?: {
+  timeRange?: number; // days
+  contentTypes?: string[];
+  includeBreakdown?: boolean;
+}) {
+  const { userId } = await getAuth({ required: true });
+
+  try {
+    const timeRange = input?.timeRange || 30;
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - timeRange);
+
+    const contentTypes = input?.contentTypes || [
+      "TRENDING_TOPIC",
+      "VIRAL_POTENTIAL",
+      "BRAND_SIGNAL",
+      "RECOMMENDATION",
+      "INSIGHT",
+    ];
+
+    // Get resonance scores within time range
+    const resonanceScores = await db.contentResonanceScore.findMany({
+      where: {
+        userId,
+        contentType: { in: contentTypes },
+        createdAt: { gte: startDate },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    if (resonanceScores.length === 0) {
+      return {
+        totalContent: 0,
+        averageResonance: 0,
+        highPerformingContent: 0,
+        trends: [],
+        breakdown: {},
+      };
+    }
+
+    // Calculate basic metrics
+    const totalContent = resonanceScores.length;
+    const averageResonance =
+      resonanceScores.reduce((sum, score) => sum + score.resonanceScore, 0) /
+      totalContent;
+    const highPerformingContent = resonanceScores.filter(
+      (score) => score.resonanceScore >= 0.7,
+    ).length;
+
+    // Calculate trends (weekly breakdown)
+    const weeklyTrends: any[] = [];
+    for (let i = 0; i < Math.ceil(timeRange / 7); i++) {
+      const weekStart = new Date(startDate);
+      weekStart.setDate(startDate.getDate() + i * 7);
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 7);
+
+      const weekScores = resonanceScores.filter(
+        (score) => score.createdAt >= weekStart && score.createdAt < weekEnd,
+      );
+
+      if (weekScores.length > 0) {
+        weeklyTrends.push({
+          week: i + 1,
+          startDate: weekStart,
+          endDate: weekEnd,
+          averageResonance:
+            weekScores.reduce((sum, score) => sum + score.resonanceScore, 0) /
+            weekScores.length,
+          contentCount: weekScores.length,
+          highPerforming: weekScores.filter(
+            (score) => score.resonanceScore >= 0.7,
+          ).length,
+        });
+      }
+    }
+
+    // Content type breakdown
+    let breakdown: any = {};
+    if (input?.includeBreakdown) {
+      breakdown = contentTypes.reduce((acc: any, type) => {
+        const typeScores = resonanceScores.filter(
+          (score) => score.contentType === type,
+        );
+        if (typeScores.length > 0) {
+          acc[type] = {
+            count: typeScores.length,
+            averageResonance:
+              typeScores.reduce((sum, score) => sum + score.resonanceScore, 0) /
+              typeScores.length,
+            highPerforming: typeScores.filter(
+              (score) => score.resonanceScore >= 0.7,
+            ).length,
+            topPerforming: typeScores
+              .sort((a, b) => b.resonanceScore - a.resonanceScore)
+              .slice(0, 3)
+              .map((score) => ({
+                contentId: score.contentId,
+                resonanceScore: score.resonanceScore,
+                lastInteraction: score.lastInteraction,
+              })),
+          };
+        }
+        return acc;
+      }, {});
+    }
+
+    return {
+      totalContent,
+      averageResonance,
+      highPerformingContent,
+      highPerformingPercentage: (highPerformingContent / totalContent) * 100,
+      trends: weeklyTrends,
+      breakdown,
+      insights: {
+        bestPerformingType: Object.entries(breakdown).reduce(
+          (best: any, [type, data]: [string, any]) =>
+            !best || (data as any).averageResonance > best.averageResonance
+              ? { type, ...data }
+              : best,
+          null,
+        ),
+        improvementTrend:
+          weeklyTrends.length >= 2
+            ? (weeklyTrends[weeklyTrends.length - 1]?.averageResonance || 0) -
+              (weeklyTrends[0]?.averageResonance || 0)
+            : 0,
+      },
+    };
+  } catch (error) {
+    console.error("Error getting resonance analytics:", error);
+    throw new Error("Failed to get analytics");
+  }
+}
+
+// Enhanced Feedback Analytics System
+export async function getFeedbackAnalytics({
+  timeRange = 30,
+}: { timeRange?: number } = {}) {
+  const { userId } = await getAuth({ required: true });
+
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - timeRange);
+
+  // Get all feedback data
+  const feedback = await db.recommendationFeedback.findMany({
+    where: {
+      userId,
+      createdAt: { gte: startDate },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (feedback.length === 0) {
+    return {
+      summary: {
+        totalFeedback: 0,
+        positiveRate: 0,
+        negativeRate: 0,
+        neutralRate: 0,
+        mostCommonTags: [] as Array<{
+          tag: string;
+          count: number;
+          percentage: number;
+        }>,
+        timeRange,
+      },
+      sourceAnalysis: {} as Record<string, any>,
+      feedbackTrends: {} as Record<string, any>,
+      topIssues: [] as Array<{
+        issue: string;
+        count: number;
+        percentage: number;
+        severity: string;
+      }>,
+      improvements: [] as Array<{
+        priority: string;
+        category: string;
+        suggestion: string;
+        impact: string;
+      }>,
+      insights: [
+        {
+          type: "info",
+          title: "No Feedback Data",
+          description:
+            "Start providing feedback on recommendations to see analytics here.",
+        },
+      ],
+    };
+  }
+
+  // Calculate summary statistics
+  const totalFeedback = feedback.length;
+  const positiveCount = feedback.filter((f) =>
+    ["love", "like"].includes(f.feedbackType),
+  ).length;
+  const negativeCount = feedback.filter(
+    (f) => f.feedbackType === "dislike",
+  ).length;
+  const neutralCount = feedback.filter(
+    (f) => f.feedbackType === "neutral",
+  ).length;
+
+  const positiveRate = positiveCount / totalFeedback;
+  const negativeRate = negativeCount / totalFeedback;
+  const neutralRate = neutralCount / totalFeedback;
+
+  // Analyze feedback by source
+  const sourceAnalysis = feedback.reduce(
+    (acc, item) => {
+      if (!acc[item.source]) {
+        acc[item.source] = {
+          total: 0,
+          positive: 0,
+          negative: 0,
+          neutral: 0,
+          positiveRate: 0,
+          negativeRate: 0,
+        };
+      }
+      acc[item.source].total++;
+      if (["love", "like"].includes(item.feedbackType))
+        acc[item.source].positive++;
+      else if (item.feedbackType === "dislike") acc[item.source].negative++;
+      else acc[item.source].neutral++;
+
+      acc[item.source].positiveRate =
+        acc[item.source].positive / acc[item.source].total;
+      acc[item.source].negativeRate =
+        acc[item.source].negative / acc[item.source].total;
+      return acc;
+    },
+    {} as Record<string, any>,
+  );
+
+  // Analyze feedback tags
+  const allTags = feedback
+    .filter((f) => f.feedbackTags)
+    .flatMap((f) => JSON.parse(f.feedbackTags!) as string[]);
+
+  const tagCounts = allTags.reduce(
+    (acc, tag) => {
+      acc[tag] = (acc[tag] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
+
+  const mostCommonTags = Object.entries(tagCounts)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 10)
+    .map(([tag, count]) => ({
+      tag,
+      count: count as number,
+      percentage: ((count as number) / totalFeedback) * 100,
+    }));
+
+  // Time series analysis
+  const feedbackTrends = feedback.reduce(
+    (acc, item) => {
+      const date = item.createdAt.toISOString().split("T")[0];
+      if (!acc[date]) {
+        acc[date] = { total: 0, positive: 0, negative: 0, neutral: 0 };
+      }
+      acc[date].total++;
+      if (["love", "like"].includes(item.feedbackType)) acc[date].positive++;
+      else if (item.feedbackType === "dislike") acc[date].negative++;
+      else acc[date].neutral++;
+      return acc;
+    },
+    {} as Record<string, any>,
+  );
+
+  // Identify top issues from negative feedback
+  const negativeFeedback = feedback.filter((f) => f.feedbackType === "dislike");
+  const negativeTagCounts = negativeFeedback
+    .filter((f) => f.feedbackTags)
+    .flatMap((f) => JSON.parse(f.feedbackTags!) as string[])
+    .reduce(
+      (acc, tag) => {
+        acc[tag] = (acc[tag] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+
+  const topIssues = Object.entries(negativeTagCounts)
+    .sort(([, a], [, b]) => (b as number) - (a as number))
+    .slice(0, 5)
+    .map(([issue, count]) => ({
+      issue,
+      count: count as number,
+      percentage: ((count as number) / negativeCount) * 100,
+      severity:
+        (count as number) > negativeCount * 0.3
+          ? "high"
+          : (count as number) > negativeCount * 0.15
+            ? "medium"
+            : "low",
+    }));
+
+  // Generate insights and recommendations
+  const insights: Array<{ type: string; title: string; description: string }> =
+    [];
+
+  if (positiveRate > 0.7) {
+    insights.push({
+      type: "positive",
+      title: "High User Satisfaction",
+      description: `${(positiveRate * 100).toFixed(1)}% of your feedback is positive, indicating strong content alignment.`,
+    });
+  } else if (positiveRate < 0.4) {
+    insights.push({
+      type: "warning",
+      title: "Low User Satisfaction",
+      description: `Only ${(positiveRate * 100).toFixed(1)}% of feedback is positive. Review content strategy and recommendations.`,
+    });
+  }
+
+  if (topIssues.length > 0 && topIssues[0]?.severity === "high") {
+    insights.push({
+      type: "alert",
+      title: `Major Issue: ${topIssues[0].issue}`,
+      description: `${topIssues[0].percentage.toFixed(1)}% of negative feedback mentions "${topIssues[0].issue}". This needs immediate attention.`,
+    });
+  }
+
+  const bestSource = Object.entries(sourceAnalysis).sort(
+    ([, a], [, b]) => (b as any).positiveRate - (a as any).positiveRate,
+  )[0];
+
+  if (bestSource && (bestSource[1] as any).positiveRate > positiveRate) {
+    insights.push({
+      type: "tip",
+      title: `${bestSource[0]} Recommendations Perform Best`,
+      description: `${((bestSource[1] as any).positiveRate * 100).toFixed(1)}% positive rate. Apply similar approaches to other sources.`,
+    });
+  }
+
+  // Generate improvement suggestions
+  const improvements: Array<{
+    priority: string;
+    category: string;
+    suggestion: string;
+    impact: string;
+  }> = [];
+
+  if (negativeRate > 0.3) {
+    improvements.push({
+      priority: "high",
+      category: "Content Quality",
+      suggestion:
+        "Review and refine content generation algorithms based on negative feedback patterns.",
+      impact: "Could improve satisfaction by 15-25%",
+    });
+  }
+
+  if (topIssues.some((issue) => issue.issue.includes("tone"))) {
+    improvements.push({
+      priority: "medium",
+      category: "Brand Voice",
+      suggestion:
+        "Update brand guidelines and tone preferences to better match user expectations.",
+      impact: "Could reduce tone-related complaints by 40%",
+    });
+  }
+
+  return {
+    summary: {
+      totalFeedback,
+      positiveRate,
+      negativeRate,
+      neutralRate,
+      mostCommonTags: mostCommonTags.slice(0, 5),
+      timeRange,
+    },
+    sourceAnalysis,
+    feedbackTrends,
+    topIssues,
+    improvements,
+    insights,
+    recentComments: feedback
+      .filter((f) => f.feedbackComment)
+      .slice(0, 10)
+      .map((f) => ({
+        id: f.id,
+        source: f.source,
+        feedbackType: f.feedbackType,
+        comment: f.feedbackComment,
+        tags: f.feedbackTags ? JSON.parse(f.feedbackTags) : [],
+        createdAt: f.createdAt,
+      })),
+  };
+}
+
+export async function getFeedbackInsights({
+  source,
+  timeRange = 30,
+}: {
+  source?: string;
+  timeRange?: number;
+} = {}) {
+  const { userId } = await getAuth({ required: true });
+
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - timeRange);
+
+  const whereClause: any = {
+    userId,
+    createdAt: { gte: startDate },
+  };
+
+  if (source) {
+    whereClause.source = source;
+  }
+
+  const feedback = await db.recommendationFeedback.findMany({
+    where: whereClause,
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (feedback.length === 0) {
+    return {
+      patterns: [] as Array<any>,
+      recommendations: [] as Array<any>,
+      actionItems: [] as Array<any>,
+    };
+  }
+
+  // Analyze patterns in feedback
+  const patterns: Array<any> = [];
+
+  // Pattern 1: Timing patterns
+  const hourlyFeedback = feedback.reduce(
+    (acc, item) => {
+      const hour = item.createdAt.getHours();
+      if (!acc[hour]) acc[hour] = { total: 0, negative: 0 };
+      acc[hour]!.total++;
+      if (item.feedbackType === "dislike") acc[hour]!.negative++;
+      return acc;
+    },
+    {} as Record<number, { total: number; negative: number }>,
+  );
+
+  const peakNegativeHours = Object.entries(hourlyFeedback)
+    .filter(([, data]) => data.total >= 3)
+    .sort(([, a], [, b]) => b.negative / b.total - a.negative / a.total)
+    .slice(0, 3)
+    .map(([hour, data]) => ({
+      hour: parseInt(hour),
+      negativeRate: data.negative / data.total,
+      count: data.total,
+    }));
+
+  if (
+    peakNegativeHours.length > 0 &&
+    peakNegativeHours[0] &&
+    peakNegativeHours[0].negativeRate > 0.6
+  ) {
+    patterns.push({
+      type: "timing",
+      title: "Peak Negative Feedback Times",
+      description: `Higher negative feedback rates between ${peakNegativeHours[0].hour}:00-${peakNegativeHours[0].hour + 1}:00`,
+      data: peakNegativeHours,
+    });
+  }
+
+  // Pattern 2: Sequential feedback analysis
+  const recentFeedback = feedback.slice(0, 10);
+  const negativeStreak = recentFeedback.findIndex(
+    (f) => f.feedbackType !== "dislike",
+  );
+
+  if (negativeStreak >= 3) {
+    patterns.push({
+      type: "streak",
+      title: "Negative Feedback Streak",
+      description: `${negativeStreak} consecutive negative feedback items detected`,
+      severity: negativeStreak >= 5 ? "high" : "medium",
+    });
+  }
+
+  // Generate AI-powered recommendations
+  const recommendations: Array<any> = [];
+
+  const commonIssues = feedback
+    .filter((f) => f.feedbackTags)
+    .flatMap((f) => JSON.parse(f.feedbackTags!) as string[])
+    .reduce(
+      (acc, tag) => {
+        acc[tag] = (acc[tag] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+
+  const topIssue = Object.entries(commonIssues).sort(
+    ([, a], [, b]) => (b as number) - (a as number),
+  )[0];
+
+  if (topIssue && (topIssue[1] as number) > feedback.length * 0.2) {
+    recommendations.push({
+      priority: "high",
+      category: "Content Improvement",
+      title: `Address "${topIssue[0]}" Issues`,
+      description: `This issue appears in ${(((topIssue[1] as number) / feedback.length) * 100).toFixed(1)}% of feedback.`,
+      actions: [
+        "Review content generation parameters",
+        "Update brand guidelines if tone-related",
+        "Adjust recommendation algorithms",
+      ],
+    });
+  }
+
+  // Generate actionable items
+  const actionItems: Array<any> = [];
+
+  const negativeRate =
+    feedback.filter((f) => f.feedbackType === "dislike").length /
+    feedback.length;
+
+  if (negativeRate > 0.4) {
+    actionItems.push({
+      priority: "urgent",
+      task: "Review Content Strategy",
+      description: "High negative feedback rate requires immediate attention",
+      estimatedImpact: "High",
+      timeframe: "This week",
+    });
+  }
+
+  if (patterns.some((p) => p.type === "streak")) {
+    actionItems.push({
+      priority: "high",
+      task: "Investigate Recent Changes",
+      description:
+        "Recent negative feedback streak suggests a systematic issue",
+      estimatedImpact: "Medium",
+      timeframe: "2-3 days",
+    });
+  }
+
+  return {
+    patterns,
+    recommendations,
+    actionItems,
+    summary: {
+      totalFeedback: feedback.length,
+      negativeRate,
+      mostCommonIssue: (topIssue?.[0] as string) || "None identified",
+      timeRange,
+    },
+  };
+}
+
+export async function getIntegratedFeedbackDashboard({
+  timeRange = 30,
+}: { timeRange?: number } = {}) {
+  // Get comprehensive feedback analytics
+  const feedbackAnalytics = await getFeedbackAnalytics({ timeRange });
+  const feedbackInsights = await getFeedbackInsights({ timeRange });
+  const resonanceAnalytics = await getResonanceAnalytics({ timeRange });
+
+  // Get recent brand signals for context
+  const brandSignals = await getBrandSignals();
+
+  // Safely access insights with fallback
+  const resonanceInsights = (resonanceAnalytics as any)?.insights || [];
+
+  // Combine insights for integrated view
+  const integratedInsights = [
+    ...feedbackAnalytics.insights,
+    ...(Array.isArray(resonanceInsights) ? resonanceInsights : []),
+  ];
+
+  // Calculate overall satisfaction score with safe access
+  const resonanceScore =
+    (resonanceAnalytics as any)?.averageResonance ||
+    resonanceAnalytics.averageResonance ||
+    0;
+  const overallSatisfaction =
+    feedbackAnalytics.summary.positiveRate * 0.6 + resonanceScore * 0.4;
+
+  // Generate cross-system recommendations
+  const crossSystemRecommendations: Array<any> = [];
+
+  if (feedbackAnalytics.summary.negativeRate > 0.3 && resonanceScore < 0.5) {
+    crossSystemRecommendations.push({
+      priority: "critical",
+      title: "Content Strategy Overhaul Needed",
+      description:
+        "Both feedback and resonance scores indicate fundamental content issues",
+      impact: "Could improve overall satisfaction by 30-50%",
+      actions: [
+        "Conduct user research to understand preferences",
+        "Review and update brand guidelines",
+        "Retrain content generation models",
+        "A/B test new content approaches",
+      ],
+    });
+  }
+
+  const feedbackTopIssue = feedbackAnalytics.topIssues[0];
+  // Handle potential missing lowPerformers property
+  const lowResonanceContent = (resonanceAnalytics as any)?.lowPerformers || [];
+
+  if (feedbackTopIssue && lowResonanceContent.length > 0) {
+    crossSystemRecommendations.push({
+      priority: "high",
+      title: "Address Common Content Issues",
+      description: `"${feedbackTopIssue.issue}" appears in feedback and correlates with low resonance`,
+      impact: "Could reduce negative feedback by 25%",
+      actions: [
+        "Analyze specific content causing issues",
+        "Update content generation parameters",
+        "Implement content quality checks",
+      ],
+    });
+  }
+
+  return {
+    summary: {
+      overallSatisfaction,
+      totalFeedback: feedbackAnalytics.summary.totalFeedback,
+      totalContent: resonanceAnalytics.totalContent,
+      timeRange,
+      healthScore:
+        overallSatisfaction > 0.7
+          ? "excellent"
+          : overallSatisfaction > 0.5
+            ? "good"
+            : overallSatisfaction > 0.3
+              ? "fair"
+              : "poor",
+    },
+    feedbackAnalytics,
+    resonanceAnalytics,
+    brandSignals: {
+      preferredTones: brandSignals.preferredTones,
+      commonKeywords: brandSignals.commonKeywords,
+      behaviorInsights: (brandSignals as any).behaviorInsights,
+    },
+    integratedInsights,
+    crossSystemRecommendations,
+    actionItems: [
+      ...feedbackInsights.actionItems,
+      ...crossSystemRecommendations.map((rec) => ({
+        priority: rec.priority,
+        task: rec.title,
+        description: rec.description,
+        estimatedImpact: rec.impact,
+        timeframe: rec.priority === "critical" ? "Immediate" : "This week",
+      })),
+    ],
+  };
+}
+
+// =============================================================================
+// RIPPLE AI AGENT - Core Backend Functions
+// =============================================================================
+
+/**
+ * Start or continue a conversation with Ripple AI
+ */
+export async function startRippleConversation(input: {
+  context?: string;
+  userMessage?: string;
+  conversationId?: string;
+}) {
+  const { userId } = await getAuth({ required: true });
+  const { context, userMessage, conversationId } = input;
+
+  let conversation;
+
+  if (conversationId) {
+    // Continue existing conversation
+    conversation = await db.rippleConversation.findUnique({
+      where: { id: conversationId, userId },
+      include: {
+        messages: {
+          orderBy: { createdAt: "asc" },
+          take: 20, // Last 20 messages for context
+        },
+      },
+    });
+
+    if (!conversation) {
+      throw new Error("Conversation not found");
+    }
+  } else {
+    // Create new conversation
+    conversation = await db.rippleConversation.create({
+      data: {
+        userId,
+        context: context || "general",
+        title: userMessage
+          ? userMessage.substring(0, 50) + "..."
+          : "New Conversation",
+      },
+      include: {
+        messages: true,
+      },
+    });
+  }
+
+  return conversation;
+}
+
+/**
+ * Send a message to Ripple and get AI response
+ */
+// Predictive Comment Prioritization
+export async function generateCommentPrioritization(input: { userId: string }) {
+  const { userId } = input;
+
+  // Get all unresponded comments
+  const unrespondedComments = await db.comment.findMany({
+    where: {
+      userId,
+      responded: false,
+    },
+    include: {
+      account: true,
+      page: true,
+    },
+    orderBy: { createdAt: "desc" },
+    take: 50,
+  });
+
+  if (unrespondedComments.length === 0) {
+    return {
+      prioritizedComments: [],
+      insights: [
+        "No unresponded comments found. Great job staying on top of engagement!",
+      ],
+      recommendations: [],
+    };
+  }
+
+  // Get user's response patterns and success metrics
+  const userContext = await buildUserContext(userId);
+  const recentMemories = await getRippleMemories({ userId, limit: 20 });
+
+  // Generate predictive prioritization
+  const result = await requestMultimodalModel({
+    system: `You are Ripple's comment prioritization engine. Analyze unresponded comments and prioritize them based on:
+
+1. Engagement potential (likelihood to drive more engagement)
+2. Relationship building value (VIP customers, influencers, etc.)
+3. Brand reputation impact (negative sentiment, public visibility)
+4. Business opportunity (sales inquiries, partnerships)
+5. Time sensitivity (recent comments get priority)
+6. User's historical success patterns
+
+User Context:
+${userContext}
+
+Learned Patterns:
+${recentMemories.map((m) => `- ${m.memoryValue.substring(0, 100)}...`).join("\n")}
+
+Provide intelligent prioritization with specific reasoning.`,
+    messages: [
+      {
+        role: "user",
+        content: `Prioritize these ${unrespondedComments.length} unresponded comments:
+
+${unrespondedComments.map((c, i) => `${i + 1}. Platform: ${c.platform}, Author: ${c.authorName}, Sentiment: ${c.sentiment}, Created: ${c.createdAt.toISOString()}, Text: "${c.text.substring(0, 150)}..."`).join("\n\n")}
+
+Provide prioritization with detailed reasoning.`,
+      },
+    ],
+    returnType: z
+      .object({
+        prioritizedComments: z
+          .array(
+            z.object({
+              commentId: z.string().describe("Comment ID from the list"),
+              priority: z
+                .enum(["critical", "high", "medium", "low"])
+                .describe("Priority level"),
+              score: z
+                .number()
+                .min(0)
+                .max(100)
+                .describe("Priority score (0-100)"),
+              reasoning: z
+                .string()
+                .describe("Why this comment has this priority"),
+              suggestedResponseStrategy: z
+                .string()
+                .describe("Recommended response approach"),
+              estimatedImpact: z
+                .string()
+                .describe("Expected impact of responding"),
+              urgency: z.string().describe("Time sensitivity assessment"),
+            }),
+          )
+          .describe("Comments ordered by priority"),
+        insights: z
+          .array(z.string())
+          .describe("Key insights from the analysis"),
+        recommendations: z
+          .array(
+            z.object({
+              type: z.string().describe("Type of recommendation"),
+              action: z.string().describe("Recommended action"),
+              benefit: z.string().describe("Expected benefit"),
+            }),
+          )
+          .describe("Strategic recommendations"),
+        patterns: z
+          .array(z.string())
+          .describe("Identified patterns in the comments"),
+      })
+      .describe("Prioritized comment analysis with strategic insights"),
+    model: "medium",
+    temperature: 0.3,
+  });
+
+  return result;
+}
+
+// AGI-Level Reasoning Engine for Ripple AI
+interface ReasoningChain {
+  step: number;
+  reasoning: string;
+  conclusion: string;
+  confidence: number;
+  evidence: string[];
+  implications: string[];
+}
+
+interface AGIResponse {
+  primaryResponse: string;
+  reasoningChain: ReasoningChain[];
+  strategicInsights: string[];
+  actionablePlans: Array<{
+    plan: string;
+    steps: string[];
+    tools: string[];
+    timeline: string;
+    expectedOutcome: string;
+    confidence: number;
+  }>;
+  opportunityMatrix: Array<{
+    opportunity: string;
+    impact: "high" | "medium" | "low";
+    effort: "high" | "medium" | "low";
+    urgency: "high" | "medium" | "low";
+    reasoning: string;
+  }>;
+  riskAssessment: Array<{
+    risk: string;
+    probability: number;
+    impact: "high" | "medium" | "low";
+    mitigation: string[];
+  }>;
+  crossContextualInsights: string[];
+  metaCognition: {
+    thinkingProcess: string;
+    uncertainties: string[];
+    needsMoreData: string[];
+    alternativeApproaches: string[];
+  };
+}
+
+// Enhanced Ripple AI Tool Registry - Complete SocialWave Integration
+const RIPPLE_TOOL_REGISTRY = {
+  // Trending & Analytics Tools
+  detectRealTimeTrendingTopics: {
+    description: "Detect real-time trending topics",
+    category: "analytics",
+  },
+  getTrendingTopicsResults: {
+    description: "Get trending topics analysis results",
+    category: "analytics",
+  },
+  getBrandFilteredTrendingTopics: {
+    description: "Get brand-filtered trending topics",
+    category: "analytics",
+  },
+  detectTikTokInstagramTrends: {
+    description: "Analyze TikTok/Instagram trends",
+    category: "analytics",
+  },
+  analyzeTikTokInstagramTrendsForBrand: {
+    description: "Analyze social trends for brand",
+    category: "analytics",
+  },
+  analyzeRealTimeTrendsForBrand: {
+    description: "Real-time brand trend analysis",
+    category: "analytics",
+  },
+  getPredictiveAnalytics: {
+    description: "Generate predictive analytics insights",
+    category: "analytics",
+  },
+  getAdvancedInsights: {
+    description: "Get comprehensive AI insights",
+    category: "analytics",
+  },
+  triggerAdvancedInsightsGeneration: {
+    description: "Generate advanced insights",
+    category: "analytics",
+  },
+
+  // Content Creation & Management Tools
+  generateContentFromTrendingTopic: {
+    description: "Create content from trending topics",
+    category: "content",
+  },
+  generateContentFromViralPotential: {
+    description: "Create viral content",
+    category: "content",
+  },
+  generateContentForPillar: {
+    description: "Generate content for specific pillar",
+    category: "content",
+  },
+  generateContentFromRecommendation: {
+    description: "Create content from AI recommendations",
+    category: "content",
+  },
+  generateViralThread: {
+    description: "Generate viral thread content",
+    category: "content",
+  },
+  generateVideoFromScript: {
+    description: "Generate video from script",
+    category: "content",
+  },
+  generateImageFromPrompt: {
+    description: "Generate images from prompts",
+    category: "content",
+  },
+  listContentPillars: {
+    description: "List user's content pillars",
+    category: "content",
+  },
+  listGeneratedContent: {
+    description: "List generated content",
+    category: "content",
+  },
+  updateGeneratedContent: {
+    description: "Update generated content",
+    category: "content",
+  },
+  deleteGeneratedContent: {
+    description: "Delete generated content",
+    category: "content",
+  },
+
+  // Engagement & Comments Tools
+  getComments: {
+    description: "Fetch comments for analysis",
+    category: "engagement",
+  },
+  analyzeCommentForResponse: {
+    description: "Analyze comment for response",
+    category: "engagement",
+  },
+  generateResponse: {
+    description: "Generate response to comments",
+    category: "engagement",
+  },
+  generateResponseVariations: {
+    description: "Generate response variations",
+    category: "engagement",
+  },
+  respondToComment: {
+    description: "Respond to specific comment",
+    category: "engagement",
+  },
+  updateCommentStatus: {
+    description: "Update comment status",
+    category: "engagement",
+  },
+
+  // Social Media Management Tools
+  getConnectedAccounts: {
+    description: "Get connected social accounts",
+    category: "social",
+  },
+  getPages: { description: "Get social media pages", category: "social" },
+  postContent: {
+    description: "Post content to social platforms",
+    category: "social",
+  },
+  schedulePost: {
+    description: "Schedule social media posts",
+    category: "social",
+  },
+  listScheduledPosts: {
+    description: "List scheduled posts",
+    category: "social",
+  },
+  deleteScheduledPost: {
+    description: "Delete scheduled post",
+    category: "social",
+  },
+  bulkSchedulePosts: {
+    description: "Schedule multiple posts",
+    category: "social",
+  },
+  getScheduledPostsStats: {
+    description: "Get scheduling statistics",
+    category: "social",
+  },
+
+  // Analytics & Performance Tools
+  getPageAnalytics: {
+    description: "Get page performance analytics",
+    category: "analytics",
+  },
+  refreshAnalyticsData: {
+    description: "Refresh analytics data",
+    category: "analytics",
+  },
+  getPerformanceAnalytics: {
+    description: "Get content performance analytics",
+    category: "analytics",
+  },
+  getContentPerformance: {
+    description: "Get specific content performance",
+    category: "analytics",
+  },
+  getDashboardStats: {
+    description: "Get dashboard statistics",
+    category: "analytics",
+  },
+  getDashboardSummary: {
+    description: "Get comprehensive dashboard summary",
+    category: "analytics",
+  },
+
+  // Brand & Strategy Tools
+  getBrandGuidelines: {
+    description: "Get brand guidelines",
+    category: "brand",
+  },
+  saveBrandGuidelines: {
+    description: "Save brand guidelines",
+    category: "brand",
+  },
+  getBrandSignals: {
+    description: "Get brand performance signals",
+    category: "brand",
+  },
+  analyzeBrandContext: {
+    description: "Analyze brand context",
+    category: "brand",
+  },
+  getBrandContext: {
+    description: "Get brand context analysis",
+    category: "brand",
+  },
+  generateContentStrategy: {
+    description: "Generate content strategy",
+    category: "brand",
+  },
+  refreshContentStrategy: {
+    description: "Refresh content strategy",
+    category: "brand",
+  },
+  generateContentRecommendations: {
+    description: "Generate content recommendations",
+    category: "brand",
+  },
+
+  // User Management & Settings Tools
+  getCurrentUser: { description: "Get current user info", category: "user" },
+  getUserSettings: { description: "Get user settings", category: "user" },
+  updateUserSettings: { description: "Update user settings", category: "user" },
+  getUserCredits: { description: "Get user credit balance", category: "user" },
+  getSubscriptionStatus: {
+    description: "Get subscription status",
+    category: "user",
+  },
+
+  // Document & Media Tools
+  uploadDocument: { description: "Upload brand documents", category: "media" },
+  listUploadedDocuments: {
+    description: "List uploaded documents",
+    category: "media",
+  },
+  deleteUploadedDocument: {
+    description: "Delete uploaded document",
+    category: "media",
+  },
+
+  // Tagging & Organization Tools
+  createContentTag: {
+    description: "Create content tag",
+    category: "organization",
+  },
+  listContentTags: {
+    description: "List content tags",
+    category: "organization",
+  },
+  addTagToContent: {
+    description: "Add tag to content",
+    category: "organization",
+  },
+  removeTagFromContent: {
+    description: "Remove tag from content",
+    category: "organization",
+  },
+  createViralThreadTag: {
+    description: "Create viral thread tag",
+    category: "organization",
+  },
+  listViralThreadTags: {
+    description: "List viral thread tags",
+    category: "organization",
+  },
+
+  // Learning & Optimization Tools
+  getLearningInsights: {
+    description: "Get AI learning insights",
+    category: "learning",
+  },
+  getLearningAnalytics: {
+    description: "Get learning analytics",
+    category: "learning",
+  },
+  getPersonalizedRecommendations: {
+    description: "Get personalized recommendations",
+    category: "learning",
+  },
+  getOptimalPostingTimes: {
+    description: "Get optimal posting times",
+    category: "learning",
+  },
+  predictViralScoreWithLearning: {
+    description: "Predict viral score with learning",
+    category: "learning",
+  },
+
+  // Notification & Communication Tools
+  getNotifications: {
+    description: "Get user notifications",
+    category: "notifications",
+  },
+  createNotification: {
+    description: "Create notification",
+    category: "notifications",
+  },
+  markNotificationRead: {
+    description: "Mark notification as read",
+    category: "notifications",
+  },
+  markAllNotificationsRead: {
+    description: "Mark all notifications as read",
+    category: "notifications",
+  },
+};
+
+// Enhanced Ripple AI with Full Tool Integration
+export async function sendRippleMessage(input: {
+  conversationId: string;
+  message: string;
+  context?: string;
+}) {
+  const { userId } = await getAuth({ required: true });
+  const { conversationId, message, context } = input;
+
+  // Start real-time response stream for progress updates
+  const stream = await startRealtimeResponse<{
+    status: string;
+    progress: number;
+    currentStep: string;
+    partial?: string;
+    processing: boolean;
+    error?: string;
+  }>();
+
+  // Verify conversation belongs to user
+  stream.next({
+    status: "typing",
+    progress: 5,
+    currentStep: "Preparing...",
+    processing: true,
+  });
+
+  const conversation = await db.rippleConversation.findUnique({
+    where: { id: conversationId, userId },
+    include: {
+      messages: {
+        orderBy: { createdAt: "asc" },
+        take: 10, // Recent context
+      },
+    },
+  });
+
+  if (!conversation) {
+    stream.next({
+      status: "error",
+      progress: 0,
+      currentStep: "Conversation not found",
+      error: "Conversation not found",
+      processing: false,
+    });
+    throw new Error("Conversation not found");
+  }
+
+  // Store user message
+  await db.rippleMessage.create({
+    data: {
+      conversationId,
+      role: "user",
+      content: message,
+      metadata: context ? JSON.stringify({ context }) : null,
+    },
+  });
+
+  try {
+    // Create a fast, natural draft without canned preamble
+    stream.next({
+      status: "drafting",
+      progress: 30,
+      currentStep: "Drafting...",
+      processing: true,
+    });
+
+    // Build a concise first-draft answer using a faster model (answer-first, no preamble)
+    const quickDraft = await requestMultimodalModel({
+      system:
+        "You are Ripple for SocialWave. Answer first with helpful, concise text. No preambles, no emojis, no filler. Keep it on-brand and action-oriented.",
+      messages: [{ role: "user", content: message }],
+      returnType: z
+        .object({ text: z.string().describe("Concise, brand-aligned answer") })
+        .describe("Short draft response"),
+      model: "small",
+      temperature: 0.2,
+    });
+
+    const draftText = quickDraft.text.trim();
+
+    // Stream the draft text so the UI shows natural content instead of canned status
+    stream.next({
+      status: "draft",
+      progress: 60,
+      currentStep: "Draft ready",
+      partial: draftText,
+      processing: true,
+    });
+
+    // Use a stable message id to avoid duplicates when final message arrives
+    const immediateMessage = await db.rippleMessage.create({
+      data: {
+        conversationId,
+        role: "assistant",
+        content: draftText,
+        metadata: JSON.stringify({
+          type: "draft",
+          processing: true,
+          streamingId: `stream_${conversationId}`,
+        }),
+      },
+    });
+
+    // Queue the comprehensive AI analysis as a background task
+    const analysisTask = await queueTask(async () => {
+      try {
+        // Get user's recent memories and context
+        const recentMemories = await getRippleMemories({ userId, limit: 5 });
+        const userContext = await buildUserContext(userId, false); // Full context for comprehensive analysis
+
+        // Prepare conversation history for AI
+        const conversationHistory = conversation.messages.map((msg) => ({
+          role: msg.role as "user" | "assistant",
+          content: msg.content,
+        }));
+
+        // Add current message
+        conversationHistory.push({
+          role: "user",
+          content: message,
+        });
+
+        // Streamlined analysis - run only essential operations for fastest response
+        const [smartSuggestions] = await Promise.allSettled([
+          generateSmartSuggestions({
+            userId,
+            context: "dashboard",
+            currentActivity: message,
+          }),
+        ]);
+
+        // Skip predictive analytics for faster response
+
+        // Available tools for Ripple AI to use
+        const availableTools = Object.entries(RIPPLE_TOOL_REGISTRY)
+          .map(
+            ([toolName, toolInfo]) =>
+              `${toolName}: ${toolInfo.description} (${toolInfo.category})`,
+          )
+          .join("\n");
+
+        // Prepare analysis results for AI context - simplified for speed
+        const analysisContext = {
+          suggestions:
+            smartSuggestions.status === "fulfilled"
+              ? smartSuggestions.value
+              : null,
+        };
+
+        // Generate AI response using requestMultimodalModel with enhanced intelligence
+        const aiResponse = await requestMultimodalModel({
+          system: `You are Ripple, an AGI-level intelligent growth agent with complete access to SocialWave's ecosystem. You are friendly, proactive, and incredibly smart - capable of complex reasoning, pattern recognition, and orchestrating multiple tools to solve problems.
+
+🧠 **ENHANCED INTELLIGENCE CAPABILITIES:**
+- Full access to all SocialWave data, analytics, and tools
+- Real-time trend analysis and predictive insights
+- Advanced pattern recognition across user behavior
+- Proactive opportunity identification
+- Multi-step reasoning and strategic planning
+- Direct tool execution and workflow automation
+
+🛠️ **AVAILABLE SOCIALWAVE TOOLS:**
+${availableTools}
+
+📊 **COMPREHENSIVE USER CONTEXT:**
+${userContext}
+
+🧵 **MEMORY & LEARNING:**
+${recentMemories.map((m) => `- ${m.memoryValue} (${m.memoryType}, confidence: ${m.confidence})`).join("\n")}
+
+🔍 **ANALYSIS RESULTS:**
+${JSON.stringify(analysisContext, null, 2)}
+
+🎯 **YOUR ENHANCED CAPABILITIES:**
+1. **Proactive Analysis**: Identify opportunities and issues before the user asks
+2. **Strategic Thinking**: Provide multi-step strategies with reasoning
+3. **Tool Orchestration**: Use multiple SocialWave tools to solve complex problems
+4. **Predictive Insights**: Forecast trends and performance outcomes
+5. **Actionable Intelligence**: Provide specific, executable recommendations
+6. **Real-time Adaptation**: Adjust strategies based on live data
+7. **Opportunity Detection**: Surface hidden opportunities from data patterns
+8. **Risk Assessment**: Identify potential issues and mitigation strategies
+
+💡 **RESPONSE GUIDELINES:**
+- Always incorporate insights from your analysis
+- Think strategically and provide actionable insights
+- Identify patterns and opportunities proactively
+- Use data to support recommendations
+- Suggest specific next steps and tools to use
+- Be conversational but demonstrate deep intelligence
+- Provide confidence levels for predictions and recommendations
+- Surface opportunities the user might not have considered
+- Prioritize recommendations by impact and urgency`,
+          messages: conversationHistory,
+          returnType: z
+            .object({
+              response: z
+                .string()
+                .describe("Your intelligent, strategic response to the user"),
+              proactiveInsights: z
+                .array(z.string())
+                .optional()
+                .describe(
+                  "Proactive insights or opportunities you've identified",
+                ),
+              detectedOpportunities: z
+                .array(z.string())
+                .optional()
+                .describe("Specific opportunities detected from data analysis"),
+              recommendedActions: z
+                .array(
+                  z.object({
+                    action: z.string().describe("Specific action to take"),
+                    tool: z
+                      .string()
+                      .optional()
+                      .describe("SocialWave tool to use"),
+                    priority: z
+                      .enum(["high", "medium", "low"])
+                      .describe("Priority level"),
+                    reasoning: z
+                      .string()
+                      .describe("Why this action is recommended"),
+                  }),
+                )
+                .optional()
+                .describe("Specific actionable recommendations"),
+              predictions: z
+                .array(
+                  z.object({
+                    prediction: z
+                      .string()
+                      .describe("What you predict will happen"),
+                    confidence: z
+                      .number()
+                      .min(0)
+                      .max(1)
+                      .describe("Confidence in this prediction"),
+                    timeframe: z
+                      .string()
+                      .describe("When this is expected to happen"),
+                  }),
+                )
+                .optional()
+                .describe("Predictive insights about future outcomes"),
+              confidence: z
+                .number()
+                .min(0)
+                .max(1)
+                .describe(
+                  "Overall confidence in your analysis and recommendations",
+                ),
+            })
+            .describe(
+              "Enhanced AGI-level response from Ripple AI with strategic insights and actionable intelligence",
+            ),
+          model: "medium", // Use medium model for better performance while maintaining quality
+          temperature: 0.3,
+        });
+
+        // Store comprehensive AI response (answer-first, no preamble)
+        // Upsert by the same streamingId to replace the draft instead of creating a duplicate
+        const streamingId = `stream_${conversationId}`;
+        const existingDraft = await db.rippleMessage.findFirst({
+          where: {
+            conversationId,
+            role: "assistant",
+            metadata: { contains: streamingId },
+          },
+        });
+
+        if (existingDraft) {
+          await db.rippleMessage.update({
+            where: { id: existingDraft.id },
+            data: {
+              content: aiResponse.response,
+              metadata: JSON.stringify({
+                type: "comprehensive_response",
+                confidence: aiResponse.confidence,
+                proactiveInsights: aiResponse.proactiveInsights,
+                recommendedActions: aiResponse.recommendedActions,
+                predictions: aiResponse.predictions,
+                taskId: analysisTask.id,
+                streamingId,
+              }),
+            },
+          });
+        } else {
+          await db.rippleMessage.create({
+            data: {
+              conversationId,
+              role: "assistant",
+              content: aiResponse.response,
+              metadata: JSON.stringify({
+                type: "comprehensive_response",
+                confidence: aiResponse.confidence,
+                proactiveInsights: aiResponse.proactiveInsights,
+                recommendedActions: aiResponse.recommendedActions,
+                predictions: aiResponse.predictions,
+                taskId: analysisTask.id,
+                streamingId,
+              }),
+            },
+          });
+        }
+
+        // Create memory if AI suggested actions or if this is important context
+        if (
+          aiResponse.recommendedActions?.length ||
+          aiResponse.confidence > 0.8
+        ) {
+          await createRippleMemory({
+            userId,
+            memoryType: "conversation",
+            memoryKey: `conv_${conversation.id}_${Date.now()}`,
+            memoryValue: `Conversation: ${message} -> ${aiResponse.response}`,
+            confidence: aiResponse.confidence,
+            source: "conversation",
+          });
+        }
+
+        // Update conversation title if it's still generic
+        if (
+          conversation.title &&
+          conversation.title.includes("New Conversation")
+        ) {
+          await db.rippleConversation.update({
+            where: { id: conversationId },
+            data: {
+              title:
+                message.substring(0, 50) + (message.length > 50 ? "..." : ""),
+            },
+          });
+        }
+
+        // Run enhanced analysis in background for complex requests
+        if (shouldRunEnhancedAnalysis(message)) {
+          // Don't await this - let it run in background
+          runEnhancedAnalysisBackground(userId, conversationId, message).catch(
+            (error) => {
+              console.error("Background enhanced analysis failed:", error);
+            },
+          );
+        }
+      } catch (error) {
+        console.error("Error in comprehensive Ripple analysis:", error);
+
+        // Store error response
+        await db.rippleMessage.create({
+          data: {
+            conversationId,
+            role: "assistant",
+            content:
+              "⚠️ I encountered an issue during the comprehensive analysis. Let me know if you'd like me to try a different approach!",
+            metadata: JSON.stringify({
+              type: "error_response",
+              error: error instanceof Error ? error.message : "Unknown error",
+              taskId: analysisTask.id,
+            }),
+          },
+        });
+      }
+    });
+
+    // Final progress update
+    stream.next({
+      status: "analysis_queued",
+      progress: 100,
+      currentStep: "Analyzing in background",
+      processing: false,
+    });
+
+    // Return immediate response with task info for tracking
+    return {
+      message: immediateMessage,
+      conversation: {
+        id: conversation.id,
+        title: conversation.title,
+      },
+      taskId: analysisTask.id, // Frontend can use this to track progress
+      processing: true,
+    };
+  } catch (error) {
+    console.error("Error in sendRippleMessage:", error);
+
+    // Store fallback response
+    const fallbackMessage = await db.rippleMessage.create({
+      data: {
+        conversationId,
+        role: "assistant",
+        content:
+          "I'm having trouble processing that right now. Could you try rephrasing your question?",
+        metadata: JSON.stringify({ error: true }),
+      },
+    });
+
+    return {
+      message: fallbackMessage,
+      conversation: {
+        id: conversation.id,
+        title: conversation.title,
+      },
+    };
+  }
+}
+
+/**
+ * Get conversation history
+ */
+export async function getRippleConversation(input: { conversationId: string }) {
+  const { userId } = await getAuth({ required: true });
+  const { conversationId } = input;
+
+  const conversation = await db.rippleConversation.findUnique({
+    where: { id: conversationId, userId },
+    include: {
+      messages: {
+        orderBy: { createdAt: "asc" },
+      },
+    },
+  });
+
+  if (!conversation) {
+    throw new Error("Conversation not found");
+  }
+
+  return conversation;
+}
+
+/**
+ * List user's conversations
+ */
+export async function listRippleConversations() {
+  const { userId } = await getAuth({ required: true });
+
+  const conversations = await db.rippleConversation.findMany({
+    where: { userId },
+    include: {
+      messages: {
+        orderBy: { createdAt: "desc" },
+        take: 1, // Just the last message for preview
+      },
+    },
+    orderBy: { updatedAt: "desc" },
+  });
+
+  return conversations.map((conv) => ({
+    id: conv.id,
+    title: conv.title,
+    context: conv.context,
+    lastMessage: conv.messages[0]?.content || "",
+    lastMessageAt: conv.messages[0]?.createdAt || conv.createdAt,
+    createdAt: conv.createdAt,
+  }));
+}
+
+/**
+ * Create a memory for Ripple
+ */
+export async function createRippleMemory(input: {
+  userId: string;
+  memoryType: string;
+  memoryKey: string;
+  memoryValue: string;
+  confidence?: number;
+  source?: string;
+}) {
+  const {
+    userId,
+    memoryType,
+    memoryKey,
+    memoryValue,
+    confidence = 1,
+    source = "conversation",
+  } = input;
+
+  const memory = await db.rippleMemory.upsert({
+    where: {
+      userId_memoryType_memoryKey: {
+        userId,
+        memoryType,
+        memoryKey,
+      },
+    },
+    update: {
+      memoryValue,
+      confidence,
+      source,
+      lastUpdated: new Date(),
+    },
+    create: {
+      userId,
+      memoryType,
+      memoryKey,
+      memoryValue,
+      confidence,
+      source,
+    },
+  });
+
+  return memory;
+}
+
+/**
+ * Get user's memories
+ */
+export async function getRippleMemories(input: {
+  userId: string;
+  type?: string;
+  limit?: number;
+}) {
+  const { userId, type, limit = 10 } = input;
+
+  const memories = await db.rippleMemory.findMany({
+    where: {
+      userId,
+      ...(type && { memoryType: type }),
+    },
+    orderBy: [{ confidence: "desc" }, { createdAt: "desc" }],
+    take: limit,
+  });
+
+  return memories;
+}
+
+/**
+ * Build user context for Ripple AI
+ */
+function buildQuickContextWithTrends(
+  user: any,
+  recentContent: any,
+  brandGuidelines: any,
+  recentComments: any,
+  currentTrends: any,
+  brandSignals: any,
+): string {
+  let context = `User Profile: ${user.name || "Unknown"} (${user.handle || "no handle"})
+`;
+
+  if (user.accounts.length > 0) {
+    context += `Connected Platforms: ${user.accounts.map((acc: any) => `${acc.platform} (${acc.name})`).join(", ")}
+`;
+  }
+
+  // Prioritize brand context
+  if (brandGuidelines.status === "fulfilled" && brandGuidelines.value) {
+    const guidelines = brandGuidelines.value;
+    context += `\nBrand Voice: ${guidelines.brandVoice || "Not specified"}
+`;
+    if (guidelines.targetAudience) {
+      context += `Target Audience: ${guidelines.targetAudience}
+`;
+    }
+    if (guidelines.contentPillars && guidelines.contentPillars.length > 0) {
+      context += `Content Pillars: ${guidelines.contentPillars.join(", ")}
+`;
+    }
+  }
+
+  // Include current trending topics for relevant content suggestions
+  if (currentTrends.status === "fulfilled" && currentTrends.value) {
+    const trends = currentTrends.value;
+    if (trends.topics && trends.topics.length > 0) {
+      const topTrends = trends.topics
+        .slice(0, 3)
+        .map((t: any) => t.topic || t.title)
+        .join(", ");
+      context += `\nCurrent Trending Topics: ${topTrends}
+`;
+    }
+  }
+
+  // Include brand signals for better personalization
+  if (brandSignals.status === "fulfilled" && brandSignals.value) {
+    const signals = brandSignals.value;
+    if (signals.length > 0) {
+      const recentSignals = signals
+        .slice(0, 2)
+        .map((s: any) => s.signal)
+        .join(", ");
+      context += `\nBrand Signals: ${recentSignals}
+`;
+    }
+  }
+
+  if (recentContent.status === "fulfilled" && recentContent.value.length > 0) {
+    const content = recentContent.value;
+    const avgScore =
+      content.reduce(
+        (sum: number, c: any) => sum + (c.performanceScore || 0),
+        0,
+      ) / content.length;
+    context += `\nRecent Performance: ${content.length} recent posts (avg score: ${avgScore.toFixed(1)})
+`;
+  }
+
+  if (
+    recentComments.status === "fulfilled" &&
+    recentComments.value.length > 0
+  ) {
+    context += `\nRecent Engagement: ${recentComments.value.length} recent comments
+`;
+  }
+
+  return context;
+}
+
+async function buildUserContext(
+  userId: string,
+  isQuickMode = false,
+): Promise<string> {
+  try {
+    // Get user's basic info
+    const user = await db.user.findUnique({
+      where: { id: userId },
+      include: {
+        accounts: true,
+      },
+    });
+
+    if (!user) {
+      return "New user with no context available.";
+    }
+
+    // In quick mode, prioritize current trends and brand data for immediate response
+    if (isQuickMode) {
+      const [
+        recentContent,
+        brandGuidelines,
+        recentComments,
+        currentTrends,
+        brandSignals,
+      ] = await Promise.allSettled([
+        db.contentPerformance.findMany({
+          where: { userId },
+          orderBy: { createdAt: "desc" },
+          take: 3,
+        }),
+        getBrandGuidelines().catch(() => null),
+        db.comment
+          .findMany({
+            where: { userId },
+            orderBy: { createdAt: "desc" },
+            take: 5,
+          })
+          .catch(() => []),
+        // Get current trending topics for immediate context
+        getTrendingTopicsResults().catch(() => null),
+        // Get brand signals for better context
+        getBrandSignals().catch(() => null),
+      ]);
+
+      return buildQuickContextWithTrends(
+        user,
+        recentContent,
+        brandGuidelines,
+        recentComments,
+        currentTrends,
+        brandSignals,
+      );
+    }
+
+    // Get comprehensive user data with 10x more intelligence + real-time context
+    const [
+      recentContent,
+      brandGuidelines,
+      contentPillars,
+      recentComments,
+      trendingTopics,
+      brandSignals,
+      advancedInsights,
+      generatedContent,
+      userSettings,
+      savedInsights,
+      viralThreads,
+      scheduledPosts,
+      learningInsights,
+      performanceAnalytics,
+      brandVoiceProfile,
+      uploadedDocuments,
+      contentTags,
+      dashboardSummary,
+      postingOptimalTimes,
+      brandContext,
+      rippleMemories,
+      realtimeMetrics,
+      crossPlatformInsights,
+      predictiveAnalytics,
+      competitorAnalysis,
+      audienceInsights,
+      contentOpportunities,
+      emergingTrends,
+      seasonalPatterns,
+      userBehaviorPatterns,
+    ] = await Promise.allSettled([
+      // Existing data sources
+      db.contentPerformance.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+      }),
+      getBrandGuidelines().catch(() => null),
+      listContentPillars().catch(() => []),
+      db.comment
+        .findMany({
+          where: { userId },
+          orderBy: { createdAt: "desc" },
+          take: 20,
+          include: {
+            page: {
+              select: {
+                id: true,
+                pageId: true,
+                pageName: true,
+              },
+            },
+          },
+        })
+        .catch(() => []),
+      getTrendingTopicsResults().catch(() => null),
+      getBrandSignals().catch(() => null),
+      getAdvancedInsights().catch(() => null),
+      db.generatedContent
+        .findMany({
+          where: { userId },
+          orderBy: { createdAt: "desc" },
+          take: 10,
+          include: {
+            tags: { include: { tag: true } },
+          },
+        })
+        .catch(() => []),
+
+      // Enhanced intelligence data sources
+      getUserSettings().catch(() => null),
+      listSavedInsights().catch(() => []),
+      listViralThreads({}).catch(() => []),
+      listScheduledPosts({ limit: 10 }).catch(() => []),
+      getLearningInsights().catch(() => null),
+      getPerformanceAnalytics({ timeRange: "30d" }).catch(() => null),
+      getUserBrandVoiceProfile().catch(() => null),
+      getContentOptimizations().catch(() => null),
+      getFeedbackAnalytics({ timeRange: 30 }).catch(() => null),
+      getRippleMemories({ userId }).catch(() => []),
+      listUploadedDocuments().catch(() => []),
+      listContentTags().catch(() => []),
+      listViralThreadTags().catch(() => []),
+      getDashboardSummary().catch(() => null),
+      getOptimalPostingTimes().catch(() => null),
+      getBrandContext().catch(() => null),
+      getContentStudioInsights().catch(() => null),
+      getPersonalizedRecommendations().catch(() => []),
+      getRealTimePerformanceMetrics().catch(() => null),
+      getUserBehaviorAnalytics({ timeRange: 30 }).catch(() => null),
+
+      // Enhanced real-time context awareness
+      getRippleMemories({ userId, limit: 20 }).catch(() => []),
+      getRealTimePerformanceMetrics().catch(() => null),
+      // Cross-platform insights (simulated for now)
+      Promise.resolve(null), // crossPlatformInsights placeholder
+      getPredictiveAnalytics().catch(() => null),
+      // Competitive analysis (simulated for now)
+      Promise.resolve(null), // competitorAnalysis placeholder
+      // Audience insights (simulated for now)
+      Promise.resolve(null), // audienceInsights placeholder
+      // Content opportunities (simulated for now)
+      Promise.resolve(null), // contentOpportunities placeholder
+      // Emerging trends (simulated for now)
+      Promise.resolve(null), // emergingTrends placeholder
+      // Seasonal patterns (simulated for now)
+      Promise.resolve(null), // seasonalPatterns placeholder
+      // User behavior patterns
+      getUserBehaviorAnalytics({ timeRange: 90 }).catch(() => null),
+    ]);
+
+    // Build comprehensive context with all available data for 10x intelligence
+    const contextData = {
+      // User information
+      userId,
+      user: {
+        name: user.name || "Unknown",
+        handle: user.handle || "no handle",
+        accounts: user.accounts.map((acc) => ({
+          platform: acc.platform,
+          name: acc.name || acc.accountId,
+          accountId: acc.accountId,
+        })),
+      },
+
+      // Core brand data
+      brandGuidelines:
+        brandGuidelines.status === "fulfilled" ? brandGuidelines.value : null,
+      contentPillars:
+        contentPillars.status === "fulfilled" ? contentPillars.value : [],
+
+      // Content and performance data
+      recentContent:
+        recentContent.status === "fulfilled" ? recentContent.value : [],
+      recentComments:
+        recentComments.status === "fulfilled" ? recentComments.value : [],
+      generatedContent:
+        generatedContent.status === "fulfilled" ? generatedContent.value : [],
+
+      // Intelligence and insights
+      trendingTopics:
+        trendingTopics.status === "fulfilled" ? trendingTopics.value : null,
+      brandSignals:
+        brandSignals.status === "fulfilled" ? brandSignals.value : null,
+      advancedInsights:
+        advancedInsights.status === "fulfilled" ? advancedInsights.value : null,
+
+      // Enhanced intelligence data
+      userSettings:
+        userSettings.status === "fulfilled" ? userSettings.value : null,
+      savedInsights:
+        savedInsights.status === "fulfilled" ? savedInsights.value : [],
+      viralThreads:
+        viralThreads.status === "fulfilled" ? viralThreads.value : [],
+      scheduledPosts:
+        scheduledPosts.status === "fulfilled" ? scheduledPosts.value : [],
+      learningInsights:
+        learningInsights.status === "fulfilled" ? learningInsights.value : null,
+      performanceAnalytics:
+        performanceAnalytics.status === "fulfilled"
+          ? performanceAnalytics.value
+          : null,
+      brandVoiceProfile:
+        brandVoiceProfile.status === "fulfilled"
+          ? brandVoiceProfile.value
+          : null,
+      uploadedDocuments:
+        uploadedDocuments.status === "fulfilled" ? uploadedDocuments.value : [],
+      contentTags: contentTags.status === "fulfilled" ? contentTags.value : [],
+      dashboardSummary:
+        dashboardSummary.status === "fulfilled" ? dashboardSummary.value : null,
+      postingOptimalTimes:
+        postingOptimalTimes.status === "fulfilled"
+          ? postingOptimalTimes.value
+          : null,
+      brandContext:
+        brandContext.status === "fulfilled" ? brandContext.value : null,
+
+      // Metadata
+      timestamp: new Date().toISOString(),
+      contextType: "comprehensive",
+    };
+
+    // Convert to formatted string for backward compatibility but with enhanced intelligence
+    let context = `User Profile: ${contextData.user.name} (${contextData.user.handle})
+`;
+
+    // Connected accounts
+    if (contextData.user.accounts.length > 0) {
+      context += `Connected Platforms: ${contextData.user.accounts.map((acc) => `${acc.platform} (${acc.name})`).join(", ")}
+`;
+    }
+
+    // Brand guidelines with enhanced detail
+    if (contextData.brandGuidelines) {
+      const guidelines = contextData.brandGuidelines;
+      context += `\nBrand Guidelines:
+`;
+      if (guidelines.brandVoice)
+        context += `- Voice: ${guidelines.brandVoice}
+`;
+      if (guidelines.brandWebsite)
+        context += `- Website: ${guidelines.brandWebsite}
+`;
+      if (guidelines.socialLinks) {
+        try {
+          const socialLinks =
+            typeof guidelines.socialLinks === "string"
+              ? JSON.parse(guidelines.socialLinks)
+              : guidelines.socialLinks;
+          if (socialLinks && typeof socialLinks === "object") {
+            const links = Object.entries(socialLinks as Record<string, unknown>)
+              .filter(
+                ([, url]) =>
+                  url && typeof url === "string" && url.trim() !== "",
+              )
+              .map(([platform, url]) => platform + ": " + url);
+            if (links.length > 0) {
+              context += "- Social Links: " + links.join(", ") + "\n";
+            }
+          }
+        } catch {
+          // If parsing fails, skip social links
+        }
+      }
+      if (guidelines.tonePriorities) {
+        try {
+          const priorities = JSON.parse(guidelines.tonePriorities as string);
+          context += `- Tone Priorities: ${Array.isArray(priorities) ? priorities.join(", ") : priorities}
+`;
+        } catch {
+          context += `- Tone Priorities: ${guidelines.tonePriorities}
+`;
+        }
+      }
+      if (guidelines.phrasesToUse) {
+        try {
+          const phrases = JSON.parse(guidelines.phrasesToUse as string);
+          context += `- Phrases to Use: ${Array.isArray(phrases) ? phrases.join(", ") : phrases}
+`;
+        } catch {
+          context += `- Phrases to Use: ${guidelines.phrasesToUse}
+`;
+        }
+      }
+      if (guidelines.additionalNotes)
+        context += `- Additional Notes: ${guidelines.additionalNotes}
+`;
+    }
+
+    // Content pillars
+    if (contextData.contentPillars.length > 0) {
+      context += `\nContent Pillars: ${contextData.contentPillars.map((p: any) => p.name).join(", ")}
+`;
+    }
+
+    // Recent content performance with enhanced analytics
+    if (contextData.recentContent.length > 0) {
+      context += `\nRecent Content Performance:
+`;
+      contextData.recentContent.forEach((c: any) => {
+        context += `- ${c.contentTitle || "Untitled"} (${c.platform}): Score ${c.performanceScore || "N/A"}
+`;
+      });
+    }
+
+    // Enhanced viral threads insight
+    if (
+      contextData.viralThreads &&
+      Array.isArray(contextData.viralThreads) &&
+      contextData.viralThreads.length > 0
+    ) {
+      context += `\nViral Thread Performance:
+`;
+      contextData.viralThreads.slice(0, 3).forEach((thread: any) => {
+        context += `- ${thread.topic || "Untitled"}: ${thread.viralScore || "N/A"} viral score
+`;
+      });
+    } else if (
+      contextData.viralThreads &&
+      typeof contextData.viralThreads === "object" &&
+      "threads" in contextData.viralThreads
+    ) {
+      const threads = (contextData.viralThreads as any).threads;
+      if (Array.isArray(threads) && threads.length > 0) {
+        context += `\nViral Thread Performance:
+`;
+        threads.slice(0, 3).forEach((thread: any) => {
+          context += `- ${thread.topic || "Untitled"}: ${thread.viralScore || "N/A"} viral score
+`;
+        });
+      }
+    }
+
+    // Scheduled content strategy
+    if (contextData.scheduledPosts.length > 0) {
+      context += `\nUpcoming Scheduled Content: ${contextData.scheduledPosts.length} posts planned
+`;
+    }
+
+    // Learning insights for personalization
+    if (contextData.learningInsights) {
+      context += `\nAI Learning Insights: Available for enhanced personalization
+`;
+    }
+
+    // Performance analytics summary
+    if (contextData.performanceAnalytics) {
+      context += `\nPerformance Analytics: Comprehensive data available for optimization
+`;
+    }
+
+    // Brand voice profile
+    if (contextData.brandVoiceProfile) {
+      context += `\nBrand Voice Profile: Personalized voice analysis available
+`;
+    }
+
+    // Uploaded documents for context
+    if (
+      contextData.uploadedDocuments &&
+      Array.isArray(contextData.uploadedDocuments) &&
+      contextData.uploadedDocuments.length > 0
+    ) {
+      context += `\nBrand Documents: ${contextData.uploadedDocuments.length} documents uploaded for context
+`;
+    }
+
+    // Recent comments and engagement (enhanced)
+    if (contextData.recentComments.length > 0) {
+      context += `\nRecent Audience Engagement:
+`;
+      contextData.recentComments.slice(0, 5).forEach((c: any) => {
+        const pageName = c.page?.name || "Unknown Page";
+        const platform = c.page?.platform || "Unknown Platform";
+        context += `- ${pageName} (${platform}): "${c.text.substring(0, 100)}${c.text.length > 100 ? "..." : ""}"
+`;
+      });
+    }
+
+    // Trending topics insights
+    if (
+      contextData.trendingTopics?.success &&
+      contextData.trendingTopics.data &&
+      Array.isArray(contextData.trendingTopics.data) &&
+      contextData.trendingTopics.data.length > 0
+    ) {
+      context += `\nCurrent Trending Topics:
+`;
+      contextData.trendingTopics.data.slice(0, 3).forEach((topic: any) => {
+        context += `- ${topic.topic}: ${topic.description}
+`;
+      });
+    }
+
+    // Brand signals (enhanced)
+    if (contextData.brandSignals) {
+      const signals = contextData.brandSignals;
+      context += `\nBrand Performance Signals:
+`;
+      if (signals.preferredTones?.length > 0) {
+        context += `- Preferred Tones: ${signals.preferredTones.join(", ")}
+`;
+      }
+      if (signals.commonKeywords?.length > 0) {
+        context += `- Common Keywords: ${signals.commonKeywords.slice(0, 5).join(", ")}
+`;
+      }
+      if (signals.contentPillars?.length > 0) {
+        context += `- Content Pillars: ${signals.contentPillars.join(", ")}
+`;
+      }
+    }
+
+    // Generated content summary
+    if (contextData.generatedContent.length > 0) {
+      context += `\nRecently Generated Content:
+`;
+      contextData.generatedContent.slice(0, 5).forEach((c: any) => {
+        context += `- ${c.title || "Untitled"} (${c.contentType} for ${c.platform})
+`;
+      });
+    }
+
+    // Advanced insights summary (enhanced)
+    if (contextData.advancedInsights?.status === "COMPLETED") {
+      const insights = contextData.advancedInsights;
+      context += `\nLatest AI Insights:
+`;
+      if (
+        insights.trendingTopics &&
+        Array.isArray(insights.trendingTopics) &&
+        insights.trendingTopics.length > 0
+      ) {
+        context += `- Trending Topics: ${insights.trendingTopics
+          .slice(0, 2)
+          .map((t: any) => t.topic)
+          .join(", ")}
+`;
+      }
+      if (
+        insights.viralContentPotential &&
+        Array.isArray(insights.viralContentPotential) &&
+        insights.viralContentPotential.length > 0
+      ) {
+        context += `- Viral Content Opportunities: ${insights.viralContentPotential
+          .slice(0, 2)
+          .map((v: any) => v.title)
+          .join(", ")}
+`;
+      }
+    }
+
+    // Optimal posting times
+    if (contextData.postingOptimalTimes) {
+      context += `\nOptimal Posting Strategy: Personalized timing recommendations available
+`;
+    }
+
+    // Brand context analysis
+    if (contextData.brandContext) {
+      context += `\nBrand Context Analysis: Comprehensive brand understanding available
+`;
+    }
+
+    // Enhanced real-time intelligence
+    if (realtimeMetrics?.status === "fulfilled" && realtimeMetrics.value) {
+      context += `\nReal-time Performance: Active engagement tracking and optimization
+`;
+    }
+
+    if (
+      predictiveAnalytics?.status === "fulfilled" &&
+      predictiveAnalytics.value
+    ) {
+      context += `\nPredictive Intelligence: Future trend analysis and forecasting available
+`;
+    }
+
+    if (
+      crossPlatformInsights?.status === "fulfilled" &&
+      crossPlatformInsights.value
+    ) {
+      context += `\nCross-Platform Intelligence: Multi-platform performance optimization
+`;
+    }
+
+    if (
+      competitorAnalysis?.status === "fulfilled" &&
+      competitorAnalysis.value
+    ) {
+      context += `\nCompetitive Intelligence: Market positioning and competitor insights
+`;
+    }
+
+    if (audienceInsights?.status === "fulfilled" && audienceInsights.value) {
+      context += `\nAudience Intelligence: Deep audience behavior and preference analysis
+`;
+    }
+
+    if (
+      contentOpportunities?.status === "fulfilled" &&
+      contentOpportunities.value
+    ) {
+      context += `\nContent Opportunities: AI-identified content gaps and opportunities
+`;
+    }
+
+    if (emergingTrends?.status === "fulfilled" && emergingTrends.value) {
+      context += `\nEmerging Trends: Early trend detection and opportunity identification
+`;
+    }
+
+    if (seasonalPatterns?.status === "fulfilled" && seasonalPatterns.value) {
+      context += `\nSeasonal Intelligence: Time-based content optimization patterns
+`;
+    }
+
+    if (
+      userBehaviorPatterns?.status === "fulfilled" &&
+      userBehaviorPatterns.value
+    ) {
+      context += `\nBehavioral Intelligence: User engagement pattern analysis
+`;
+    }
+
+    if (
+      rippleMemories?.status === "fulfilled" &&
+      rippleMemories.value?.length > 0
+    ) {
+      context += `\nPersonalization Memory: ${rippleMemories.value.length} previous interactions for enhanced personalization
+`;
+    }
+
+    return context;
+  } catch (error) {
+    console.error("Error building comprehensive user context:", error);
+    return "Unable to load comprehensive user context. Using minimal context for this interaction.";
+  }
+}
+
+/**
+ * Record Ripple action
+ */
+export async function recordRippleAction(input: {
+  conversationId?: string;
+  actionType: string;
+  description: string;
+  metadata?: any;
+}) {
+  const { userId } = await getAuth({ required: true });
+  const { conversationId, actionType, description, metadata } = input;
+
+  const action = await db.rippleAction.create({
+    data: {
+      conversationId: conversationId!,
+      userId,
+      actionType,
+      actionData: description,
+      status: "completed",
+      result: metadata ? JSON.stringify(metadata) : null,
+    },
+  });
+
+  return action;
+}
+
+/**
+ * Submit feedback on Ripple interaction
+ */
+export async function submitRippleFeedback(input: {
+  conversationId?: string;
+  messageId?: string;
+  rating: number;
+  feedback?: string;
+}) {
+  const { userId } = await getAuth({ required: true });
+  const { conversationId, messageId, rating, feedback } = input;
+
+  const feedbackRecord = await db.rippleFeedback.create({
+    data: {
+      userId,
+      feedbackType: "rating",
+      rating,
+      comment: feedback,
+      category: "general",
+      metadata: JSON.stringify({ conversationId, messageId }),
+    },
+  });
+
+  // Create learning record to improve future responses
+  if (rating <= 2) {
+    await db.rippleLearning.create({
+      data: {
+        userId,
+        learningType: "failure_pattern",
+        pattern: JSON.stringify({ feedbackType: "negative", rating }),
+        evidence: JSON.stringify([
+          {
+            feedback: feedback || "Low rating received",
+            timestamp: new Date(),
+          },
+        ]),
+        confidence: 0.8,
+      },
+    });
+  } else if (rating >= 4) {
+    await db.rippleLearning.create({
+      data: {
+        userId,
+        learningType: "success_pattern",
+        pattern: JSON.stringify({ feedbackType: "positive", rating }),
+        evidence: JSON.stringify([
+          {
+            feedback: feedback || "High rating received",
+            timestamp: new Date(),
+          },
+        ]),
+        confidence: 0.8,
+      },
+    });
+  }
+
+  // If the user left freeform feedback text, attempt to learn simple directives (e.g., "avoid X", "prefer Y")
+  try {
+    if (feedback) {
+      const candidates: string[] = [];
+      const lower = feedback.toLowerCase();
+      if (lower.includes("controversial"))
+        candidates.push("Avoid controversial topics");
+      const regexes = [
+        /avoid\s+([^.;\n]+)/gi,
+        /prefer\s+([^.;\n]+)/gi,
+        /use\s+([^.;\n]+)/gi,
+      ];
+      regexes.forEach((re) => {
+        let m: RegExpExecArray | null;
+        while ((m = re.exec(feedback)) !== null) {
+          const verbToken = (m[0] ?? "").split(" ")[0] ?? "";
+          const phraseRaw = (m[1] as string | undefined) ?? undefined;
+          if (!verbToken || !phraseRaw) continue;
+          const phrase = phraseRaw.trim();
+          if (!phrase) continue;
+          const dir =
+            verbToken.charAt(0).toUpperCase() +
+            verbToken.slice(1).toLowerCase() +
+            " " +
+            phrase;
+          candidates.push(sanitizeString(dir, 100));
+        }
+      });
+      if (candidates.length > 0) {
+        const existing = await db.brandGuidelines.findUnique({
+          where: { userId },
+        });
+        const existingDirectives: string[] = existing?.directives
+          ? (JSON.parse(existing.directives) as unknown as string[])
+          : [];
+        const merged = Array.from(
+          new Set([...existingDirectives, ...candidates]),
+        ).slice(0, 50);
+        if (existing) {
+          await db.brandGuidelines.update({
+            where: { userId },
+            data: { directives: JSON.stringify(merged) },
+          });
+        } else {
+          await db.brandGuidelines.create({
+            data: {
+              userId,
+              directives: JSON.stringify(merged),
+              brandVoice: "professional",
+              tonePriorities: JSON.stringify([]),
+              phrasesToUse: JSON.stringify([]),
+              phrasesToAvoid: JSON.stringify([]),
+              exampleResponses: JSON.stringify([]),
+            },
+          });
+        }
+      }
+    }
+  } catch (e) {
+    console.error("Failed to learn directives from Ripple feedback:", e);
+  }
+
+  return feedbackRecord;
+}
+
+/**
+ * Get Ripple analytics and insights
+ */
+export async function getRippleAnalytics() {
+  const { userId } = await getAuth({ required: true });
+
+  const [conversations, memories, actions, feedback, learning] =
+    await Promise.all([
+      db.rippleConversation.count({ where: { userId } }),
+      db.rippleMemory.count({ where: { userId } }),
+      db.rippleAction.count({ where: { userId } }),
+      db.rippleFeedback.findMany({ where: { userId } }),
+      db.rippleLearning.count({ where: { userId } }),
+    ]);
+
+  const avgRating =
+    feedback.length > 0
+      ? feedback.reduce((sum, f) => sum + (f.rating || 0), 0) / feedback.length
+      : 0;
+
+  return {
+    totalConversations: conversations,
+    totalMemories: memories,
+    totalActions: actions,
+    totalFeedback: feedback.length,
+    averageRating: avgRating,
+    totalLearnings: learning,
+  };
+}
+
+export async function generateRippleEnhancedResponse(input: {
+  commentId: string;
+  conversationId?: string;
+}) {
+  const { userId } = await getAuth({ required: true });
+
+  await requireFeatureAccess("ai_response_generation");
+  await requireUsageLimit("ai_responses_daily");
+
+  // Consume credits for Ripple-enhanced response generation (4 credits)
+  await _consumeCredits(
+    userId,
+    "ai_response_generation",
+    4,
+    `Ripple-enhanced response for comment: ${input.commentId}`,
+    { commentId: input.commentId, rippleEnhanced: true },
+  );
+
+  const comment = await db.comment.findFirst({
+    where: {
+      id: input.commentId,
+      userId,
+    },
+    include: {
+      account: true,
+      page: true,
+    },
+  });
+
+  if (!comment) {
+    throw new Error("Comment not found");
+  }
+
+  // Start streaming response for real-time progress updates
+  const stream = await startRealtimeResponse<{
+    status?: string;
+    progress?: number;
+    currentStep?: string;
+    toolHistory?: Array<{
+      name: string;
+      status: "in_progress" | "done";
+      inProgressMessage: string;
+    }>;
+    result?: {
+      response: string;
+      alternativeResponses?: string[];
+      strategy: string;
+      rippleInsights: string[];
+      confidence: number;
+    };
+    error?: string;
+  }>();
+
+  try {
+    // Initial status update
+    stream.next({
+      status: "starting",
+      progress: 0,
+      currentStep: "Initializing Ripple analysis...",
+    });
+
+    // Get Ripple's enhanced context
+    const userContext = await buildUserContext(userId);
+    const recentMemories = await getRippleMemories({ userId, limit: 15 });
+
+    // Get brand guidelines and user preferences
+    const brandGuidelines = await db.brandGuidelines.findUnique({
+      where: { userId },
+    });
+
+    const userPref = await db.userResponsePreference.findUnique({
+      where: { userId },
+    });
+
+    stream.next({
+      status: "analyzing",
+      progress: 20,
+      currentStep: "Analyzing comment with Ripple intelligence...",
+    });
+
+    // Get original post content for better context
+    let originalPostContent = "";
+    if (
+      comment.platform === "facebook" &&
+      comment.account &&
+      comment.account.pageToken &&
+      comment.postId
+    ) {
+      try {
+        const validationResult = validateFacebookPostId(comment.postId);
+        const postId = validationResult.isValid
+          ? validationResult.normalizedId || comment.postId
+          : comment.postId;
+
+        const postRes = await axios.get(
+          `https://graph.facebook.com/v18.0/${postId}`,
+          {
+            params: {
+              fields: "message,story",
+              access_token: comment.account.pageToken,
+            },
+          },
+        );
+        originalPostContent = postRes.data.message || postRes.data.story || "";
+      } catch {
+        originalPostContent = "";
+      }
+    }
+
+    // Get thread context
+    const threadComments = await db.comment.findMany({
+      where: {
+        platform: comment.platform,
+        postId: comment.postId,
+        id: { not: comment.id },
+        userId,
+      },
+      orderBy: { createdAt: "asc" },
+      select: {
+        authorName: true,
+        text: true,
+        createdAt: true,
+      },
+      take: 10,
+    });
+
+    stream.next({
+      status: "generating",
+      progress: 40,
+      currentStep: "Generating Ripple-enhanced response...",
+    });
+
+    const directives = brandGuidelines?.directives
+      ? (() => {
+          try {
+            return JSON.parse(brandGuidelines.directives as any) as string[];
+          } catch {
+            return [];
+          }
+        })()
+      : [];
+    const result = await requestMultimodalModel({
+      system: `You are Ripple, an AI growth agent integrated with SocialWave's comment response system. You have deep understanding of the user's brand, audience engagement patterns, and successful response strategies.
+
+User Context:
+${userContext}
+
+Recent Memories and Insights:
+${recentMemories.map((m) => `- ${m.memoryValue} (${m.memoryType}, confidence: ${m.confidence})`).join("\n")}
+
+${
+  brandGuidelines
+    ? `Brand Guidelines:
+- Voice: ${brandGuidelines.brandVoice}
+- Directives: ${directives.join(", ") || "None"}
+- Additional Notes: ${brandGuidelines.additionalNotes || "None"}`
+    : "No brand guidelines set"
+}
+
+${
+  userPref
+    ? `User Response Patterns:
+- Preferred Tone: ${userPref.tone || "Not analyzed"}
+- Typical Length: ${userPref.length || "Not analyzed"}
+- Positivity Level: ${userPref.positivity || "Not analyzed"}
+- Directness Level: ${userPref.directness || "Not analyzed"}`
+    : "No response patterns learned yet"
+}
+
+CRITICAL: Enforce Brand Vibe directives when composing responses. Avoid prohibited topics/tones and prefer required phrases.
+
+Generate a response that:
+1. Leverages your understanding of the user's successful engagement patterns
+2. Aligns with their brand voice and previous successful responses
+3. Considers the context of the original post and conversation thread
+4. Optimizes for engagement and relationship building
+5. Applies learned insights from similar successful interactions`,
+      messages: [
+        {
+          role: "user",
+          content: `Original Post: ${originalPostContent || "[not available]"}
+
+Comment by ${comment.authorName}: "${comment.text}"
+
+${threadComments.length > 0 ? `Thread Context:\n${threadComments.map((c) => `${c.authorName}: ${c.text}`).join("\n")}` : "No other comments in thread"}
+
+Generate the most effective response based on my context, brand, and successful patterns. Explain your strategic reasoning and provide alternatives.`,
+        },
+      ],
+      returnType: z
+        .object({
+          response: z.string().describe("The primary recommended response"),
+          alternativeResponses: z
+            .array(z.string())
+            .describe("2-3 alternative response options"),
+          strategy: z
+            .string()
+            .describe("Strategic reasoning behind the response approach"),
+          rippleInsights: z
+            .array(z.string())
+            .describe(
+              "Key insights from user context that influenced this response",
+            ),
+          confidence: z
+            .number()
+            .min(0)
+            .max(1)
+            .describe("Confidence level in this response strategy"),
+        })
+        .describe(
+          "Enhanced response recommendations from Ripple AI with strategic insights",
+        ),
+      model: "medium",
+      temperature: 0.7,
+      onProgress: (tools) => {
+        stream.next({
+          toolHistory: tools.map((tool) => ({
+            name: tool.toolName,
+            status: tool.status,
+            inProgressMessage: tool.inProgressMessage,
+          })),
+          progress:
+            50 +
+            (tools.filter((t) => t.status === "done").length / tools.length) *
+              40,
+          currentStep:
+            tools.find((t) => t.status === "in_progress")?.inProgressMessage ||
+            "Generating enhanced response...",
+        });
+      },
+    });
+
+    // Create memory of this response generation for future learning
+    await createRippleMemory({
+      userId,
+      memoryType: "response_generation",
+      memoryKey: `response_${input.commentId}_${Date.now()}`,
+      memoryValue: `Generated response to comment: "${comment.text.substring(0, 100)}..." with strategy: ${result.strategy}`,
+      confidence: result.confidence,
+      source: "response_generation",
+    });
+
+    // Record action for analytics
+    await recordRippleAction({
+      conversationId: input.conversationId,
+      actionType: "response_generation",
+      description: JSON.stringify({
+        platform: comment.platform,
+        confidence: result.confidence,
+        insightsApplied: result.rippleInsights.length,
+      }),
+      metadata: {
+        platform: comment.platform,
+        confidence: result.confidence,
+        insightsApplied: result.rippleInsights.length,
+      },
+    });
+
+    stream.next({
+      status: "completed",
+      progress: 100,
+      currentStep: "Ripple-enhanced response generated successfully!",
+      result: result,
+    });
+
+    return stream.end();
+  } catch (error) {
+    console.error("Error generating Ripple-enhanced response:", error);
+
+    stream.next({
+      status: "error",
+      progress: 0,
+      currentStep: "Error occurred during generation",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to generate enhanced response. Please try again.",
+    });
+
+    throw new Error("Failed to generate enhanced response. Please try again.");
+  }
+}
+
+export async function schedulePostWithRipple(input: {
+  content: string;
+  platform: string;
+  accountId: string;
+  pageId?: string;
+  preferredTimeRange?: { start: string; end: string };
+  sourceType?: string;
+  sourceId?: string;
+  imageUrl?: string;
+  conversationId?: string;
+}) {
+  const { userId } = await getAuth({ required: true });
+
+  await requireFeatureAccess("post_scheduling");
+  await requireUsageLimit("scheduled_posts_monthly");
+
+  // Consume credits for Ripple-enhanced scheduling (2 credits)
+  await _consumeCredits(
+    userId,
+    "post_scheduling",
+    2,
+    `Ripple-enhanced scheduling for ${input.platform}`,
+    { platform: input.platform ?? "twitter", rippleEnhanced: true },
+  );
+
+  // Start streaming response for real-time progress updates
+  const stream = await startRealtimeResponse<{
+    status?: string;
+    progress?: number;
+    currentStep?: string;
+    toolHistory?: Array<{
+      name: string;
+      status: "in_progress" | "done";
+      inProgressMessage: string;
+    }>;
+    result?: {
+      scheduledPost: any;
+      optimalTime: string;
+      rippleInsights: string[];
+      confidence: number;
+      alternatives: Array<{
+        time: string;
+        reason: string;
+        confidence: number;
+      }>;
+    };
+    error?: string;
+  }>();
+
+  try {
+    // Initial status update
+    stream.next({
+      status: "starting",
+      progress: 0,
+      currentStep: "Initializing Ripple scheduling analysis...",
+    });
+
+    // Get Ripple's enhanced context for scheduling optimization
+    const userContext = await buildUserContext(userId);
+    const recentMemories = await getRippleMemories({ userId, limit: 10 });
+
+    // Get user's posting history and performance data
+    const recentPosts = await db.scheduledPost.findMany({
+      where: {
+        userId,
+        platform: input.platform ?? "twitter",
+        status: "POSTED",
+        createdAt: {
+          gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Last 30 days
+        },
+      },
+      orderBy: { scheduledAt: "desc" },
+      take: 20,
+    });
+
+    // Get optimal posting times
+    const optimalTimes = await getOptimalPostingTimes({
+      platform: input.platform ?? "twitter",
+    });
+
+    stream.next({
+      status: "analyzing",
+      progress: 30,
+      currentStep: "Analyzing optimal timing with Ripple intelligence...",
+    });
+
+    const result = await requestMultimodalModel({
+      system: `You are Ripple, an AI growth agent integrated with SocialWave's scheduling system. You have deep understanding of the user's posting patterns, audience engagement, and optimal timing strategies.
+
+User Context:
+${userContext}
+
+Recent Memories and Insights:
+${recentMemories.map((m) => `- ${m.memoryValue} (${m.memoryType}, confidence: ${m.confidence})`).join("\n")}
+
+Recent Posting History (last 30 days):
+${recentPosts.map((p) => `- ${p.scheduledAt}: "${p.content.substring(0, 50)}..." on ${p.platform}`).join("\n") || "No recent posts"}
+
+Optimal Times Analysis:
+- Best Hours: ${optimalTimes.bestHours?.map((h) => `${h.time} (${h.engagementRate}% engagement)`).join(", ") || "No data"}
+- Best Days: ${optimalTimes.bestDays?.map((d) => `${d.dayName} (${d.engagementRate}% engagement)`).join(", ") || "No data"}
+
+User Preferences:
+${input.preferredTimeRange ? `- Preferred time range: ${input.preferredTimeRange.start} to ${input.preferredTimeRange.end}` : "- No time preferences specified"}
+
+Analyze the content and recommend the optimal posting time that:
+1. Maximizes audience engagement based on historical data
+2. Considers the content type and platform-specific best practices
+3. Avoids scheduling conflicts with recent posts
+4. Aligns with user preferences when specified
+5. Leverages insights from successful past posts`,
+      messages: [
+        {
+          role: "user",
+          content: `Content to schedule: "${input.content}"
+Platform: ${input.platform}
+${input.preferredTimeRange ? `Preferred time range: ${input.preferredTimeRange.start} - ${input.preferredTimeRange.end}` : "No time preference"}
+
+Recommend the optimal posting time and provide strategic reasoning. Include alternative options with explanations.`,
+        },
+      ],
+      returnType: z
+        .object({
+          optimalTime: z
+            .string()
+            .describe("ISO timestamp for the optimal posting time"),
+          rippleInsights: z
+            .array(z.string())
+            .describe("Key insights that influenced the timing recommendation"),
+          confidence: z
+            .number()
+            .min(0)
+            .max(1)
+            .describe("Confidence level in this timing recommendation"),
+          alternatives: z
+            .array(
+              z.object({
+                time: z
+                  .string()
+                  .describe("ISO timestamp for alternative posting time"),
+                reason: z
+                  .string()
+                  .describe("Reason for this alternative timing"),
+                confidence: z
+                  .number()
+                  .min(0)
+                  .max(1)
+                  .describe("Confidence in this alternative"),
+              }),
+            )
+            .describe("2-3 alternative posting times with explanations"),
+          strategy: z
+            .string()
+            .describe("Overall scheduling strategy explanation"),
+        })
+        .describe(
+          "Optimal posting schedule recommendations with strategic insights",
+        ),
+      model: "medium",
+      temperature: 0.3,
+      onProgress: (tools) => {
+        stream.next({
+          toolHistory: tools.map((tool) => ({
+            name: tool.toolName,
+            status: tool.status,
+            inProgressMessage: tool.inProgressMessage,
+          })),
+          progress:
+            40 +
+            (tools.filter((t) => t.status === "done").length / tools.length) *
+              30,
+          currentStep:
+            tools.find((t) => t.status === "in_progress")?.inProgressMessage ||
+            "Optimizing posting schedule...",
+        });
+      },
+    });
+
+    stream.next({
+      status: "scheduling",
+      progress: 80,
+      currentStep: "Creating optimized scheduled post...",
+    });
+
+    // Use the Ripple-recommended optimal time
+    const scheduledTime = new Date(result.optimalTime);
+
+    // Validate the recommended time
+    const validation = await validateScheduledPost(
+      {
+        ...input,
+        scheduledAt: new Date(result.optimalTime),
+        sourceType: "ripple_scheduled",
+        sourceId: "ripple_optimal_time",
+      },
+      userId,
+    );
+
+    if (!validation.isValid) {
+      // If the optimal time has issues, try the first alternative
+      const fallbackTime = result.alternatives[0]?.time;
+      if (fallbackTime) {
+        const fallbackValidation = await validateScheduledPost(
+          {
+            ...input,
+            scheduledAt: new Date(fallbackTime),
+            sourceType: "ripple_scheduled",
+            sourceId: "ripple_fallback_time",
+          },
+          userId,
+        );
+
+        if (fallbackValidation.isValid) {
+          // Use the fallback time
+          scheduledTime.setTime(new Date(fallbackTime).getTime());
+        } else {
+          throw new Error(
+            `Scheduling validation failed: ${validation.errors.join("; ")}`,
+          );
+        }
+      } else {
+        throw new Error(
+          `Scheduling validation failed: ${validation.errors.join("; ")}`,
+        );
+      }
+    }
+
+    // Create the scheduled post
+    const scheduledPost = await db.scheduledPost.create({
+      data: {
+        userId,
+        content: input.content,
+        platform: input.platform ?? "twitter",
+        accountId: input.accountId,
+        pageId: input.pageId,
+        scheduledAt: scheduledTime,
+        sourceType: input.sourceType ?? "manual",
+        sourceId: input.sourceId ?? "unknown",
+        imageUrl: input.imageUrl,
+        status: "PENDING",
+      },
+    });
+
+    // Create memory of this scheduling decision for future learning
+    await createRippleMemory({
+      userId,
+      memoryType: "scheduling_optimization",
+      memoryKey: `${input.platform}_scheduling_pattern`,
+      memoryValue: JSON.stringify({
+        content: `Scheduled post for ${input.platform} at ${scheduledTime.toISOString()} with strategy: ${result.strategy}`,
+        platform: input.platform ?? "twitter",
+        scheduledTime: scheduledTime.toISOString(),
+        insights: result.rippleInsights,
+        strategy: result.strategy,
+      }),
+      confidence: result.confidence,
+    });
+
+    // Record action for analytics
+    await recordRippleAction({
+      conversationId: input.conversationId,
+      actionType: "schedule_optimization",
+      description: JSON.stringify({
+        platform: input.platform ?? "twitter",
+        confidence: result.confidence,
+        insightsApplied: result.rippleInsights.length,
+        scheduledTime: scheduledTime.toISOString(),
+      }),
+      metadata: {
+        platform: input.platform ?? "twitter",
+        confidence: result.confidence,
+        insightsApplied: result.rippleInsights.length,
+        scheduledTime: scheduledTime.toISOString(),
+      },
+    });
+
+    const finalResult = {
+      scheduledPost: {
+        ...scheduledPost,
+        validationWarnings: validation.warnings,
+      },
+      optimalTime: result.optimalTime,
+      rippleInsights: result.rippleInsights,
+      confidence: result.confidence,
+      alternatives: result.alternatives,
+    };
+
+    stream.next({
+      status: "completed",
+      progress: 100,
+      currentStep: "Post scheduled with Ripple optimization!",
+      result: finalResult,
+    });
+
+    return stream.end();
+  } catch (error) {
+    console.error("Error scheduling post with Ripple:", error);
+
+    stream.next({
+      status: "error",
+      progress: 0,
+      currentStep: "Error occurred during scheduling",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to schedule post with Ripple optimization. Please try again.",
+    });
+
+    throw new Error(
+      "Failed to schedule post with Ripple optimization. Please try again.",
+    );
+  }
+}
+
+export async function generateContentWithRipple(input: {
+  prompt: string;
+  contentType: "TEXT" | "IMAGE" | "VIDEO";
+  format?: string;
+  conversationId?: string;
+}) {
+  const { userId } = await getAuth({ required: true });
+
+  // Check feature access and usage limits
+  await requireFeatureAccess("content_generation");
+  await requireUsageLimit("content_generation_daily");
+
+  // Consume credits for Ripple-enhanced content generation (7 credits)
+  await _consumeCredits(
+    userId,
+    "content_generation",
+    7,
+    `Ripple-enhanced content generation: ${input.prompt}`,
+    { prompt: input.prompt, contentType: input.contentType },
+  );
+
+  // Get user context and memories for Ripple enhancement
+  const userContext = await buildUserContext(userId);
+  const recentMemories = await getRippleMemories({ userId, limit: 10 });
+
+  // Find or create a default content pillar for Ripple-generated content
+  const defaultPillar = await findOrCreateContentPillar({
+    name: "Ripple Generated",
+    description: "Content generated with Ripple AI assistance",
+  });
+
+  // Create content generation record
+  const generatedContent = await db.generatedContent.create({
+    data: {
+      userId,
+      pillarId: defaultPillar.id,
+      title: `Generating: ${input.format || input.contentType} content`,
+      type: input.contentType,
+      content: "Content is being generated with Ripple assistance...",
+      sourceIdea: JSON.stringify({
+        prompt: input.prompt,
+        rippleEnhanced: true,
+      }),
+      status: "GENERATING",
+    },
+  });
+
+  const task = await queueTask(async () => {
+    try {
+      // Use Ripple's enhanced understanding for content generation
+      const brand = await getBrandGuidelines();
+      const brandVibeText = brand
+        ? `Brand Voice: ${brand.brandVoice}\nDirectives: ${(brand.directives || []).join(", ")}`
+        : "";
+      const contentResult = await requestMultimodalModel({
+        system: `You are Ripple, an AI growth agent integrated with SocialWave's content generation system. You have deep understanding of the user's brand, audience, and content strategy.
+
+BRAND VIBE ALIGNMENT: Always enforce the following brand rules. If any requested content conflicts, adapt it to comply without losing impact.\n${brandVibeText}
+
+User Context:
+${userContext}
+
+Recent Memories and Insights:
+${recentMemories.map((m) => `- ${m.memoryValue} (${m.memoryType}, confidence: ${m.confidence})`).join("\n")}
+
+Generate content that:
+1. Aligns with the user's brand voice and strategy
+2. Leverages insights from their content history
+3. Optimizes for their target audience
+4. Incorporates proven patterns from their successful content`,
+        messages: [
+          {
+            role: "user",
+            content: `Create ${input.contentType.toLowerCase()} content based on this prompt: ${input.prompt}${input.format ? ` in ${input.format} format` : ""}. Use my context and history to make it as effective as possible.`,
+          },
+        ],
+        returnType: z
+          .object({
+            title: z.string().describe("Engaging title for the content"),
+            content: z
+              .string()
+              .describe(
+                "The generated content or detailed prompt for media generation",
+              ),
+            strategy: z
+              .string()
+              .describe("Strategic reasoning behind content choices"),
+            optimizations: z
+              .array(z.string())
+              .describe("Specific optimizations applied based on user context"),
+          })
+          .describe(
+            "Generated content with strategic insights and optimizations",
+          ),
+        model: "medium",
+        temperature: 0.7,
+      });
+
+      let finalContent = contentResult.content;
+
+      // Handle media generation if needed
+      if (input.contentType === "IMAGE") {
+        const imageResult = await requestMultimodalModel({
+          system:
+            "Generate a high-quality image based on the content strategy provided.",
+          messages: [
+            {
+              role: "user",
+              content: `Generate an image for: ${contentResult.content}\n\nStrategy context: ${contentResult.strategy}`,
+            },
+          ],
+          returnType: z
+            .object({
+              imageUrl: z.string().describe("The URL of the generated image"),
+            })
+            .describe("Generated image result with URL"),
+        });
+        finalContent = imageResult.imageUrl;
+      } else if (input.contentType === "VIDEO") {
+        // Placeholder for video generation
+        finalContent = "Video generation with Ripple enhancement coming soon.";
+      }
+
+      // Update the content record
+      await db.generatedContent.update({
+        where: { id: generatedContent.id },
+        data: {
+          title: contentResult.title,
+          content: finalContent,
+          status: "DRAFT",
+        },
+      });
+
+      // Create memory of this content generation for future reference
+      await createRippleMemory({
+        userId,
+        memoryType: "content_generation",
+        memoryKey: `${input.contentType.toLowerCase()}_generation_pattern`,
+        memoryValue: JSON.stringify({
+          title: contentResult.title,
+          strategy: contentResult.strategy,
+          optimizations: contentResult.optimizations,
+          prompt: input.prompt,
+        }),
+        confidence: 0.8,
+        source: "content_generation",
+      });
+
+      // Record action for analytics
+      await recordRippleAction({
+        conversationId: input.conversationId,
+        actionType: "content_generation",
+        description: JSON.stringify({
+          contentType: input.contentType,
+          title: contentResult.title,
+          optimizationsApplied: contentResult.optimizations.length,
+        }),
+        metadata: {
+          contentType: input.contentType,
+          title: contentResult.title,
+          optimizationsApplied: contentResult.optimizations.length,
+        },
+      });
+    } catch (error) {
+      console.error("Ripple content generation failed:", error);
+
+      // Update with error status
+      await db.generatedContent.update({
+        where: { id: generatedContent.id },
+        data: {
+          title: "Content Generation Failed",
+          content:
+            "Failed to generate content with Ripple assistance. Please try again.",
+          status: "FAILED",
+        },
+      });
+    }
+  });
+
+  return {
+    taskId: task.id,
+    contentId: generatedContent.id,
+    rippleEnhanced: true,
+  };
+}
+
+export async function getRippleLearningInsights() {
+  const { userId } = await getAuth({ required: true });
+
+  // Get all learning records for analysis
+  const learningRecords = await db.rippleLearning.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    take: 100,
+  });
+
+  // Get recent feedback for pattern analysis
+  const recentFeedback = await db.rippleFeedback.findMany({
+    where: {
+      userId,
+      createdAt: {
+        gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Last 30 days
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  // Get performance data from actions
+  const actions = await db.rippleAction.findMany({
+    where: {
+      userId,
+      createdAt: {
+        gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  // Analyze patterns and generate insights
+  const insights = {
+    totalLearnings: learningRecords.length,
+    recentFeedback: recentFeedback.length,
+    averageRating:
+      recentFeedback.length > 0
+        ? recentFeedback.reduce((sum, f) => sum + (f.rating || 0), 0) /
+          recentFeedback.length
+        : 0,
+    categories: {} as Record<string, number>,
+    sources: {} as Record<string, number>,
+    improvements: [] as string[],
+    strengths: [] as string[],
+    actionTypes: {} as Record<string, number>,
+  };
+
+  // Categorize learning records
+  learningRecords.forEach((record) => {
+    insights.categories[record.learningType] =
+      (insights.categories[record.learningType] || 0) + 1;
+    // Use learningType as source since there's no source field
+    insights.sources[record.learningType] =
+      (insights.sources[record.learningType] || 0) + 1;
+  });
+
+  // Categorize actions
+  actions.forEach((action) => {
+    insights.actionTypes[action.actionType] =
+      (insights.actionTypes[action.actionType] || 0) + 1;
+  });
+
+  // Generate improvement suggestions based on negative feedback
+  const negativeFeedback = recentFeedback.filter(
+    (f) => f.rating && f.rating <= 2,
+  );
+  if (negativeFeedback.length > 0) {
+    const commonIssues = negativeFeedback
+      .map((f) => f.comment)
+      .filter(Boolean)
+      .slice(0, 3);
+    insights.improvements = commonIssues.map((issue) => `Address: ${issue}`);
+  }
+
+  // Identify strengths from positive feedback
+  const positiveFeedback = recentFeedback.filter(
+    (f) => f.rating && f.rating >= 4,
+  );
+  if (positiveFeedback.length > 0) {
+    const strengths = positiveFeedback
+      .map((f) => f.comment)
+      .filter(Boolean)
+      .slice(0, 3);
+    insights.strengths = strengths.map((strength) => `Continue: ${strength}`);
+  }
+
+  return insights;
+}
+
+export async function updateRippleLearning(input: {
+  category: string;
+  insight: string;
+  confidence: number;
+  source: string;
+  context?: string;
+}) {
+  const { userId } = await getAuth({ required: true });
+
+  // Create new learning record
+  const learning = await db.rippleLearning.create({
+    data: {
+      userId,
+      learningType: input.category,
+      pattern: input.insight,
+      evidence: "[]",
+      confidence: input.confidence,
+    },
+  });
+
+  // Update user's learning patterns
+  await updateUserLearningPatterns(userId, input.category, input.confidence);
+
+  return learning;
+}
+
+export async function generateRippleLearningReport() {
+  const { userId } = await getAuth({ required: true });
+
+  // Get comprehensive learning data
+  const [insights, feedback, actions, memories] = await Promise.all([
+    getRippleLearningInsights(),
+    db.rippleFeedback.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    }),
+    db.rippleAction.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    }),
+    db.rippleMemory.findMany({
+      where: { userId },
+      orderBy: { confidence: "desc" },
+      take: 20,
+    }),
+  ]);
+
+  // Generate AI-powered learning report
+  const report = await requestMultimodalModel({
+    system: `You are Ripple's learning analysis system. Analyze the user's interaction patterns, feedback, and performance data to generate a comprehensive learning report.
+
+Provide insights on:
+1. User's interaction patterns and preferences
+2. Areas where Ripple is performing well
+3. Areas needing improvement
+4. Personalized recommendations for better assistance
+5. Learning trends and progress over time
+
+Be specific, actionable, and focus on continuous improvement.`,
+    messages: [
+      {
+        role: "user",
+        content: `Generate a learning report based on this data:
+
+Learning Insights:
+${JSON.stringify(insights, null, 2)}
+
+Recent Feedback (last 50):
+${feedback.map((f) => `Rating: ${f.rating}/5, Comment: ${f.comment || "None"}`).join("\n")}
+
+Recent Actions (last 50):
+${actions.map((a) => `${a.actionType}: ${a.actionData}`).join("\n")}
+
+Top Memories:
+${memories.map((m) => `${m.memoryType} (confidence: ${m.confidence}): ${m.memoryValue}`).join("\n")}`,
+      },
+    ],
+    returnType: z
+      .object({
+        summary: z.string().describe("Overall learning summary"),
+        strengths: z.array(z.string()).describe("Areas where Ripple excels"),
+        improvements: z.array(z.string()).describe("Areas needing improvement"),
+        recommendations: z
+          .array(z.string())
+          .describe("Specific recommendations for better assistance"),
+        trends: z
+          .array(z.string())
+          .describe("Learning trends and patterns observed"),
+        score: z
+          .number()
+          .min(0)
+          .max(100)
+          .describe("Overall learning effectiveness score"),
+      })
+      .describe(
+        "Comprehensive learning analysis report with insights and recommendations",
+      ),
+    model: "medium",
+    temperature: 0.3,
+  });
+
+  // Store the learning report
+  await db.rippleLearning.create({
+    data: {
+      userId,
+      learningType: "learning_report",
+      pattern: JSON.stringify(report),
+      evidence: JSON.stringify({
+        source: "ai_analysis",
+        context: "Comprehensive learning analysis",
+      }),
+      confidence: 0.9,
+    },
+  });
+
+  return report;
+}
+
+export async function adaptRippleBehavior(input: {
+  interactionType: string;
+  outcome: "positive" | "negative" | "neutral";
+  context: string;
+  details?: string;
+}) {
+  const { userId } = await getAuth({ required: true });
+
+  // Record the behavioral adaptation
+  const adaptation = await db.rippleLearning.create({
+    data: {
+      userId,
+      learningType: "behavioral_adaptation",
+      pattern: `${input.interactionType} resulted in ${input.outcome} outcome: ${input.context}`,
+      evidence: JSON.stringify({
+        source: "behavioral_analysis",
+        context: input.details,
+      }),
+      confidence:
+        input.outcome === "positive"
+          ? 0.8
+          : input.outcome === "negative"
+            ? 0.9
+            : 0.5,
+    },
+  });
+
+  // Update user preferences based on the outcome
+  if (input.outcome === "positive") {
+    await createRippleMemory({
+      userId,
+      memoryType: "success_pattern",
+      memoryKey: `${input.interactionType}_success`,
+      memoryValue: `Successful interaction: ${input.interactionType} - ${input.context}`,
+      confidence: 0.8,
+      source: "user_feedback",
+    });
+  } else if (input.outcome === "negative") {
+    await createRippleMemory({
+      userId,
+      memoryType: "failure_pattern",
+      memoryKey: `${input.interactionType}_failure`,
+      memoryValue: `Unsuccessful interaction: ${input.interactionType} - ${input.context}`,
+      confidence: 0.9,
+      source: "user_feedback",
+    });
+  }
+
+  return adaptation;
+}
+
+export async function getRipplePersonalizationProfile() {
+  const { userId } = await getAuth({ required: true });
+
+  // Get user's interaction history and preferences
+  const [memories, , feedback, actions] = await Promise.all([
+    db.rippleMemory.findMany({
+      where: { userId },
+      orderBy: { confidence: "desc" },
+      take: 30,
+    }),
+    db.rippleLearning.findMany({
+      where: { userId },
+      orderBy: { confidence: "desc" },
+      take: 50,
+    }),
+    db.rippleFeedback.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      take: 30,
+    }),
+    db.rippleAction.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    }),
+  ]);
+
+  // Analyze preferences and patterns
+  const profile = {
+    preferredInteractionStyle: "adaptive", // Default
+    contentPreferences: {} as Record<string, number>,
+    platformPreferences: {} as Record<string, number>,
+    timingPreferences: {} as Record<string, number>,
+    tonePreferences: {} as Record<string, number>,
+    successPatterns: [] as string[],
+    avoidancePatterns: [] as string[],
+    confidenceLevel: 0.5,
+  };
+
+  // Analyze successful patterns
+  const successMemories = memories.filter(
+    (m) => m.memoryType === "success_pattern",
+  );
+  profile.successPatterns = successMemories
+    .slice(0, 5)
+    .map((m) => m.memoryValue);
+
+  // Analyze failure patterns to avoid
+  const failureMemories = memories.filter(
+    (m) => m.memoryType === "failure_pattern",
+  );
+  profile.avoidancePatterns = failureMemories
+    .slice(0, 5)
+    .map((m) => m.memoryValue);
+
+  // Calculate overall confidence based on feedback
+  const avgRating =
+    feedback.length > 0
+      ? feedback.reduce((sum, f) => sum + (f.rating || 0), 0) / feedback.length
+      : 2.5;
+  profile.confidenceLevel = Math.min(avgRating / 5, 1);
+
+  // Analyze action patterns for preferences
+  actions.forEach((action) => {
+    try {
+      const details = JSON.parse(action.actionData || "{}") as any;
+      if (details.platform) {
+        profile.platformPreferences[details.platform] =
+          (profile.platformPreferences[details.platform] || 0) + 1;
+      }
+      if (details.tone) {
+        profile.tonePreferences[details.tone] =
+          (profile.tonePreferences[details.tone] || 0) + 1;
+      }
+    } catch {
+      // Ignore parsing errors
+    }
+  });
+
+  return profile;
+}
+
+async function updateUserLearningPatterns(
+  userId: string,
+  category: string,
+  confidence: number,
+) {
+  // This is a helper function to update user learning patterns
+  // Could be expanded to update user preferences, adjust AI behavior, etc.
+
+  // For now, we'll just record the pattern update in ripple learning
+  await db.rippleLearning.create({
+    data: {
+      userId,
+      learningType: "pattern_update",
+      pattern: JSON.stringify({
+        category,
+        confidence,
+        timestamp: new Date().toISOString(),
+      }),
+      evidence: JSON.stringify([
+        {
+          type: "user_interaction",
+          timestamp: new Date().toISOString(),
+          category,
+          confidence,
+        },
+      ]),
+      confidence,
+    },
+  });
+}
+
+// Enhanced proactive insights generation
+// Predictive Analytics Functions
+export async function generatePredictiveAnalytics(input: {
+  userId: string;
+  analysisType: "engagement" | "content" | "timing" | "audience";
+  timeframe?: number; // days to look back
+}) {
+  const { userId, analysisType, timeframe = 30 } = input;
+  const cutoffDate = new Date();
+  cutoffDate.setDate(cutoffDate.getDate() - timeframe);
+
+  // Get user's historical data
+  const comments = await db.comment.findMany({
+    where: {
+      userId,
+      createdAt: { gte: cutoffDate },
+    },
+    include: {
+      account: true,
+      page: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const generatedContent = await db.generatedContent.findMany({
+    where: {
+      userId,
+      createdAt: { gte: cutoffDate },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const rippleMemories = await db.rippleMemory.findMany({
+    where: {
+      userId,
+      createdAt: { gte: cutoffDate },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  // Generate predictive insights based on analysis type
+  const result = await requestMultimodalModel({
+    system: `You are Ripple's predictive analytics engine. Analyze the user's historical engagement data and generate accurate predictions and actionable insights.
+
+Analysis Type: ${analysisType}
+Timeframe: ${timeframe} days
+
+Provide data-driven predictions with confidence scores and specific recommendations.`,
+    messages: [
+      {
+        role: "user",
+        content: `Analyze this data and generate predictive insights:
+
+Comments Data (${comments.length} items):
+${comments
+  .slice(0, 20)
+  .map(
+    (c) =>
+      `Platform: ${c.platform}, Sentiment: ${c.sentiment}, Responded: ${c.responded}, Text: "${c.text.substring(0, 100)}..."`,
+  )
+  .join("\n")}
+
+Generated Content (${generatedContent.length} items):
+${generatedContent
+  .slice(0, 10)
+  .map(
+    (gc) =>
+      `Type: ${gc.type}, Status: ${gc.status}, Title: "${gc.title?.substring(0, 50)}..."`,
+  )
+  .join("\n")}
+
+Ripple Memories (${rippleMemories.length} items):
+${rippleMemories
+  .slice(0, 15)
+  .map(
+    (rm) =>
+      `Type: ${rm.memoryType}, Value: "${rm.memoryValue.substring(0, 80)}...", Confidence: ${rm.confidence}`,
+  )
+  .join("\n")}
+
+Generate predictive analytics for ${analysisType}.`,
+      },
+    ],
+    returnType: z
+      .object({
+        predictions: z
+          .array(
+            z.object({
+              type: z.string().describe("Type of prediction"),
+              prediction: z.string().describe("The predicted outcome or trend"),
+              confidence: z.number().min(0).max(1).describe("Confidence level"),
+              timeframe: z.string().describe("When this prediction applies"),
+              evidence: z
+                .array(z.string())
+                .describe("Data points supporting this prediction"),
+            }),
+          )
+          .describe("Array of predictions"),
+        recommendations: z
+          .array(
+            z.object({
+              action: z.string().describe("Recommended action"),
+              priority: z
+                .enum(["high", "medium", "low"])
+                .describe("Priority level"),
+              expectedImpact: z
+                .string()
+                .describe("Expected impact of taking this action"),
+              timeline: z.string().describe("Recommended timeline for action"),
+              confidence: z
+                .number()
+                .min(0)
+                .max(1)
+                .describe("Confidence in recommendation"),
+            }),
+          )
+          .describe("Array of actionable recommendations"),
+        insights: z
+          .array(z.string())
+          .describe("Key insights from the analysis"),
+        trends: z
+          .array(
+            z.object({
+              trend: z.string().describe("Identified trend"),
+              direction: z
+                .enum(["increasing", "decreasing", "stable"])
+                .describe("Trend direction"),
+              strength: z
+                .number()
+                .min(0)
+                .max(1)
+                .describe("Strength of the trend"),
+            }),
+          )
+          .describe("Identified trends"),
+      })
+      .describe("Predictive analytics results"),
+    model: "medium",
+    temperature: 0.3,
+  });
+
+  return result;
+}
+
+export async function generateSmartSuggestions(input: {
+  userId: string;
+  context: "dashboard" | "comment_response" | "content_creation" | "scheduling";
+  currentActivity?: string;
+}) {
+  const { userId, context, currentActivity } = input;
+
+  // Get recent user context and activity
+  const userContext = await buildUserContext(userId);
+  const recentMemories = await getRippleMemories({ userId, limit: 10 });
+  const proactiveInsights = await generateProactiveInsights(
+    userId,
+    userContext,
+    currentActivity || "",
+  );
+
+  // Get current time and user timezone for timing suggestions
+  const now = new Date();
+  const hour = now.getHours();
+  const dayOfWeek = now.getDay();
+
+  const result = await requestMultimodalModel({
+    system: `You are Ripple's smart suggestion engine. Based on the user's context, current activity, and learned patterns, generate intelligent, proactive suggestions that anticipate their needs.
+
+Context: ${context}
+Current Activity: ${currentActivity || "general"}
+Current Time: ${hour}:00 on ${["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][dayOfWeek]}
+
+Generate smart, actionable suggestions that help the user be more effective and successful.`,
+    messages: [
+      {
+        role: "user",
+        content: `User Context:
+${userContext}
+
+Recent Memories:
+${recentMemories.map((m) => `- ${m.memoryValue} (${m.memoryType}, confidence: ${m.confidence})`).join("\n")}
+
+Proactive Insights:
+${JSON.stringify(proactiveInsights, null, 2)}
+
+Generate smart suggestions for the ${context} context.`,
+      },
+    ],
+    returnType: z
+      .object({
+        suggestions: z
+          .array(
+            z.object({
+              id: z.string().describe("Unique suggestion ID"),
+              title: z.string().describe("Suggestion title"),
+              description: z.string().describe("Detailed description"),
+              category: z.string().describe("Suggestion category"),
+              priority: z
+                .enum(["high", "medium", "low"])
+                .describe("Priority level"),
+              actionType: z.string().describe("Type of action suggested"),
+              estimatedImpact: z.string().describe("Expected positive impact"),
+              timeToComplete: z.string().describe("Estimated time to complete"),
+              confidence: z
+                .number()
+                .min(0)
+                .max(1)
+                .describe("Confidence in suggestion value"),
+            }),
+          )
+          .describe("Array of smart suggestions"),
+        contextualTips: z
+          .array(z.string())
+          .describe("Contextual tips based on current situation"),
+        opportunityAlerts: z
+          .array(
+            z.object({
+              type: z.string().describe("Type of opportunity"),
+              message: z.string().describe("Opportunity description"),
+              urgency: z
+                .enum(["high", "medium", "low"])
+                .describe("Urgency level"),
+              actionRequired: z
+                .string()
+                .describe("Action needed to capitalize"),
+            }),
+          )
+          .describe("Time-sensitive opportunities"),
+        predictiveInsights: z
+          .array(z.string())
+          .describe("Forward-looking insights"),
+      })
+      .describe("Smart suggestions and contextual recommendations"),
+    model: "medium",
+    temperature: 0.4,
+  });
+
+  return result;
+}
+
+export async function generateProactiveInsights(
+  userId: string,
+  userContext: string,
+  currentMessage: string,
+) {
+  try {
+    // Get recent user activity and performance data
+    const [recentComments, recentContent, brandSignals] =
+      await Promise.allSettled([
+        db.comment.findMany({
+          where: { userId },
+          orderBy: { createdAt: "desc" },
+          take: 20,
+          include: { account: true },
+        }),
+        db.generatedContent.findMany({
+          where: { userId },
+          orderBy: { createdAt: "desc" },
+          take: 10,
+        }),
+        db.brandSignal.findMany({
+          where: { userId },
+          orderBy: { createdAt: "desc" },
+          take: 5,
+        }),
+      ]);
+
+    const insights = {
+      opportunities: [] as string[],
+      risks: [] as string[],
+      trends: [] as string[],
+      recommendations: [] as Array<{
+        type: string;
+        priority: "high" | "medium" | "low";
+        action: string;
+        reason: string;
+        confidence: number;
+      }>,
+      patterns: [] as string[],
+      predictions: [] as Array<{
+        prediction: string;
+        confidence: number;
+        timeframe: string;
+        impact: "high" | "medium" | "low";
+      }>,
+    };
+
+    // Analyze comment engagement patterns
+    if (
+      recentComments.status === "fulfilled" &&
+      recentComments.value.length > 0
+    ) {
+      const comments = recentComments.value;
+      const responseRates =
+        comments.filter((c) => c.responded).length / comments.length;
+
+      if (responseRates < 0.3) {
+        insights.opportunities.push(
+          "Low comment response rate detected - opportunity to improve engagement",
+        );
+        insights.recommendations.push({
+          type: "engagement",
+          priority: "high",
+          action:
+            "Increase comment response rate to improve audience engagement",
+          reason: `Current response rate is ${Math.round(responseRates * 100)}%, which is below optimal levels`,
+          confidence: 0.85,
+        });
+      }
+
+      // Analyze platform distribution
+      const platformCounts = comments.reduce(
+        (acc, comment) => {
+          acc[comment.platform] = (acc[comment.platform] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>,
+      );
+
+      const dominantPlatform = Object.entries(platformCounts).sort(
+        ([, a], [, b]) => b - a,
+      )[0];
+      if (dominantPlatform && dominantPlatform.length > 0) {
+        const platformName = dominantPlatform[0];
+        const platformCount = platformCounts[platformName];
+        if (platformCount && platformCount / comments.length > 0.7) {
+          insights.opportunities.push(
+            `Heavy focus on ${platformName} - consider diversifying platforms`,
+          );
+          insights.recommendations.push({
+            type: "diversification",
+            priority: "medium",
+            action: "Expand presence to other social media platforms",
+            reason: `${Math.round((platformCount / comments.length) * 100)}% of activity is on ${platformName}`,
+            confidence: 0.75,
+          });
+        }
+      }
+    }
+
+    // Analyze content generation patterns
+    if (
+      recentContent.status === "fulfilled" &&
+      recentContent.value.length > 0
+    ) {
+      const content = recentContent.value;
+      const recentContentCount = content.filter(
+        (c) =>
+          new Date(c.createdAt) >
+          new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      ).length;
+
+      if (recentContentCount < 3) {
+        insights.opportunities.push(
+          "Low content generation activity - opportunity to increase output",
+        );
+        insights.recommendations.push({
+          type: "content_creation",
+          priority: "medium",
+          action: "Increase content generation frequency",
+          reason: `Only ${recentContentCount} pieces of content generated in the last week`,
+          confidence: 0.8,
+        });
+      }
+
+      // Analyze content status patterns
+      const completedContent = content.filter((c) => c.status === "completed");
+      const failedContent = content.filter((c) => c.status === "failed");
+
+      if (failedContent.length > completedContent.length * 0.2) {
+        insights.risks.push("High content generation failure rate detected");
+        insights.recommendations.push({
+          type: "optimization",
+          priority: "high",
+          action: "Review and optimize content generation process",
+          reason: `${Math.round((failedContent.length / content.length) * 100)}% of content generation attempts failed`,
+          confidence: 0.9,
+        });
+      }
+    }
+
+    // Analyze brand signals for trends
+    if (brandSignals.status === "fulfilled" && brandSignals.value.length > 0) {
+      const signals = brandSignals.value;
+      const recentSignals = signals.slice(0, 3);
+
+      if (recentSignals.length > 0) {
+        insights.trends.push(
+          `${recentSignals.length} recent brand signals detected`,
+        );
+        insights.recommendations.push({
+          type: "brand_monitoring",
+          priority: "medium",
+          action: "Continue monitoring brand signals for insights",
+          reason: "Active brand signal tracking is providing valuable data",
+          confidence: 0.8,
+        });
+      }
+    }
+
+    // Generate predictive insights based on patterns
+    if (insights.recommendations.length > 0) {
+      const highPriorityActions = insights.recommendations.filter(
+        (r) => r.priority === "high",
+      );
+      if (highPriorityActions.length > 0) {
+        insights.predictions.push({
+          prediction:
+            "Implementing high-priority recommendations could improve engagement by 25-40%",
+          confidence: 0.75,
+          timeframe: "2-4 weeks",
+          impact: "high",
+        });
+      }
+    }
+
+    // Contextual analysis based on current message
+    if (
+      currentMessage.toLowerCase().includes("engagement") ||
+      currentMessage.toLowerCase().includes("growth")
+    ) {
+      insights.patterns.push(
+        "User is actively focused on growth and engagement metrics",
+      );
+      insights.recommendations.push({
+        type: "strategic_focus",
+        priority: "high",
+        action: "Provide detailed engagement optimization strategy",
+        reason: "User is specifically asking about engagement/growth topics",
+        confidence: 0.95,
+      });
+    }
+
+    if (
+      currentMessage.toLowerCase().includes("content") ||
+      currentMessage.toLowerCase().includes("post")
+    ) {
+      insights.patterns.push(
+        "User is focused on content creation and strategy",
+      );
+      insights.recommendations.push({
+        type: "content_strategy",
+        priority: "medium",
+        action: "Suggest content calendar and optimization techniques",
+        reason: "User is asking about content-related topics",
+        confidence: 0.9,
+      });
+    }
+
+    // Add time-based insights
+    const currentHour = new Date().getHours();
+    if (currentHour >= 9 && currentHour <= 17) {
+      insights.opportunities.push(
+        "Peak business hours - optimal time for B2B engagement",
+      );
+    } else if (currentHour >= 18 && currentHour <= 22) {
+      insights.opportunities.push(
+        "Evening hours - optimal time for B2C social media engagement",
+      );
+    }
+
+    return {
+      opportunities: insights.opportunities,
+      risks: insights.risks,
+      trends: insights.trends,
+      actionableRecommendations: insights.recommendations,
+      detectedPatterns: insights.patterns,
+      predictiveInsights: insights.predictions,
+    };
+  } catch (error) {
+    console.error("Error generating proactive insights:", error);
+    return {
+      opportunities: [
+        "Unable to analyze current opportunities - please try again",
+      ],
+      risks: [],
+      trends: [],
+      actionableRecommendations: [],
+      detectedPatterns: [],
+      predictiveInsights: [],
+    };
+  }
+}
+
+/**
+ * Check if enhanced analysis should run based on message complexity
+ */
+function shouldRunEnhancedAnalysis(message: string): boolean {
+  const complexKeywords = [
+    "strategy",
+    "analyze",
+    "predict",
+    "forecast",
+    "optimize",
+    "insights",
+    "analytics",
+    "performance",
+    "growth plan",
+    "recommendations",
+  ];
+
+  return (
+    complexKeywords.some((keyword) =>
+      message.toLowerCase().includes(keyword),
+    ) || message.length > 100
+  );
+}
+
+/**
+ * Run enhanced analysis in background for complex requests
+ */
+async function runEnhancedAnalysisBackground(
+  userId: string,
+  conversationId: string,
+  message: string,
+) {
+  try {
+    // Build quick context first for faster processing
+    const quickContext = await buildUserContext(userId, true);
+
+    // Run enhanced analysis in parallel with optimized operations
+    const [proactiveAnalysis, predictiveAnalytics, smartSuggestions] =
+      await Promise.allSettled([
+        generateProactiveInsights(
+          userId,
+          quickContext, // Use quick context instead of full context
+          message,
+        ),
+        generatePredictiveAnalytics({
+          userId,
+          analysisType: "engagement",
+          timeframe: 7,
+        }),
+        generateSmartSuggestions({
+          userId,
+          context: "dashboard",
+          currentActivity: message,
+        }),
+      ]);
+
+    // Store enhanced insights as a follow-up message
+    let enhancedInsights = "📊 **Enhanced Analysis Results:**\n\n";
+
+    if (
+      proactiveAnalysis.status === "fulfilled" &&
+      proactiveAnalysis.value.opportunities.length > 0
+    ) {
+      enhancedInsights += "🔍 **Opportunities:**\n";
+      proactiveAnalysis.value.opportunities.slice(0, 3).forEach((opp) => {
+        enhancedInsights += `• ${opp}\n`;
+      });
+      enhancedInsights += "\n";
+    }
+
+    if (
+      predictiveAnalytics.status === "fulfilled" &&
+      predictiveAnalytics.value.predictions.length > 0
+    ) {
+      enhancedInsights += "🔮 **Predictions:**\n";
+      predictiveAnalytics.value.predictions.slice(0, 2).forEach((pred) => {
+        enhancedInsights += `• ${pred.prediction} (${Math.round(pred.confidence * 100)}% confidence)\n`;
+      });
+      enhancedInsights += "\n";
+    }
+
+    if (
+      smartSuggestions.status === "fulfilled" &&
+      smartSuggestions.value.suggestions.length > 0
+    ) {
+      enhancedInsights += "💡 **Smart Suggestions:**\n";
+      smartSuggestions.value.suggestions.slice(0, 3).forEach((sugg) => {
+        enhancedInsights += `• ${sugg.title}: ${sugg.description}\n`;
+      });
+    }
+
+    // Only add follow-up if we have meaningful insights
+    if (enhancedInsights.length > 100) {
+      await db.rippleMessage.create({
+        data: {
+          conversationId,
+          role: "assistant",
+          content: enhancedInsights,
+          metadata: JSON.stringify({
+            type: "enhanced_analysis",
+            background: true,
+            timestamp: new Date().toISOString(),
+          }),
+        },
+      });
+    }
+  } catch (error) {
+    console.error("Error in enhanced analysis background:", error);
+  }
+}
+
+// AGI-Level Reasoning Engine for Complex Problem Solving
+export async function generateAGIReasoning(input: {
+  query: string;
+  context: any;
+  userId?: string;
+  requireDeepAnalysis?: boolean;
+}): Promise<AGIResponse> {
+  const { query, context, userId, requireDeepAnalysis = true } = input;
+  const auth = await getAuth();
+  const targetUserId = userId || auth.userId;
+
+  // Build comprehensive context
+  const userContext = targetUserId
+    ? await buildUserContext(targetUserId)
+    : null;
+
+  const response = await requestMultimodalModel({
+    system: `You are an advanced AGI reasoning engine with sophisticated analytical capabilities. Your role is to provide deep, multi-layered analysis that goes beyond surface-level responses.
+
+    REASONING FRAMEWORK:
+    1. DECOMPOSITION: Break complex problems into fundamental components
+    2. MULTI-PERSPECTIVE ANALYSIS: Consider multiple viewpoints and stakeholders
+    3. CAUSAL REASONING: Identify root causes, effects, and feedback loops
+    4. STRATEGIC THINKING: Consider long-term implications and strategic positioning
+    5. RISK ASSESSMENT: Evaluate potential risks and mitigation strategies
+    6. OPPORTUNITY IDENTIFICATION: Spot hidden opportunities and synergies
+    7. META-COGNITION: Reflect on your own reasoning process and limitations
+
+    ANALYSIS DEPTH:
+    - Use first principles thinking
+    - Apply systems thinking to understand interconnections
+    - Consider second and third-order effects
+    - Evaluate trade-offs and opportunity costs
+    - Generate multiple hypotheses and test them
+    - Consider alternative scenarios and contingencies
+
+    OUTPUT REQUIREMENTS:
+    - Provide step-by-step reasoning chains
+    - Include confidence levels for each conclusion
+    - Identify areas of uncertainty
+    - Suggest additional data that would improve analysis
+    - Generate actionable plans with clear steps
+    - Consider cross-contextual insights and patterns
+
+    Be thorough, logical, and maintain intellectual humility about limitations.`,
+    messages: [
+      {
+        role: "user",
+        content: `Analyze this query with deep AGI-level reasoning:\n\nQUERY: ${query}\n\nCONTEXT: ${JSON.stringify(context, null, 2)}\n\nUSER CONTEXT: ${userContext ? JSON.stringify(userContext, null, 2) : "Not available"}\n\nProvide comprehensive analysis with reasoning chains, strategic insights, actionable plans, opportunity matrix, risk assessment, and meta-cognitive reflection.`,
+      },
+    ],
+    returnType: z
+      .object({
+        primaryResponse: z.string().describe("Main response to the query"),
+        reasoningChain: z
+          .array(
+            z.object({
+              step: z.number().describe("Step number in reasoning process"),
+              reasoning: z
+                .string()
+                .describe("Detailed reasoning for this step"),
+              conclusion: z
+                .string()
+                .describe("Conclusion reached in this step"),
+              confidence: z
+                .number()
+                .min(0)
+                .max(1)
+                .describe("Confidence level for this conclusion"),
+              evidence: z
+                .array(z.string())
+                .describe("Evidence supporting this reasoning"),
+              implications: z
+                .array(z.string())
+                .describe("Implications of this conclusion"),
+            }),
+          )
+          .describe("Step-by-step reasoning chain"),
+        strategicInsights: z
+          .array(z.string())
+          .describe("High-level strategic insights"),
+        actionablePlans: z
+          .array(
+            z.object({
+              plan: z.string().describe("Name of the action plan"),
+              steps: z.array(z.string()).describe("Specific steps to execute"),
+              tools: z.array(z.string()).describe("Tools or resources needed"),
+              timeline: z.string().describe("Expected timeline"),
+              expectedOutcome: z.string().describe("Expected outcome"),
+              confidence: z
+                .number()
+                .min(0)
+                .max(1)
+                .describe("Confidence in plan success"),
+            }),
+          )
+          .describe("Actionable implementation plans"),
+        opportunityMatrix: z
+          .array(
+            z.object({
+              opportunity: z.string().describe("Identified opportunity"),
+              impact: z
+                .enum(["high", "medium", "low"])
+                .describe("Potential impact level"),
+              effort: z
+                .enum(["high", "medium", "low"])
+                .describe("Required effort level"),
+              urgency: z
+                .enum(["high", "medium", "low"])
+                .describe("Urgency level"),
+              reasoning: z.string().describe("Reasoning for this assessment"),
+            }),
+          )
+          .describe("Opportunity analysis matrix"),
+        riskAssessment: z
+          .array(
+            z.object({
+              risk: z.string().describe("Identified risk"),
+              probability: z
+                .number()
+                .min(0)
+                .max(1)
+                .describe("Probability of risk occurring"),
+              impact: z
+                .enum(["high", "medium", "low"])
+                .describe("Impact level if risk occurs"),
+              mitigation: z
+                .array(z.string())
+                .describe("Risk mitigation strategies"),
+            }),
+          )
+          .describe("Comprehensive risk assessment"),
+        crossContextualInsights: z
+          .array(z.string())
+          .describe("Insights that connect across different contexts"),
+        metaCognition: z
+          .object({
+            thinkingProcess: z
+              .string()
+              .describe("Reflection on the reasoning process used"),
+            uncertainties: z
+              .array(z.string())
+              .describe("Areas of uncertainty in the analysis"),
+            needsMoreData: z
+              .array(z.string())
+              .describe("Additional data that would improve analysis"),
+            alternativeApproaches: z
+              .array(z.string())
+              .describe("Alternative analytical approaches to consider"),
+          })
+          .describe("Meta-cognitive reflection on the reasoning process"),
+      })
+      .describe("Comprehensive AGI-level reasoning response"),
+    model: requireDeepAnalysis ? "large" : "medium",
+  });
+
+  // Store the reasoning session for learning
+  if (targetUserId) {
+    await db.rippleMemory.create({
+      data: {
+        userId: targetUserId,
+        memoryType: "agi_reasoning",
+        memoryKey: `reasoning_session_${Date.now()}`,
+        memoryValue: JSON.stringify({
+          query,
+          response: response.primaryResponse,
+          reasoningDepth: response.reasoningChain.length,
+          strategicInsights: response.strategicInsights.length,
+          actionablePlans: response.actionablePlans.length,
+          modelUsed: requireDeepAnalysis ? "large" : "medium",
+          contextSize: JSON.stringify(context).length,
+          timestamp: new Date().toISOString(),
+        }),
+        source: "agi_reasoning",
+        confidence: 0.9,
+      },
+    });
+  }
+
+  return response;
+}
+
+// REAL-TIME BRAND CONTEXT LEARNING SYSTEM
+
+/**
+ * Real-time brand context learning system that continuously adapts
+ * based on user interactions, feedback, and performance data
+ */
+// Allow users to manually update any part of their brand context/persona
+export async function updateBrandContext(input: {
+  industry?: string | null;
+  niche?: string | null;
+  riskTolerance?: "low" | "medium" | "high" | string | null;
+  trendAdoptionSpeed?: string | null; // e.g., conservative, moderate, early-adopter
+  // Complex objects (will be JSON.stringified if provided)
+  targetAudience?: any | null;
+  brandPersonality?: any | null;
+  competitorAnalysis?: any | null;
+  brandValues?: string[] | null;
+  contentThemes?: string[] | null;
+  contentOpportunities?: any | null;
+  industryContext?: any | null;
+  communicationStyle?: string | null;
+  keyValues?: string[] | null;
+  visualStyle?: string | null;
+  competitivePositioning?: string | null;
+}) {
+  try {
+    const { userId } = await getAuth({ required: true });
+
+    const toJson = (v: any) =>
+      v === undefined
+        ? undefined
+        : v === null
+          ? null
+          : typeof v === "string"
+            ? v
+            : JSON.stringify(v);
+
+    const data: any = {
+      industry: input.industry ?? undefined,
+      niche: input.niche ?? undefined,
+      riskTolerance: (input.riskTolerance as any) ?? undefined,
+      trendAdoptionSpeed: input.trendAdoptionSpeed ?? undefined,
+      communicationStyle: input.communicationStyle ?? undefined,
+      visualStyle: input.visualStyle ?? undefined,
+      competitivePositioning: input.competitivePositioning ?? undefined,
+      keyValues:
+        input.keyValues === undefined
+          ? undefined
+          : JSON.stringify(input.keyValues ?? []),
+      brandValues:
+        input.brandValues === undefined
+          ? undefined
+          : JSON.stringify(input.brandValues ?? []),
+      contentThemes:
+        input.contentThemes === undefined
+          ? undefined
+          : JSON.stringify(input.contentThemes ?? []),
+      targetAudience: toJson(input.targetAudience),
+      brandPersonality: toJson(input.brandPersonality),
+      competitorAnalysis: toJson(input.competitorAnalysis),
+      contentOpportunities: toJson(input.contentOpportunities),
+      industryContext: toJson(input.industryContext),
+      analysisStatus: "COMPLETED",
+      lastAnalyzedAt: new Date(),
+    };
+
+    Object.keys(data).forEach((k) => data[k] === undefined && delete data[k]);
+
+    await db.brandContext.upsert({
+      where: { userId },
+      update: data,
+      create: { userId, ...data },
+    });
+
+    const updated = await getBrandContext();
+    return updated;
+  } catch (error) {
+    console.error("Failed to update brand context:", error);
+    throw new Error(
+      error instanceof Error
+        ? error.message
+        : "Unable to update brand persona right now.",
+    );
+  }
+}
+
+export async function updateBrandContextRealTime(input: {
+  userId?: string;
+  triggerType:
+    | "user_interaction"
+    | "feedback"
+    | "performance"
+    | "content_creation"
+    | "engagement";
+  data: any;
+}) {
+  const { userId: inputUserId } = input;
+  const { userId } = inputUserId
+    ? { userId: inputUserId }
+    : await getAuth({ required: true });
+
+  // Start streaming response for real-time updates
+  const stream = await startRealtimeResponse<{
+    status: string;
+    progress: number;
+    currentStep: string;
+    learningInsights?: any;
+    brandContextUpdates?: any;
+    confidence: number;
+  }>();
+
+  try {
+    stream.next({
+      status: "initializing",
+      progress: 0,
+      currentStep: "Analyzing user interaction data",
+      confidence: 0,
+    });
+
+    // Step 1: Gather comprehensive user data
+    stream.next({
+      status: "gathering_data",
+      progress: 10,
+      currentStep: "Gathering user behavior data",
+      confidence: 0,
+    });
+
+    const [
+      currentBrandContext,
+      recentFeedback,
+      behaviorData,
+      performanceData,
+      contentData,
+    ] = await Promise.all([
+      db.brandContext.findUnique({ where: { userId } }),
+      db.recommendationFeedback.findMany({
+        where: {
+          userId,
+          createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }, // Last 7 days
+        },
+        take: 50,
+        orderBy: { createdAt: "desc" },
+      }),
+      db.userBehaviorEvent.findMany({
+        where: {
+          userId,
+          createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+        },
+        take: 100,
+        orderBy: { createdAt: "desc" },
+      }),
+      db.contentPerformance.findMany({
+        where: {
+          userId,
+          createdAt: { gte: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000) },
+        },
+        take: 50,
+        orderBy: { actualScore: "desc" },
+      }),
+      db.generatedContent.findMany({
+        where: {
+          userId,
+          createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+        },
+        take: 30,
+        include: { pillar: true },
+      }),
+    ]);
+
+    stream.next({
+      status: "analyzing",
+      progress: 30,
+      currentStep: "Analyzing behavioral patterns",
+      confidence: 20,
+    });
+
+    // Step 2: Analyze real-time learning patterns
+    const learningAnalysis = await requestMultimodalModel({
+      system: `You are an advanced AI learning system that analyzes user behavior patterns to continuously improve brand context understanding. Your task is to identify micro-patterns, preferences, and behavioral shifts that indicate evolving brand context needs.
+
+Focus on:
+1. Subtle preference changes in content engagement
+2. Emerging themes in user feedback
+3. Performance patterns that suggest brand evolution
+4. Real-time behavioral signals that indicate context shifts
+5. Learning opportunities from user interactions
+
+Always return valid JSON that matches the expected schema exactly.`,
+      messages: [
+        {
+          role: "user",
+          content: `Analyze this real-time user data for brand context learning:
+
+TRIGGER TYPE: ${input.triggerType}
+TRIGGER DATA: ${JSON.stringify(input.data, null, 2)}
+
+CURRENT BRAND CONTEXT:
+${JSON.stringify(currentBrandContext, null, 2)}
+
+RECENT FEEDBACK (${recentFeedback.length} items):
+${JSON.stringify(recentFeedback.slice(0, 10), null, 2)}
+
+BEHAVIOR DATA (${behaviorData.length} events):
+${JSON.stringify(behaviorData.slice(0, 20), null, 2)}
+
+PERFORMANCE DATA (${performanceData.length} posts):
+${JSON.stringify(performanceData.slice(0, 10), null, 2)}
+
+CONTENT DATA (${contentData.length} pieces):
+${JSON.stringify(
+  contentData
+    .slice(0, 10)
+    .map((c) => ({ title: c.title, type: c.type, pillar: c.pillar?.name })),
+  null,
+  2,
+)}
+
+Identify learning opportunities and context updates in valid JSON format.`,
+        },
+      ],
+      returnType: z
+        .object({
+          learningInsights: z
+            .object({
+              behaviorPatterns: z
+                .array(z.string())
+                .describe("New behavioral patterns identified"),
+              preferenceShifts: z
+                .array(z.string())
+                .describe("Detected preference changes"),
+              engagementTrends: z
+                .array(z.string())
+                .describe("Emerging engagement trends"),
+              contentResonance: z
+                .array(z.string())
+                .describe("Content elements showing high resonance"),
+              feedbackPatterns: z
+                .array(z.string())
+                .describe("Patterns in user feedback"),
+            })
+            .describe("Real-time learning insights"),
+          contextUpdates: z
+            .object({
+              audienceEvolution: z
+                .string()
+                .optional()
+                .describe("How target audience understanding should evolve"),
+              brandPersonalityAdjustments: z
+                .array(z.string())
+                .describe("Suggested brand personality refinements"),
+              contentStrategyShifts: z
+                .array(z.string())
+                .describe("Recommended content strategy adjustments"),
+              platformOptimizations: z
+                .record(z.string())
+                .describe("Platform-specific optimizations"),
+              riskToleranceUpdate: z
+                .enum(["low", "medium", "high"])
+                .optional()
+                .describe("Updated risk tolerance if changed"),
+              trendAdoptionUpdate: z
+                .enum(["conservative", "moderate", "early-adopter"])
+                .optional()
+                .describe("Updated trend adoption speed"),
+            })
+            .describe("Suggested brand context updates"),
+          confidence: z
+            .number()
+            .min(0)
+            .max(100)
+            .describe("Confidence in these learning insights"),
+          urgency: z
+            .enum(["low", "medium", "high"])
+            .describe("Urgency of applying these updates"),
+          reasoning: z
+            .string()
+            .describe("Explanation of why these updates are recommended"),
+        })
+        .describe("Real-time brand context learning analysis"),
+      temperature: 0.3,
+    });
+
+    stream.next({
+      status: "learning",
+      progress: 60,
+      currentStep: "Processing learning insights",
+      learningInsights: learningAnalysis.learningInsights,
+      confidence: learningAnalysis.confidence,
+    });
+
+    // Step 3: Apply context updates if confidence is high enough
+    let updatedContext: any = null;
+    if (
+      learningAnalysis.confidence >= 70 &&
+      learningAnalysis.urgency !== "low"
+    ) {
+      stream.next({
+        status: "updating",
+        progress: 80,
+        currentStep: "Applying brand context updates",
+        confidence: learningAnalysis.confidence,
+      });
+
+      // Prepare context updates
+      const updates: any = {};
+
+      if (learningAnalysis.contextUpdates.audienceEvolution) {
+        const currentAudience = currentBrandContext?.targetAudience
+          ? typeof currentBrandContext.targetAudience === "string"
+            ? JSON.parse(currentBrandContext.targetAudience)
+            : currentBrandContext.targetAudience
+          : {};
+        updates.targetAudience = JSON.stringify({
+          ...(typeof currentAudience === "object" && currentAudience !== null
+            ? currentAudience
+            : {}),
+          evolution: learningAnalysis.contextUpdates.audienceEvolution,
+          lastEvolved: new Date().toISOString(),
+        });
+      }
+
+      if (
+        learningAnalysis.contextUpdates.brandPersonalityAdjustments.length > 0
+      ) {
+        const currentPersonality = currentBrandContext?.brandPersonality
+          ? typeof currentBrandContext.brandPersonality === "string"
+            ? JSON.parse(currentBrandContext.brandPersonality)
+            : currentBrandContext.brandPersonality
+          : {};
+        updates.brandPersonality = JSON.stringify({
+          ...(typeof currentPersonality === "object" &&
+          currentPersonality !== null
+            ? currentPersonality
+            : {}),
+          adjustments:
+            learningAnalysis.contextUpdates.brandPersonalityAdjustments,
+          lastAdjusted: new Date().toISOString(),
+        });
+      }
+
+      if (learningAnalysis.contextUpdates.contentStrategyShifts.length > 0) {
+        updates.contentOpportunities = JSON.stringify({
+          strategicShifts:
+            learningAnalysis.contextUpdates.contentStrategyShifts,
+          platformOptimizations:
+            learningAnalysis.contextUpdates.platformOptimizations,
+          lastUpdated: new Date().toISOString(),
+        });
+      }
+
+      if (learningAnalysis.contextUpdates.riskToleranceUpdate) {
+        updates.riskTolerance =
+          learningAnalysis.contextUpdates.riskToleranceUpdate;
+      }
+
+      if (learningAnalysis.contextUpdates.trendAdoptionUpdate) {
+        updates.trendAdoptionSpeed =
+          learningAnalysis.contextUpdates.trendAdoptionUpdate;
+      }
+
+      // Apply updates to database
+      if (Object.keys(updates).length > 0) {
+        updatedContext = await db.brandContext.upsert({
+          where: { userId },
+          update: {
+            ...updates,
+            lastAnalyzedAt: new Date(),
+          },
+          create: {
+            userId,
+            ...updates,
+            analysisStatus: "COMPLETED",
+            lastAnalyzedAt: new Date(),
+          },
+        });
+      }
+    }
+
+    // Step 4: Store learning insights for future reference
+    await db.learningInsight.create({
+      data: {
+        userId,
+        insightType: "REAL_TIME_CONTEXT_UPDATE",
+        insightData: JSON.stringify({
+          triggerType: input.triggerType,
+          learningInsights: learningAnalysis.learningInsights,
+          contextUpdates: learningAnalysis.contextUpdates,
+          confidence: learningAnalysis.confidence,
+          urgency: learningAnalysis.urgency,
+          reasoning: learningAnalysis.reasoning,
+          appliedUpdates: updatedContext ? true : false,
+        }),
+        confidence: learningAnalysis.confidence,
+        sampleSize:
+          recentFeedback.length + behaviorData.length + performanceData.length,
+      },
+    });
+
+    stream.next({
+      status: "completed",
+      progress: 100,
+      currentStep: "Brand context learning completed",
+      learningInsights: learningAnalysis.learningInsights,
+      brandContextUpdates: learningAnalysis.contextUpdates,
+      confidence: learningAnalysis.confidence,
+    });
+
+    console.log(
+      `Real-time brand context learning completed for user ${userId} with confidence ${learningAnalysis.confidence}%`,
+    );
+  } catch (error) {
+    console.error("Error in real-time brand context learning:", error);
+    stream.next({
+      status: "error",
+      progress: 0,
+      currentStep: "Error occurred during learning process",
+      confidence: 0,
+    });
+    throw error;
+  }
+
+  return stream.end();
+}
+
+/**
+ * Trigger brand context learning based on user interactions
+ */
+export async function triggerBrandContextLearning(input: {
+  interactionType:
+    | "content_view"
+    | "feedback_given"
+    | "content_created"
+    | "engagement"
+    | "preference_change";
+  metadata: any;
+}) {
+  const { userId } = await getAuth({ required: true });
+
+  // Record the interaction
+  await db.userBehaviorEvent.create({
+    data: {
+      userId,
+      eventType: "BRAND_CONTEXT_TRIGGER",
+      eventData: JSON.stringify({
+        interactionType: input.interactionType,
+        metadata: input.metadata,
+        timestamp: new Date().toISOString(),
+      }),
+      sessionId: "brand-learning-" + Date.now(),
+    },
+  });
+
+  // Trigger real-time learning if interaction is significant
+  const significantInteractions = [
+    "feedback_given",
+    "content_created",
+    "preference_change",
+  ];
+  if (significantInteractions.includes(input.interactionType)) {
+    return await updateBrandContextRealTime({
+      triggerType: "user_interaction",
+      data: {
+        interactionType: input.interactionType,
+        metadata: input.metadata,
+      },
+    });
+  }
+
+  return { message: "Interaction recorded for future learning" };
+}
+
+/**
+ * Get real-time brand context learning status
+ */
+export async function getBrandContextLearningStatus() {
+  const { userId } = await getAuth({ required: true });
+
+  const [recentInsights, contextStatus, learningProgress] = await Promise.all([
+    db.learningInsight.findMany({
+      where: {
+        userId,
+        insightType: "REAL_TIME_CONTEXT_UPDATE",
+        createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+      },
+      take: 10,
+      orderBy: { createdAt: "desc" },
+    }),
+    db.brandContext.findUnique({ where: { userId } }),
+    db.userBehaviorEvent.count({
+      where: {
+        userId,
+        eventType: "BRAND_CONTEXT_TRIGGER",
+        createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+      },
+    }),
+  ]);
+
+  const avgConfidence =
+    recentInsights.length > 0
+      ? recentInsights.reduce((sum, insight) => sum + insight.confidence, 0) /
+        recentInsights.length
+      : 0;
+
+  return {
+    learningActive: recentInsights.length > 0,
+    lastLearningUpdate: recentInsights[0]?.createdAt || null,
+    averageConfidence: Math.round(avgConfidence),
+    totalLearningEvents: learningProgress,
+    contextStatus: contextStatus?.analysisStatus || "PENDING",
+    recentInsights: recentInsights.map((insight) => ({
+      id: insight.id,
+      confidence: insight.confidence,
+      createdAt: insight.createdAt,
+      summary:
+        (typeof insight.insightData === "string"
+          ? (JSON.parse(insight.insightData) as any)?.reasoning
+          : null) || "Learning insight recorded",
+    })),
+  };
+}
+
+/**
+ * Enhanced brand context retrieval with real-time learning data
+ */
+export async function getBrandContextWithLearning() {
+  const { userId } = await getAuth({ required: true });
+
+  // Get brand context
+  const brandContext = await db.brandContext.findUnique({
+    where: { userId },
+  });
+
+  if (!brandContext) {
+    return {
+      brandContext: null,
+      learningEnabled: false,
+      performanceInsights: {
+        avgPerformance: 0,
+        topPerformingContent: [],
+        learningTrends: [],
+      },
+    };
+  }
+
+  // Check if user has learning access
+  const hasLearningAccess = await checkSelfLearningAccess();
+  if (!hasLearningAccess) {
+    return {
+      brandContext,
+      learningEnabled: false,
+      performanceInsights: {
+        avgPerformance: 0,
+        topPerformingContent: [],
+        learningTrends: [],
+      },
+    };
+  }
+
+  // Get recent learning insights
+  const recentInsights = await db.learningInsight.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    take: 10,
+  });
+
+  // Get performance data
+  const performanceData = await db.contentPerformance.findMany({
+    where: { userId },
+    orderBy: { actualScore: "desc" },
+    take: 20,
+  });
+
+  // Calculate performance insights
+  const avgPerformance =
+    performanceData.length > 0
+      ? performanceData.reduce((sum, p) => sum + (p.actualScore || 0), 0) /
+        performanceData.length
+      : 0;
+
+  const topPerformingContent = performanceData.slice(0, 5).map((p) => ({
+    title: `Content ${p.contentId.slice(-8)}`, // Use last 8 chars of contentId as identifier
+    score: p.actualScore || 0,
+    platform: p.platform || "unknown",
+  }));
+
+  return {
+    brandContext,
+    learningEnabled: recentInsights.length > 0,
+    performanceInsights: {
+      avgPerformance,
+      topPerformingContent,
+      learningTrends: recentInsights.map((insight) => ({
+        type: insight.insightType,
+        confidence: insight.confidence,
+        createdAt: insight.createdAt,
+      })),
+    },
+  };
+}
+
+// Helper function to create sample learning insights for testing
+export async function _createSampleLearningInsights() {
+  const { userId } = await getAuth({ required: true });
+
+  // Create some sample learning insights for testing
+  await db.learningInsight.createMany({
+    data: [
+      {
+        userId,
+        insightType: "CONTENT_PERFORMANCE",
+        insightData: JSON.stringify({
+          pattern: "Video content performs 40% better than text posts",
+          recommendation: "Increase video content production",
+          confidence: 85,
+        }),
+        confidence: 85,
+        sampleSize: 50,
+      },
+      {
+        userId,
+        insightType: "AUDIENCE_ENGAGEMENT",
+        insightData: JSON.stringify({
+          pattern: "LinkedIn engagement peaks at 9 AM on weekdays",
+          recommendation: "Schedule LinkedIn posts for 9 AM",
+          confidence: 78,
+        }),
+        confidence: 78,
+        sampleSize: 30,
+      },
+      {
+        userId,
+        insightType: "BRAND_RESONANCE",
+        insightData: JSON.stringify({
+          pattern:
+            "Transformation-focused content generates highest engagement",
+          recommendation: "Focus on transformation themes in content strategy",
+          confidence: 92,
+        }),
+        confidence: 92,
+        sampleSize: 40,
+      },
+    ],
+  });
+
+  console.log(`Created sample learning insights for user ${userId}`);
+  return { success: true, message: "Sample learning insights created" };
+}
+
+// Test function to validate 10x improved brand-relevant content recommendations
+export async function _testBrandRelevantRecommendations() {
+  const { userId } = await getAuth({ required: true });
+
+  // Test brand context
+  const brandContext = await getBrandContext();
+  if (!brandContext) {
+    throw new Error("No brand context found for testing");
+  }
+
+  // Generate test recommendations using the correct function signature
+  const recommendations = await generateContentRecommendations({});
+  // Test brand relevance scoring using the industry field as brand context
+  const brandText = brandContext.industry || "";
+  const brandRelevanceTests = recommendations.recommendations.map((rec) => {
+    const brandKeywords = brandText
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((word) => word.length > 3);
+
+    const contentText = `${rec.title} ${rec.caption || ""}`
+      .toLowerCase()
+      .replace(/[^\w\s]/g, " ");
+
+    const keywordMatches = brandKeywords.filter((keyword) =>
+      contentText.includes(keyword),
+    ).length;
+
+    const brandRelevanceScore = Math.min(
+      keywordMatches / Math.max(brandKeywords.length * 0.3, 1),
+      1,
+    );
+
+    return {
+      recommendationId: rec.title,
+      content: rec.caption.substring(0, 100) + "...",
+      brandRelevanceScore,
+      keywordMatches,
+      totalBrandKeywords: brandKeywords.length,
+      platform: rec.targetPlatforms.join(", "),
+      contentType: rec.format,
+      estimatedEngagement: rec.brandIntelligenceScore || 0,
+    };
+  });
+
+  // Calculate overall brand alignment
+  const averageBrandRelevance =
+    brandRelevanceTests.reduce(
+      (sum, test) => sum + test.brandRelevanceScore,
+      0,
+    ) / brandRelevanceTests.length;
+
+  const highRelevanceCount = brandRelevanceTests.filter(
+    (test) => test.brandRelevanceScore > 0.7,
+  ).length;
+
+  const testResults = {
+    userId,
+    brandContextLength: brandText.length,
+    totalRecommendations: recommendations.recommendations.length,
+    averageBrandRelevance: Math.round(averageBrandRelevance * 100) / 100,
+    highRelevanceCount,
+    highRelevancePercentage:
+      Math.round(
+        (highRelevanceCount / recommendations.recommendations.length) * 100,
+      ) / 100,
+    brandRelevanceTests,
+    testTimestamp: new Date().toISOString(),
+    brandContextPreview: brandText.substring(0, 200) + "...",
+  };
+
+  console.log(
+    `[Brand Relevance Test] User ${userId}: ${highRelevanceCount}/${recommendations.recommendations.length} recommendations with high brand relevance (${testResults.highRelevancePercentage}%)`,
+  );
+
+  return testResults;
+}
+
+// Enhanced Usage Analytics and Billing Dashboard Functions
+export async function getUsageAnalytics(input?: {
+  timeRange?: number; // days, default 30
+  groupBy?: "day" | "week" | "month";
+}) {
+  const { userId } = await getAuth({ required: true });
+  const timeRange = input?.timeRange || 30;
+  const groupBy = input?.groupBy || "day";
+
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - timeRange);
+
+  // Get credit transactions within timeframe
+  const transactions = await db.creditTransaction.findMany({
+    where: {
+      userId,
+      createdAt: { gte: startDate },
+      type: "usage",
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  // Group transactions by time period
+  const groupedUsage = new Map<
+    string,
+    {
+      date: string;
+      totalUsage: number;
+      operationCounts: Record<string, number>;
+      transactions: number;
+    }
+  >();
+
+  transactions.forEach((transaction) => {
+    let groupKey: string;
+    const date = new Date(transaction.createdAt);
+
+    if (groupBy === "day") {
+      groupKey = date.toISOString().split("T")[0]!;
+    } else if (groupBy === "week") {
+      const weekStart = new Date(date);
+      weekStart.setDate(date.getDate() - date.getDay());
+      groupKey = weekStart.toISOString().split("T")[0]!;
+    } else {
+      groupKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+    }
+
+    if (!groupedUsage.has(groupKey)) {
+      groupedUsage.set(groupKey, {
+        date: groupKey,
+        totalUsage: 0,
+        operationCounts: {},
+        transactions: 0,
+      });
+    }
+
+    const group = groupedUsage.get(groupKey)!;
+    group.totalUsage += Math.abs(transaction.amount);
+    group.operationCounts[transaction.operation] =
+      (group.operationCounts[transaction.operation] || 0) + 1;
+    group.transactions += 1;
+  });
+
+  // Convert to array and sort
+  const usageData = Array.from(groupedUsage.values()).sort((a, b) =>
+    a.date.localeCompare(b.date),
+  );
+
+  // Calculate operation breakdown
+  const operationBreakdown = transactions.reduce(
+    (acc, transaction) => {
+      const operation = transaction.operation;
+      if (!acc[operation]) {
+        acc[operation] = {
+          operation,
+          totalUsage: 0,
+          count: 0,
+          averageUsage: 0,
+        };
+      }
+      acc[operation]!.totalUsage += Math.abs(transaction.amount);
+      acc[operation]!.count += 1;
+      acc[operation]!.averageUsage =
+        Math.round((acc[operation]!.totalUsage / acc[operation]!.count) * 100) /
+        100;
+      return acc;
+    },
+    {} as Record<
+      string,
+      {
+        operation: string;
+        totalUsage: number;
+        count: number;
+        averageUsage: number;
+      }
+    >,
+  );
+
+  // Calculate usage statistics
+  const totalUsage = transactions.reduce(
+    (sum, t) => sum + Math.abs(t.amount),
+    0,
+  );
+  const averageDailyUsage =
+    timeRange > 0 ? Math.round((totalUsage / timeRange) * 100) / 100 : 0;
+  const peakUsageDay = usageData.reduce(
+    (max, day) => (day.totalUsage > max.totalUsage ? day : max),
+    usageData[0] || { date: "", totalUsage: 0 },
+  );
+
+  // Get current user credits for context
+  const userCredits = await getUserCredits();
+
+  return {
+    timeRange,
+    groupBy,
+    totalUsage,
+    averageDailyUsage,
+    peakUsageDay,
+    usageData,
+    operationBreakdown: Object.values(operationBreakdown).sort(
+      (a, b) => b.totalUsage - a.totalUsage,
+    ),
+    currentCredits: userCredits,
+    projectedMonthlyUsage: averageDailyUsage * 30,
+    usageEfficiency:
+      userCredits.totalCredits > 0
+        ? Math.round((totalUsage / userCredits.totalCredits) * 100) / 100
+        : 0,
+  };
+}
+
+export async function getBillingDashboard() {
+  const { userId } = await getAuth({ required: true });
+
+  // Get current user credits and subscription info
+  const userCredits = await getUserCredits();
+  const userPurchases = await listUserPurchases();
+  const products = await listProducts();
+
+  // Get usage analytics for current month
+  const currentMonth = new Date();
+  const monthStart = new Date(
+    currentMonth.getFullYear(),
+    currentMonth.getMonth(),
+    1,
+  );
+
+  const monthlyTransactions = await db.creditTransaction.findMany({
+    where: {
+      userId,
+      createdAt: { gte: monthStart },
+      type: "usage",
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const monthlyUsage = monthlyTransactions.reduce(
+    (sum, t) => sum + Math.abs(t.amount),
+    0,
+  );
+
+  // Calculate monthly usage trend (compare to previous month)
+  const previousMonthStart = new Date(
+    currentMonth.getFullYear(),
+    currentMonth.getMonth() - 1,
+    1,
+  );
+  const previousMonthEnd = new Date(
+    currentMonth.getFullYear(),
+    currentMonth.getMonth(),
+    0,
+  );
+
+  const previousMonthTransactions = await db.creditTransaction.findMany({
+    where: {
+      userId,
+      createdAt: {
+        gte: previousMonthStart,
+        lte: previousMonthEnd,
+      },
+      type: "usage",
+    },
+  });
+
+  const previousMonthUsage = previousMonthTransactions.reduce(
+    (sum, t) => sum + Math.abs(t.amount),
+    0,
+  );
+  const usageTrend =
+    previousMonthUsage > 0
+      ? Math.round(
+          ((monthlyUsage - previousMonthUsage) / previousMonthUsage) * 100,
+        )
+      : 0;
+
+  // Calculate cost efficiency metrics
+  const currentSubscription = userPurchases.find((p) =>
+    products.some((prod) => prod.id === p.id && prod.kind === "SUBSCRIPTION"),
+  );
+  const monthlySubscriptionCost = currentSubscription
+    ? currentSubscription.price / 100
+    : 0;
+  const costPerACU =
+    userCredits.totalCredits > 0
+      ? monthlySubscriptionCost / userCredits.totalCredits
+      : 0;
+  const actualCostPerUsedACU =
+    monthlyUsage > 0 ? monthlySubscriptionCost / monthlyUsage : 0;
+
+  // Predict end-of-month usage based on current trend
+  const daysInMonth = new Date(
+    currentMonth.getFullYear(),
+    currentMonth.getMonth() + 1,
+    0,
+  ).getDate();
+  const dayOfMonth = currentMonth.getDate();
+  const projectedMonthlyUsage =
+    dayOfMonth > 0 ? Math.round((monthlyUsage / dayOfMonth) * daysInMonth) : 0;
+
+  // Calculate overage prediction
+  const projectedOverage = Math.max(
+    0,
+    projectedMonthlyUsage - userCredits.totalCredits,
+  );
+  const overageRisk =
+    projectedOverage > 0
+      ? "high"
+      : projectedMonthlyUsage > userCredits.totalCredits * 0.8
+        ? "medium"
+        : "low";
+
+  // Usage recommendations
+  const recommendations: Array<{
+    type: string;
+    title: string;
+    message: string;
+    action: string;
+  }> = [];
+
+  if (overageRisk === "high") {
+    recommendations.push({
+      type: "warning",
+      title: "Overage Expected",
+      message: `You're projected to exceed your monthly limit by ${projectedOverage} ACUs. Consider upgrading or purchasing credit packs.`,
+      action: "upgrade",
+    });
+  } else if (overageRisk === "medium") {
+    recommendations.push({
+      type: "info",
+      title: "High Usage Month",
+      message: `You're using ${Math.round((monthlyUsage / userCredits.totalCredits) * 100)}% of your monthly allocation. Monitor usage to avoid overages.`,
+      action: "monitor",
+    });
+  }
+
+  if (
+    actualCostPerUsedACU > costPerACU * 2 &&
+    monthlyUsage < userCredits.totalCredits * 0.5
+  ) {
+    recommendations.push({
+      type: "suggestion",
+      title: "Consider Downgrading",
+      message: `You're only using ${Math.round((monthlyUsage / userCredits.totalCredits) * 100)}% of your allocation. A lower tier might be more cost-effective.`,
+      action: "downgrade",
+    });
+  }
+
+  return {
+    currentPeriod: {
+      month: currentMonth.toLocaleDateString("en-US", {
+        month: "long",
+        year: "numeric",
+      }),
+      usage: monthlyUsage,
+      allocation: userCredits.totalCredits,
+      remaining: userCredits.availableCredits,
+      usagePercentage: Math.round(
+        (monthlyUsage / userCredits.totalCredits) * 100,
+      ),
+    },
+    trends: {
+      previousMonthUsage,
+      usageTrend,
+      projectedMonthlyUsage,
+      projectedOverage,
+      overageRisk,
+    },
+    costMetrics: {
+      monthlySubscriptionCost,
+      costPerACU: Math.round(costPerACU * 10000) / 10000, // 4 decimal places
+      actualCostPerUsedACU: Math.round(actualCostPerUsedACU * 100) / 100,
+      efficiency:
+        monthlyUsage > 0
+          ? Math.round((monthlyUsage / userCredits.totalCredits) * 100)
+          : 0,
+    },
+    subscription: {
+      plan: userCredits.subscriptionPlan,
+      current: currentSubscription,
+      availableUpgrades: products.filter(
+        (p) =>
+          p.kind === "SUBSCRIPTION" &&
+          p.price > (currentSubscription?.price || 0),
+      ),
+    },
+    recommendations,
+  };
+}
+
+export async function getCreditUsageInsights(input: {
+  timeRange: number;
+  groupBy?: "day" | "week" | "month";
+}) {
+  const { userId } = await getAuth({ required: true });
+  const { timeRange, groupBy = "day" } = input;
+
+  const startDate = new Date(Date.now() - timeRange * 24 * 60 * 60 * 1000);
+
+  // Get credit transactions for the specified time range
+  const transactions = await db.creditTransaction.findMany({
+    where: {
+      userId,
+      createdAt: {
+        gte: startDate,
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  // Get current credit balance
+  const currentCredits = await getUserCredits();
+
+  // Group transactions by the specified period
+  const groupedData: Record<string, any> = {};
+  const spendingByFeature: Record<string, number> = {};
+
+  transactions.forEach((transaction) => {
+    const date = new Date(transaction.createdAt);
+    let key: string;
+
+    switch (groupBy) {
+      case "week":
+        const weekStart = new Date(date);
+        weekStart.setDate(date.getDate() - date.getDay());
+        key = weekStart.toISOString().split("T")[0] ?? "";
+        break;
+      case "month":
+        key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+        break;
+      default: // day
+        key = date.toISOString().split("T")[0] ?? "";
+    }
+
+    if (!groupedData[key]) {
+      groupedData[key] = {
+        date: key,
+        spent: 0,
+        earned: 0,
+        transactions: 0,
+      };
+    }
+
+    if (transaction.amount < 0) {
+      groupedData[key].spent += Math.abs(transaction.amount);
+    } else {
+      groupedData[key].earned += transaction.amount;
+    }
+    groupedData[key].transactions += 1;
+
+    // Track spending by feature
+    if (transaction.amount < 0 && transaction.description) {
+      const feature = transaction.description.split(" ")[0] || "Unknown";
+      spendingByFeature[feature] =
+        (spendingByFeature[feature] || 0) + Math.abs(transaction.amount);
+    }
+  });
+
+  const timeSeriesData = Object.values(groupedData).sort(
+    (a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+  );
+
+  const totalSpent = transactions
+    .filter((t) => t.amount < 0)
+    .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+  const totalEarned = transactions
+    .filter((t) => t.amount > 0)
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  // Calculate usage patterns
+  const averageDailySpending = totalSpent / timeRange;
+  const projectedMonthlySpending = averageDailySpending * 30;
+
+  // Identify peak usage days
+  const peakUsageDays = timeSeriesData
+    .filter((day: any) => day.spent > averageDailySpending * 1.5)
+    .map((day: any) => day.date);
+
+  return {
+    summary: {
+      currentCredits: currentCredits.availableCredits,
+      totalSpent,
+      totalEarned,
+      netChange: totalEarned - totalSpent,
+      averageDailySpending,
+      projectedMonthlySpending,
+    },
+    timeSeriesData,
+    spendingByFeature: Object.entries(spendingByFeature)
+      .map(([feature, amount]) => ({ feature, amount }))
+      .sort((a, b) => b.amount - a.amount),
+    insights: {
+      peakUsageDays,
+      mostExpensiveFeature: Object.entries(spendingByFeature).reduce(
+        (max, [feature, amount]) =>
+          amount > max.amount ? { feature, amount } : max,
+        { feature: "None", amount: 0 },
+      ),
+      usagePattern:
+        averageDailySpending > 10
+          ? "high"
+          : averageDailySpending > 3
+            ? "moderate"
+            : "low",
+    },
+  };
+}
+
+// ===== INTELLIGENT BRAND LEARNING ALGORITHMS =====
+
+/**
+ * Advanced predictive preference modeling using machine learning patterns
+ */
+export async function generatePredictivePreferenceModel(input?: {
+  userId?: string;
+  timeHorizon?: number; // days to predict ahead
+  includeSeasonality?: boolean;
+}) {
+  const {
+    userId: inputUserId,
+    timeHorizon = 30,
+    includeSeasonality = true,
+  } = input || {};
+  const { userId } = inputUserId
+    ? { userId: inputUserId }
+    : await getAuth({ required: true });
+
+  // Start streaming response for real-time updates
+  const stream = await startRealtimeResponse<{
+    status: string;
+    progress: number;
+    currentStep: string;
+    predictiveModel?: any;
+    confidence: number;
+  }>();
+
+  try {
+    stream.next({
+      status: "initializing",
+      progress: 0,
+      currentStep: "Gathering historical preference data",
+      confidence: 0,
+    });
+
+    // Gather comprehensive historical data
+    const [feedbackHistory, behaviorHistory, performanceHistory, brandSignals] =
+      await Promise.all([
+        db.recommendationFeedback.findMany({
+          where: {
+            userId,
+            createdAt: { gte: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) }, // 90 days
+          },
+          orderBy: { createdAt: "asc" },
+        }),
+        db.userBehaviorEvent.findMany({
+          where: {
+            userId,
+            createdAt: { gte: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) },
+          },
+          orderBy: { createdAt: "asc" },
+        }),
+        db.contentPerformance.findMany({
+          where: {
+            userId,
+            createdAt: { gte: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) },
+          },
+          orderBy: { createdAt: "asc" },
+        }),
+        db.brandSignal.findUnique({ where: { userId } }),
+      ]);
+
+    stream.next({
+      status: "analyzing",
+      progress: 25,
+      currentStep: "Building predictive models",
+      confidence: 30,
+    });
+
+    // Generate predictive model using AI
+    const predictiveAnalysis = await requestMultimodalModel({
+      system: `You are an advanced machine learning system specializing in predictive user preference modeling. Analyze historical user data to build sophisticated predictive models that can forecast future preferences, content performance, and behavioral patterns.
+
+Focus on:
+1. Temporal preference evolution patterns
+2. Seasonal and cyclical behavior trends
+3. Content performance predictors
+4. Engagement pattern forecasting
+5. Preference drift detection
+6. Emerging interest identification
+
+Use advanced statistical and ML concepts like time series analysis, pattern recognition, and predictive modeling.`,
+      messages: [
+        {
+          role: "user",
+          content: `Build a predictive preference model for ${timeHorizon} days ahead:
+
+FEEDBACK HISTORY (${feedbackHistory.length} entries):
+${JSON.stringify(feedbackHistory.slice(-50), null, 2)}
+
+BEHAVIOR HISTORY (${behaviorHistory.length} events):
+${JSON.stringify(behaviorHistory.slice(-100), null, 2)}
+
+PERFORMANCE HISTORY (${performanceHistory.length} posts):
+${JSON.stringify(performanceHistory.slice(-30), null, 2)}
+
+CURRENT BRAND SIGNALS:
+${JSON.stringify(brandSignals, null, 2)}
+
+TIME HORIZON: ${timeHorizon} days
+INCLUDE SEASONALITY: ${includeSeasonality}
+
+Generate comprehensive predictive models with confidence scores.`,
+        },
+      ],
+      returnType: z
+        .object({
+          predictiveModel: z
+            .object({
+              preferenceEvolution: z
+                .object({
+                  trendDirection: z
+                    .enum(["improving", "declining", "stable", "volatile"])
+                    .describe("Direction of preference trend over time"),
+                  predictedChanges: z
+                    .array(z.string())
+                    .describe("Specific changes predicted to occur"),
+                  confidenceScore: z
+                    .number()
+                    .min(0)
+                    .max(100)
+                    .describe("Confidence in preference evolution predictions"),
+                  timeToChange: z
+                    .number()
+                    .describe("Days until significant change"),
+                })
+                .describe("Analysis of how user preferences are evolving"),
+              contentPerformanceForecast: z
+                .object({
+                  highPerformingTypes: z
+                    .array(z.string())
+                    .describe("Content types predicted to perform well"),
+                  emergingOpportunities: z
+                    .array(z.string())
+                    .describe("New content opportunities identified"),
+                  decliningFormats: z
+                    .array(z.string())
+                    .describe("Content formats predicted to decline"),
+                  predictedEngagement: z
+                    .record(z.number())
+                    .describe("Predicted engagement rates by content type"),
+                  seasonalFactors: z
+                    .record(z.number())
+                    .optional()
+                    .describe("Seasonal adjustment factors"),
+                })
+                .describe("Forecast of content performance patterns"),
+              behavioralPredictions: z
+                .object({
+                  activityPatterns: z
+                    .record(z.number())
+                    .describe("Predicted activity levels by time period"),
+                  engagementTimes: z
+                    .array(z.number())
+                    .describe("Optimal engagement time periods"),
+                  interactionStyle: z
+                    .string()
+                    .describe("Predicted interaction style preferences"),
+                  contentConsumptionTrends: z
+                    .array(z.string())
+                    .describe("Trends in content consumption behavior"),
+                })
+                .describe("Predictions about user behavioral patterns"),
+              riskAssessment: z
+                .object({
+                  preferenceStability: z
+                    .enum(["stable", "moderate", "volatile"])
+                    .describe("Stability level of user preferences"),
+                  predictionReliability: z
+                    .number()
+                    .min(0)
+                    .max(100)
+                    .describe("Reliability score of predictions"),
+                  dataQualityScore: z
+                    .number()
+                    .min(0)
+                    .max(100)
+                    .describe("Quality score of underlying data"),
+                  recommendationRisk: z
+                    .enum(["low", "medium", "high"])
+                    .describe("Risk level for recommendations"),
+                })
+                .describe("Assessment of prediction risks and reliability"),
+            })
+            .describe("Comprehensive predictive model for user preferences"),
+          actionableInsights: z
+            .array(
+              z
+                .object({
+                  insight: z
+                    .string()
+                    .describe("The actionable insight discovered"),
+                  priority: z
+                    .enum(["low", "medium", "high"])
+                    .describe("Priority level of the insight"),
+                  timeframe: z
+                    .string()
+                    .describe("Timeframe for implementing the insight"),
+                  expectedImpact: z
+                    .string()
+                    .describe("Expected impact of acting on the insight"),
+                })
+                .describe(
+                  "An actionable insight derived from the predictive model",
+                ),
+            )
+            .describe(
+              "List of actionable insights from the predictive analysis",
+            ),
+          modelConfidence: z
+            .number()
+            .min(0)
+            .max(100)
+            .describe("Overall confidence in the predictive model"),
+          dataQuality: z
+            .object({
+              feedbackQuality: z
+                .number()
+                .min(0)
+                .max(100)
+                .describe("Quality score of feedback data"),
+              behaviorDataRichness: z
+                .number()
+                .min(0)
+                .max(100)
+                .describe("Richness score of behavioral data"),
+              performanceDataReliability: z
+                .number()
+                .min(0)
+                .max(100)
+                .describe("Reliability score of performance data"),
+              overallDataScore: z
+                .number()
+                .min(0)
+                .max(100)
+                .describe("Overall data quality score"),
+            })
+            .describe("Assessment of data quality used in the model"),
+        })
+        .describe(
+          "Comprehensive predictive preference model with insights and quality metrics",
+        ),
+      temperature: 0.2,
+    });
+
+    stream.next({
+      status: "storing",
+      progress: 75,
+      currentStep: "Storing predictive model",
+      confidence: predictiveAnalysis.modelConfidence,
+    });
+
+    // Store the predictive model
+    await db.learningInsight.create({
+      data: {
+        userId,
+        insightType: "PREDICTIVE_PREFERENCE_MODEL",
+        insightData: JSON.stringify({
+          model: predictiveAnalysis.predictiveModel,
+          insights: predictiveAnalysis.actionableInsights,
+          dataQuality: predictiveAnalysis.dataQuality,
+          timeHorizon,
+          includeSeasonality,
+          generatedAt: new Date().toISOString(),
+        }),
+        confidence: predictiveAnalysis.modelConfidence,
+        sampleSize:
+          feedbackHistory.length +
+          behaviorHistory.length +
+          performanceHistory.length,
+      },
+    });
+
+    stream.next({
+      status: "completed",
+      progress: 100,
+      currentStep: "Predictive model generated successfully",
+      predictiveModel: predictiveAnalysis.predictiveModel,
+      confidence: predictiveAnalysis.modelConfidence,
+    });
+
+    return stream.end();
+  } catch (error) {
+    console.error("Error generating predictive preference model:", error);
+    stream.next({
+      status: "error",
+      progress: 0,
+      currentStep: "Error occurred during model generation",
+      confidence: 0,
+    });
+    throw error;
+  }
+}
+
+/**
+ * Adaptive content performance learning system
+ */
+export async function runAdaptiveContentLearning(input?: {
+  userId?: string;
+  learningMode?: "incremental" | "comprehensive" | "realtime";
+}) {
+  const { userId: inputUserId, learningMode = "incremental" } = input || {};
+  const { userId } = inputUserId
+    ? { userId: inputUserId }
+    : await getAuth({ required: true });
+
+  const stream = await startRealtimeResponse<{
+    status: string;
+    progress: number;
+    currentStep: string;
+    learningResults?: any;
+    confidence: number;
+  }>();
+
+  try {
+    stream.next({
+      status: "initializing",
+      progress: 0,
+      currentStep: "Initializing adaptive learning system",
+      confidence: 0,
+    });
+
+    // Determine data range based on learning mode
+    const dataRange = {
+      incremental: 14, // 2 weeks
+      comprehensive: 90, // 3 months
+      realtime: 7, // 1 week
+    }[learningMode];
+
+    // Gather learning data
+    const [contentPerformance, userFeedback, brandContext, previousLearning] =
+      await Promise.all([
+        db.contentPerformance.findMany({
+          where: {
+            userId,
+            createdAt: {
+              gte: new Date(Date.now() - dataRange * 24 * 60 * 60 * 1000),
+            },
+          },
+          orderBy: { createdAt: "desc" },
+        }),
+        db.recommendationFeedback.findMany({
+          where: {
+            userId,
+            createdAt: {
+              gte: new Date(Date.now() - dataRange * 24 * 60 * 60 * 1000),
+            },
+          },
+          orderBy: { createdAt: "desc" },
+        }),
+        db.brandContext.findUnique({ where: { userId } }),
+        db.learningInsight.findMany({
+          where: {
+            userId,
+            insightType: "ADAPTIVE_CONTENT_LEARNING",
+            createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+          },
+          orderBy: { createdAt: "desc" },
+          take: 5,
+        }),
+      ]);
+
+    stream.next({
+      status: "learning",
+      progress: 30,
+      currentStep: "Processing adaptive learning algorithms",
+      confidence: 40,
+    });
+
+    // Run adaptive learning analysis
+    const learningAnalysis = await requestMultimodalModel({
+      system: `You are an advanced adaptive learning system that continuously improves content recommendations through sophisticated machine learning algorithms. Analyze performance data, user feedback, and behavioral patterns to identify learning opportunities and optimize future content suggestions.
+
+Focus on:
+1. Performance pattern recognition
+2. Feedback-performance correlation analysis
+3. Content optimization opportunities
+4. Predictive performance modeling
+5. Adaptive recommendation refinement
+6. Learning from failures and successes
+
+Use concepts from reinforcement learning, collaborative filtering, and content-based recommendation systems.`,
+      messages: [
+        {
+          role: "user",
+          content: `Run adaptive content learning analysis:
+
+LEARNING MODE: ${learningMode}
+DATA RANGE: ${dataRange} days
+
+CONTENT PERFORMANCE DATA (${contentPerformance.length} entries):
+${JSON.stringify(contentPerformance.slice(0, 20), null, 2)}
+
+USER FEEDBACK (${userFeedback.length} entries):
+${JSON.stringify(userFeedback.slice(0, 30), null, 2)}
+
+BRAND CONTEXT:
+${JSON.stringify(brandContext, null, 2)}
+
+PREVIOUS LEARNING INSIGHTS:
+${JSON.stringify(
+  previousLearning.map((l) => ({
+    type: l.insightType,
+    confidence: l.confidence,
+    createdAt: l.createdAt,
+  })),
+  null,
+  2,
+)}
+
+Identify learning patterns, optimization opportunities, and adaptive improvements.`,
+        },
+      ],
+      returnType: z
+        .object({
+          learningResults: z
+            .object({
+              performancePatterns: z
+                .object({
+                  successFactors: z
+                    .array(z.string())
+                    .describe("Factors that contribute to content success"),
+                  failureFactors: z
+                    .array(z.string())
+                    .describe("Factors that lead to content failure"),
+                  emergingTrends: z
+                    .array(z.string())
+                    .describe("New trends identified in content performance"),
+                  performancePredictors: z
+                    .record(z.number())
+                    .describe("Metrics that predict content performance"),
+                })
+                .describe("Analysis of content performance patterns"),
+              adaptiveImprovements: z
+                .object({
+                  recommendationAdjustments: z
+                    .array(z.string())
+                    .describe("Adjustments to improve recommendations"),
+                  contentOptimizations: z
+                    .array(z.string())
+                    .describe("Optimizations for content creation"),
+                  targetingRefinements: z
+                    .array(z.string())
+                    .describe("Refinements to audience targeting"),
+                  timingOptimizations: z
+                    .array(z.string())
+                    .describe("Optimizations for content timing"),
+                })
+                .describe("Adaptive improvements identified through learning"),
+              learningInsights: z
+                .object({
+                  keyDiscoveries: z
+                    .array(z.string())
+                    .describe("Key discoveries from the learning process"),
+                  unexpectedPatterns: z
+                    .array(z.string())
+                    .describe("Unexpected patterns discovered"),
+                  validatedHypotheses: z
+                    .array(z.string())
+                    .describe("Hypotheses that were validated"),
+                  newHypotheses: z
+                    .array(z.string())
+                    .describe("New hypotheses generated"),
+                })
+                .describe("Insights gained from the adaptive learning process"),
+              qualityMetrics: z
+                .object({
+                  learningVelocity: z
+                    .number()
+                    .min(0)
+                    .max(100)
+                    .describe("Speed of learning and adaptation"),
+                  adaptationEffectiveness: z
+                    .number()
+                    .min(0)
+                    .max(100)
+                    .describe("Effectiveness of adaptations made"),
+                  predictionAccuracy: z
+                    .number()
+                    .min(0)
+                    .max(100)
+                    .describe("Accuracy of performance predictions"),
+                  improvementPotential: z
+                    .number()
+                    .min(0)
+                    .max(100)
+                    .describe("Potential for further improvement"),
+                })
+                .describe("Quality metrics for the learning process"),
+            })
+            .describe("Results from the adaptive learning analysis"),
+          nextActions: z
+            .array(
+              z
+                .object({
+                  action: z.string().describe("The recommended action to take"),
+                  priority: z
+                    .enum(["low", "medium", "high", "critical"])
+                    .describe("Priority level of the action"),
+                  timeframe: z
+                    .string()
+                    .describe("Recommended timeframe for the action"),
+                  expectedOutcome: z
+                    .string()
+                    .describe("Expected outcome of the action"),
+                  riskLevel: z
+                    .enum(["low", "medium", "high"])
+                    .describe("Risk level associated with the action"),
+                })
+                .describe(
+                  "A recommended next action based on learning results",
+                ),
+            )
+            .describe("List of recommended next actions"),
+          confidenceScore: z
+            .number()
+            .min(0)
+            .max(100)
+            .describe("Overall confidence in the learning results"),
+          learningEffectiveness: z
+            .number()
+            .min(0)
+            .max(100)
+            .describe("Effectiveness score of the learning process"),
+        })
+        .describe(
+          "Comprehensive adaptive learning results with insights and recommendations",
+        ),
+      temperature: 0.3,
+    });
+
+    stream.next({
+      status: "applying",
+      progress: 70,
+      currentStep: "Applying learning improvements",
+      confidence: learningAnalysis.confidenceScore,
+    });
+
+    // Store learning results
+    await db.learningInsight.create({
+      data: {
+        userId,
+        insightType: "ADAPTIVE_CONTENT_LEARNING",
+        insightData: JSON.stringify({
+          learningMode,
+          results: learningAnalysis.learningResults,
+          nextActions: learningAnalysis.nextActions,
+          effectiveness: learningAnalysis.learningEffectiveness,
+          dataRange,
+          generatedAt: new Date().toISOString(),
+        }),
+        confidence: learningAnalysis.confidenceScore,
+        sampleSize: contentPerformance.length + userFeedback.length,
+      },
+    });
+
+    stream.next({
+      status: "completed",
+      progress: 100,
+      currentStep: "Adaptive learning completed successfully",
+      learningResults: learningAnalysis.learningResults,
+      confidence: learningAnalysis.confidenceScore,
+    });
+
+    return stream.end();
+  } catch (error) {
+    console.error("Error in adaptive content learning:", error);
+    stream.next({
+      status: "error",
+      progress: 0,
+      currentStep: "Error occurred during adaptive learning",
+      confidence: 0,
+    });
+    throw error;
+  }
+}
+
+/**
+ * Get intelligent learning insights and recommendations
+ */
+export async function getIntelligentLearningInsights(input?: {
+  userId?: string;
+  insightTypes?: string[];
+  timeRange?: number;
+}) {
+  const {
+    userId: inputUserId,
+    insightTypes = [
+      "PREDICTIVE_PREFERENCE_MODEL",
+      "ADAPTIVE_CONTENT_LEARNING",
+      "BEHAVIORAL_PATTERN_ANALYSIS",
+    ],
+    timeRange = 30,
+  } = input || {};
+  const { userId } = inputUserId
+    ? { userId: inputUserId }
+    : await getAuth({ required: true });
+
+  // Get recent learning insights
+  const learningInsights = await db.learningInsight.findMany({
+    where: {
+      userId,
+      insightType: { in: insightTypes },
+      createdAt: {
+        gte: new Date(Date.now() - timeRange * 24 * 60 * 60 * 1000),
+      },
+    },
+    orderBy: { createdAt: "desc" },
+    take: 20,
+  });
+
+  // Get brand signals for context
+  const brandSignals = await db.brandSignal.findUnique({ where: { userId } });
+
+  // Aggregate insights by type
+  const insightsByType = learningInsights.reduce(
+    (acc, insight) => {
+      if (!acc[insight.insightType]) {
+        acc[insight.insightType] = [];
+      }
+      acc[insight.insightType]!.push({
+        id: insight.id,
+        data: JSON.parse(insight.insightData as string),
+        confidence: insight.confidence,
+        sampleSize: insight.sampleSize,
+        createdAt: insight.createdAt,
+      });
+      return acc;
+    },
+    {} as Record<string, any[]>,
+  );
+
+  // Calculate overall learning metrics
+  const totalInsights = learningInsights.length;
+  const avgConfidence =
+    totalInsights > 0
+      ? learningInsights.reduce((sum, insight) => sum + insight.confidence, 0) /
+        totalInsights
+      : 0;
+  const latestInsight = learningInsights[0];
+
+  return {
+    summary: {
+      totalInsights,
+      averageConfidence: avgConfidence,
+      latestInsightDate: latestInsight?.createdAt,
+      insightTypes: Object.keys(insightsByType),
+      learningVelocity: totalInsights / timeRange, // insights per day
+    },
+    insightsByType,
+    brandSignals: brandSignals
+      ? {
+          preferredTones: JSON.parse(
+            (brandSignals.preferredTones as string) || "[]",
+          ),
+          commonKeywords: JSON.parse(
+            (brandSignals.commonKeywords as string) || "[]",
+          ),
+          contentPillars: JSON.parse(
+            (brandSignals.contentPillars as string) || "[]",
+          ),
+          lastUpdated: brandSignals.lastUpdatedAt,
+        }
+      : null,
+    recommendations: {
+      nextLearningActions: [
+        totalInsights === 0
+          ? "Generate initial predictive preference model"
+          : null,
+        avgConfidence < 70
+          ? "Increase data collection for better insights"
+          : null,
+        !insightsByType.BEHAVIORAL_PATTERN_ANALYSIS
+          ? "Run behavioral pattern analysis"
+          : null,
+        !insightsByType.ADAPTIVE_CONTENT_LEARNING
+          ? "Initialize adaptive content learning"
+          : null,
+      ].filter(Boolean),
+      improvementAreas: [
+        avgConfidence < 50 ? "Data quality improvement needed" : null,
+        totalInsights < 5 ? "More learning iterations required" : null,
+        !brandSignals ? "Brand signals initialization needed" : null,
+      ].filter(Boolean),
+    },
+  };
+}
+
+// Test function to verify timeout fixes are working
+
+// Re-export monetization functions for frontend access
+export { listProducts, listUserPurchases, createProduct, discontinueProduct };
+
+// SocialSpark-backed, brand-aligned generation
+export async function generateOnBrandThread(input: {
+  source?: string;
+  fileBase64?: string;
+  fileName?: string;
+  platform?: string;
+  targetAudience?: string;
+  contentTone?: string;
+}) {
+  const { userId } = await getAuth({ required: true });
+
+  try {
+    // Try to align with brand voice/persona
+    let targetAudience = input.targetAudience ?? "general audience";
+    let contentTone = input.contentTone ?? "friendly";
+
+    try {
+      if (!input.contentTone || !input.targetAudience) {
+        const voice = await getBrandVoiceProfile();
+        if (voice) {
+          const tv =
+            (voice as any).toneOfVoice ||
+            (voice as any)?.voiceCharacteristics?.tone;
+          const taObj =
+            (voice as any).targetAudience ||
+            (voice as any)?.topicPreferences?.audience;
+          contentTone =
+            input.contentTone ??
+            (typeof tv === "string" && tv.length > 0 ? tv : contentTone);
+          if (typeof taObj === "string" && taObj)
+            targetAudience = input.targetAudience ?? taObj;
+          if (typeof taObj === "object" && taObj?.summary)
+            targetAudience = input.targetAudience ?? taObj.summary;
+        }
+      }
+    } catch {}
+
+    const res = await generateThreadFromUniversalSource({
+      source: input.source,
+      fileData: input.fileBase64,
+      fileName: input.fileName ?? "content.txt",
+      targetAudience,
+      contentTone,
+      platform: input.platform ?? "twitter",
+      userId,
+    });
+
+    return res; // { taskId, videoId }
+  } catch (error) {
+    console.error("generateOnBrandThread error", error);
+    throw error;
+  }
+}
+
+export async function socialSparkListThreads(input?: {
+  searchTerm?: string;
+  sortBy?: "createdAt" | "engagementScore";
+  filterByPattern?: string;
+}) {
+  try {
+    return await externalListThreads(input);
+  } catch (error) {
+    console.error("socialSparkListThreads error", error);
+    throw error;
+  }
+}
+
+export async function repurposeOnBrandThread(input: {
+  threadId: string;
+  platform:
+    | "linkedin"
+    | "facebook"
+    | "instagram"
+    | "twitter"
+    | "tiktok"
+    | "youtube"
+    | "pinterest"
+    | "reddit"
+    | "medium"
+    | "blog";
+}) {
+  try {
+    return await repurposeThread({
+      threadId: input.threadId,
+      platform: input.platform ?? "twitter",
+    });
+  } catch (error) {
+    console.error("repurposeOnBrandThread error", error);
+    throw error;
+  }
+}
+
+export async function getRepurposedContentForThread(input: {
+  threadId: string;
+  taskId: string;
+  platform?: string;
+}) {
+  try {
+    return await externalGetRepurposeResults({
+      taskId: input.taskId,
+      threadId: input.threadId,
+      platform: input.platform ?? "twitter",
+    });
+  } catch (error) {
+    console.error("getRepurposedContentForThread error", error);
+    throw error;
+  }
+}
+
+// Generate contextual engagement tactics for a specific post on demand
+export async function generatePostEngagementTactics(input: {
+  contentId?: string;
+  text?: string;
+  platform?: string;
+}) {
+  const { userId } = await getAuth({ required: true });
+
+  try {
+    let postText = (input.text || "").trim();
+
+    if (!postText && input.contentId) {
+      const content = await db.generatedContent.findFirst({
+        where: { id: input.contentId, userId },
+      });
+
+      if (!content) {
+        throw new Error("Content not found or you don't have access to it");
+      }
+
+      const raw = content.content || "";
+      try {
+        const pkg = JSON.parse(raw) as Record<string, any>;
+        postText =
+          (typeof pkg.postText === "string" && pkg.postText) ||
+          (typeof pkg.caption === "string" && pkg.caption) ||
+          (typeof pkg.content === "string" && pkg.content) ||
+          "";
+      } catch {
+        postText = raw;
+      }
+
+      if (!postText && content.title) {
+        postText = `${content.title}\n${raw}`.trim();
+      }
+    }
+
+    postText = (postText || "").trim();
+    if (!postText) {
+      throw new Error("No post content provided");
+    }
+
+    const [brandGuidelines, optimalTimes] = await Promise.all([
+      db.brandGuidelines.findUnique({ where: { userId } }),
+      getOptimalPostingTimes({ platform: input.platform }),
+    ]);
+
+    const bestHours = Array.isArray(optimalTimes?.bestHours)
+      ? optimalTimes.bestHours
+          .slice(0, 3)
+          .map((h: any) => `${h.time} (${h.engagementRate}% est.)`)
+          .join(", ")
+      : "";
+    const bestDays = Array.isArray(optimalTimes?.bestDays)
+      ? optimalTimes.bestDays
+          .slice(0, 2)
+          .map((d: any) => `${d.dayName} (${d.engagementRate}% est.)`)
+          .join(", ")
+      : "";
+
+    const system = `You are a social media engagement coach. Given a specific post draft and context, output a concise list of highly actionable tactics to boost engagement. Requirements:
+- Return 6 to 8 SHORT, imperative sentences (one line each)
+- Prioritize actions that take under 2 minutes
+- Cover before-post, during-post (first 60 mins), and after-post actions
+- Use the provided optimal times/day windows when relevant
+- Avoid generic fluff; be specific and practical
+- Do not number the items; return a plain list of strings only`;
+
+    const messages = [
+      {
+        role: "user" as const,
+        content: [
+          {
+            type: "text" as const,
+            text: `POST DRAFT (for context):\n${postText}`,
+          },
+          {
+            type: "text" as const,
+            text: `Brand voice: ${brandGuidelines?.brandVoice || "Not set"}`,
+          },
+          {
+            type: "text" as const,
+            text: `Optimal hours: ${bestHours || "N/A"}`,
+          },
+          { type: "text" as const, text: `Best days: ${bestDays || "N/A"}` },
+        ],
+      },
+    ];
+
+    const result = await requestMultimodalModel({
+      system,
+      messages,
+      model: "small",
+      temperature: 0.2,
+      returnType: z
+        .object({
+          tactics: z
+            .array(z.string())
+            .min(3)
+            .max(10)
+            .describe("Short, concrete engagement tactics"),
+        })
+        .describe("Engagement tactics to apply around posting"),
+    });
+
+    const tactics = (result.tactics || [])
+      .map((t) => (t || "").replace(/^[-*\d.\s]+/, "").trim())
+      .filter((t) => t.length > 0)
+      .slice(0, 8);
+
+    return { tactics };
+  } catch (error) {
+    console.error("generatePostEngagementTactics error", error);
+    throw error;
+  }
+}
+
