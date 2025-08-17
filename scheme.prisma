@@ -34,27 +34,50 @@ model User {
   SavedInsight           SavedInsight[]
   UserCredits            UserCredits?
   CreditTransaction      CreditTransaction[]
+  TrendSearchHistory     TrendSearchHistory[]
+  ContentPerformance     ContentPerformance[]
+  LearningInsight        LearningInsight[]
+  UserBehaviorEvent      UserBehaviorEvent[]
+  ContentResonanceScore  ContentResonanceScore[]
+  UserEngagementPattern  UserEngagementPattern?
+  // Ripple AI relations
+  rippleConversations    RippleConversation[]
+  rippleMemories         RippleMemory[]
+  rippleActions          RippleAction[]
+  rippleFeedback         RippleFeedback[]
+  rippleLearning         RippleLearning[]
+  Notification           Notification[]
+  OAuthCredentials       OAuthCredentials[]
+  SocialMediaInsights    SocialMediaInsights?
+  BrandIntelligence      BrandIntelligence?
+  BrandInsight           BrandInsight[]
+  BrandSignalSuggestion  BrandSignalSuggestion[]
 }
 
 model Account {
-  id           String    @id @default(cuid())
-  userId       String
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  platform     String // "facebook", "instagram", "twitter", "youtube", "linkedin"
-  name         String // Display name of the account
-  accountId    String // Platform-specific ID
-  accessToken  String // OAuth token or API key
-  refreshToken String? // For OAuth refresh
-  expiresAt    DateTime?
+  id                    String               @id @default(cuid())
+  userId                String
+  user                  User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform              String // "facebook", "instagram", "twitter", "youtube", "linkedin"
+  name                  String // Display name of the account
+  accountId             String // Platform-specific ID
+  accessToken           String // OAuth token or API key
+  refreshToken          String? // For OAuth refresh
+  expiresAt             DateTime?
   // Legacy fields - kept for backward compatibility
-  pageId       String? // For Facebook/Instagram pages
-  pageToken    String? // For Facebook/Instagram page access
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  pageId                String? // For Facebook/Instagram pages
+  pageToken             String? // For Facebook/Instagram page access
+  SocialMediaInsights   SocialMediaInsights? @relation(fields: [socialMediaInsightsId], references: [id])
+  BrandIntelligence     BrandIntelligence?   @relation(fields: [brandIntelligenceId], references: [id])
+  BrandInsights         BrandInsight[]
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
   // Comments from this account
-  comments     Comment[]
+  comments              Comment[]
   // Facebook pages
-  pages        Page[]
+  pages                 Page[]
+  socialMediaInsightsId String?
+  brandIntelligenceId   String?
 
   @@unique([userId, platform, accountId])
 }
@@ -65,13 +88,9 @@ model Page {
   account   Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
   pageId    String // Facebook page ID
   pageName  String // Facebook page name
-  pageToken String // Facebook page access token
+  pageToken String? // Facebook page access token
   createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  // Comments from this page
-  comments  Comment[]
-
-  @@unique([accountId, pageId])
+  Comment   Comment[]
 }
 
 model OAuthState {
@@ -81,6 +100,20 @@ model OAuthState {
   platform  String
   expiresAt DateTime
   createdAt DateTime @default(now())
+}
+
+model OAuthCredentials {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform     String // "facebook", "twitter", "linkedin", "youtube"
+  clientId     String // App ID / Client ID
+  clientSecret String // App Secret / Client Secret
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, platform])
 }
 
 model AIRequestLog {
@@ -122,6 +155,15 @@ model BrandGuidelines {
   phrasesToAvoid   String // Stored as JSON string
   exampleResponses String // Stored as JSON string
   additionalNotes  String? // any additional guidelines
+  // Business objectives & KPIs (stored as JSON for flexibility)
+  objectives       String? // JSON string array of focus areas (e.g., awareness, engagement, conversions)
+  kpis             String? // JSON string array of key KPIs (e.g., reach, CTR, sales)
+  kpiNotes         String? // Optional notes/targets for KPIs
+  // Manual brand information for persona building
+  brandWebsite     String? // Brand website URL
+  socialLinks      String? // Stored as JSON string with platform -> URL mapping
+  // Central alignment directives (explicit rules applied across generation)
+  directives       String? // JSON string array of directives like "Avoid controversial topics", "Use inclusive language"
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 }
@@ -226,11 +268,160 @@ model PostAnalytics {
   createdAt   DateTime @default(now())
 }
 
+// Performance tracking for content posted through SocialWave
+
+model ContentPerformance {
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contentId      String // Reference to GeneratedContent, ScheduledPost, or other content
+  contentType    String // "GENERATED_CONTENT", "SCHEDULED_POST", "VIRAL_THREAD", "MANUAL"
+  platform       String // "facebook", "instagram", "twitter", "linkedin", etc.
+  // Performance metrics
+  likes          Int?      @default(0)
+  comments       Int?      @default(0)
+  shares         Int?      @default(0)
+  views          Int?      @default(0)
+  clicks         Int?      @default(0)
+  reach          Int?
+  impressions    Int?
+  engagementRate Float?
+  // Tracking metadata
+  trackingMethod String // "API", "MANUAL", "HYBRID"
+  isApiTracked   Boolean   @default(false)
+  lastApiSync    DateTime?
+  // Content metadata for learning
+  contentLength  Int?
+  hashtagCount   Int?
+  mentionCount   Int?
+  emojiCount     Int?
+  contentTone    String? // "professional", "casual", "humorous", etc.
+  postTime       DateTime?
+  // Learning scores
+  viralScore     Float? // Predicted viral score (0-1)
+  actualScore    Float? // Calculated actual performance score (0-1)
+  performanceGap Float? // Difference between predicted and actual
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([contentId, contentType])
+  @@index([platform])
+  @@index([createdAt])
+}
+
+// AI Learning insights derived from performance data
+
+model LearningInsight {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  insightType String // "CONTENT_PATTERN", "TIMING_PATTERN", "PLATFORM_PREFERENCE", "TONE_EFFECTIVENESS"
+  insightData String // JSON data containing the insight details
+  confidence  Float // Confidence score (0-1)
+  sampleSize  Int // Number of data points used to generate this insight
+  // Metadata
+  platform    String?
+  contentType String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@index([insightType])
+  @@index([confidence])
+}
+
+// User behavior tracking for intelligent brand signals
+
+model UserBehaviorEvent {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventType   String // "PAGE_VIEW", "CONTENT_VIEW", "INSIGHT_VIEW", "RECOMMENDATION_VIEW", "CLICK", "SCROLL", "TIME_SPENT"
+  eventData   String // JSON data containing event-specific information
+  sessionId   String // Track user sessions
+  // Context
+  pageUrl     String? // Which page/section the event occurred on
+  elementId   String? // Specific element that was interacted with
+  contentId   String? // Reference to content/insight/recommendation
+  contentType String? // "TRENDING_TOPIC", "VIRAL_POTENTIAL", "BRAND_SIGNAL", "RECOMMENDATION", "INSIGHT"
+  // Metrics
+  duration    Int? // Time spent (in seconds) for time-based events
+  scrollDepth Float? // Scroll percentage for scroll events
+  clickCount  Int?     @default(1) // Number of clicks for click events
+  // Metadata
+  userAgent   String?
+  deviceType  String? // "mobile", "desktop", "tablet"
+  createdAt   DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([eventType])
+  @@index([sessionId])
+  @@index([contentId, contentType])
+}
+
+model ContentResonanceScore {
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contentId        String // Reference to the content/insight/recommendation
+  contentType      String // "TRENDING_TOPIC", "VIRAL_POTENTIAL", "BRAND_SIGNAL", "RECOMMENDATION", "INSIGHT"
+  // Behavioral metrics
+  viewCount        Int      @default(0)
+  totalTimeSpent   Int      @default(0) // Total seconds spent viewing
+  avgTimeSpent     Float? // Average time per view
+  clickCount       Int      @default(0)
+  shareCount       Int      @default(0)
+  saveCount        Int      @default(0)
+  // Engagement depth
+  maxScrollDepth   Float? // Deepest scroll percentage
+  returnVisits     Int      @default(0) // How many times user returned to this content
+  // Feedback correlation
+  explicitFeedback String? // "positive", "negative", "neutral" from thumbs up/down
+  feedbackScore    Float? // Numerical feedback score if available
+  // Resonance calculation
+  resonanceScore   Float    @default(0) // Calculated resonance score (0-1)
+  lastInteraction  DateTime @default(now())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([userId, contentId, contentType])
+  @@index([userId, resonanceScore])
+  @@index([contentType, resonanceScore])
+}
+
+model UserEngagementPattern {
+  id                     String   @id @default(cuid())
+  userId                 String   @unique
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Behavioral patterns
+  preferredSections      String // JSON array of most visited sections
+  peakActivityHours      String // JSON array of hours when user is most active
+  avgSessionDuration     Float? // Average session duration in minutes
+  contentConsumptionRate Float? // Content items viewed per session
+  // Interaction preferences
+  preferredContentTypes  String // JSON array of content types user engages with most
+  interactionStyle       String? // "browser", "deep_reader", "quick_scanner"
+  feedbackFrequency      Float? // How often user provides explicit feedback
+  // Learning insights
+  topResonatingTopics    String // JSON array of topics that resonate most
+  contentLengthPref      String? // "short", "medium", "long"
+  visualContentPref      Boolean  @default(false) // Prefers visual over text content
+  // Metadata
+  lastAnalyzed           DateTime @default(now())
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@index([lastAnalyzed])
+}
+
 model ContentStrategy {
   id           String   @id @default(cuid())
   userId       String   @unique
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   strategyData String?
+  // Optional user-edited weekly preferences to influence regeneration (stored as JSON string)
+  preferences  String?
   status       String   @default("NONE") // NONE, GENERATING, COMPLETED, FAILED
   error        String?
   createdAt    DateTime @default(now())
@@ -300,6 +491,19 @@ model BrandSignal {
   contentPillars     String? // JSON array of most successful content pillars
   lastUpdatedAt      DateTime @updatedAt
   createdAt          DateTime @default(now())
+}
+
+model BrandSignalSuggestion {
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  suggestions      String // JSON object containing all suggestion categories
+  confidenceScore  Float    @default(0)
+  brandHealthScore Float    @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([userId])
 }
 
 model RecommendationFeedback {
@@ -416,22 +620,55 @@ model BlogPost {
   @@index([isPublished, publishedAt])
 }
 
+// Public share links for resources like generated content
+
+model PublicShare {
+  id        String    @id @default(cuid()) // shareId
+  userId    String
+  type      String // e.g., "GENERATED_CONTENT"
+  targetId  String // e.g., GeneratedContent.id
+  createdAt DateTime  @default(now())
+  expiresAt DateTime?
+
+  @@index([type, targetId])
+  @@index([userId, createdAt])
+}
+
+model SocialMediaInsights {
+  id               String    @id @default(cuid())
+  userId           String    @unique
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platformInsights String? // JSON object with platform-specific insights
+  lastAnalyzedAt   DateTime  @default(now())
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  Account          Account[]
+}
+
 model BrandContext {
-  id                 String   @id @default(cuid())
-  userId             String   @unique
-  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  industry           String?
-  niche              String?
-  targetAudience     String? // JSON object
-  brandPersonality   String? // JSON object
-  competitorAnalysis String? // JSON object
-  brandValues        String? // JSON array
-  contentThemes      String? // JSON array
-  riskTolerance      String   @default("medium") // low, medium, high
-  trendAdoptionSpeed String   @default("moderate") // conservative, moderate, early-adopter
-  lastAnalyzedAt     DateTime @default(now())
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id                     String   @id @default(cuid())
+  userId                 String   @unique
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  industry               String?
+  niche                  String?
+  targetAudience         String? // JSON object
+  brandPersonality       String? // JSON object
+  competitorAnalysis     String? // JSON object
+  brandValues            String? // JSON array
+  contentThemes          String? // JSON array
+  riskTolerance          String   @default("medium") // low, medium, high
+  trendAdoptionSpeed     String   @default("moderate") // conservative, moderate, early-adopter
+  communicationStyle     String? // Brand communication style and tone
+  keyValues              String? // JSON array of core brand values
+  visualStyle            String? // Brand visual identity description
+  competitivePositioning String? // Market positioning analysis
+  contentOpportunities   String? // JSON array of content opportunities
+  brandVoiceKeywords     String? // JSON array of brand voice keywords
+  industryContext        String? // Industry context and market analysis
+  analysisStatus         String   @default("PENDING") // PENDING, RUNNING, COMPLETED, FAILED
+  lastAnalyzedAt         DateTime @default(now())
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
 }
 
 model TrendingTopic {
@@ -505,6 +742,26 @@ model SavedInsight {
   @@index([createdAt])
 }
 
+model TrendSearchHistory {
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  query            String // The search query/description
+  region           String? // Optional region filter
+  category         String? // Optional category filter
+  includeInstagram Boolean  @default(true)
+  includeTikTok    Boolean  @default(true)
+  includeTwitter   Boolean  @default(true)
+  includeGoogle    Boolean  @default(true)
+  timeframe        String?  @default("24h")
+  resultsCount     Int      @default(0) // Number of trends found
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([userId, region, category])
+}
+
 // Credit System Models
 
 model UserCredits {
@@ -560,5 +817,220 @@ model Waitlist {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  @@index([createdAt])
+}
+
+// Ripple AI Agent Models
+
+model RippleConversation {
+  id           String          @id @default(cuid())
+  userId       String
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title        String? // Auto-generated conversation title
+  context      String? // JSON object with conversation context (e.g., which page it started from)
+  status       String          @default("active") // active, archived, completed
+  lastActiveAt DateTime        @default(now())
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  messages     RippleMessage[]
+  actions      RippleAction[]
+
+  @@index([userId, lastActiveAt])
+  @@index([status])
+}
+
+model RippleMessage {
+  id             String             @id @default(cuid())
+  conversationId String
+  conversation   RippleConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           String // "user", "assistant", "system"
+  content        String // The message content
+  messageType    String             @default("text") // "text", "action_request", "action_result", "context_update"
+  metadata       String? // JSON object with additional message data (attachments, context, etc.)
+  tokenCount     Int? // Track token usage for cost management
+  processingTime Int? // Processing time in milliseconds
+  createdAt      DateTime           @default(now())
+
+  @@index([conversationId, createdAt])
+  @@index([role])
+}
+
+model RippleMemory {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  memoryType  String // "brand_voice", "user_preference", "performance_pattern", "content_style", "audience_insight"
+  memoryKey   String // Specific identifier for the memory (e.g., "preferred_tone", "best_posting_time")
+  memoryValue String // JSON object containing the memory data
+  confidence  Float    @default(1) // Confidence score 0-1
+  source      String // Where this memory came from ("conversation", "performance_analysis", "user_feedback")
+  lastUpdated DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, memoryType, memoryKey])
+  @@index([userId, memoryType])
+  @@index([confidence])
+}
+
+model RippleAction {
+  id             String             @id @default(cuid())
+  conversationId String
+  conversation   RippleConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  actionType     String // "create_post", "schedule_post", "reply_comment", "analyze_performance", "generate_content"
+  actionData     String // JSON object with action-specific data
+  status         String             @default("pending") // "pending", "in_progress", "completed", "failed"
+  result         String? // JSON object with action results
+  error          String? // Error message if action failed
+  executedAt     DateTime?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  feedback       RippleFeedback[]
+
+  @@index([userId, actionType])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model RippleFeedback {
+  id           String        @id @default(cuid())
+  userId       String
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  actionId     String?
+  action       RippleAction? @relation(fields: [actionId], references: [id], onDelete: SetNull)
+  feedbackType String // "thumbs_up", "thumbs_down", "rating", "correction", "suggestion"
+  rating       Int? // 1-5 rating if applicable
+  comment      String? // User's feedback comment
+  category     String? // "accuracy", "helpfulness", "relevance", "creativity"
+  metadata     String? // JSON object with additional feedback data
+  createdAt    DateTime      @default(now())
+
+  @@index([userId, feedbackType])
+  @@index([actionId])
+  @@index([createdAt])
+}
+
+model RippleLearning {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  learningType  String // "success_pattern", "failure_pattern", "user_preference", "content_optimization"
+  pattern       String // JSON object describing the learned pattern
+  evidence      String // JSON array of evidence supporting this learning
+  confidence    Float    @default(0) // Confidence in this learning (0-1)
+  impactScore   Float? // How much this learning has improved performance
+  lastValidated DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId, learningType])
+  @@index([confidence])
+  @@index([lastValidated])
+}
+
+// Comprehensive Notification System
+
+model Notification {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title        String
+  message      String
+  type         String // "engagement", "trend", "content", "system", "achievement", "reminder", "insight"
+  category     String? // Additional categorization for filtering
+  priority     String    @default("normal") // "low", "normal", "high", "urgent"
+  status       String    @default("unread") // "unread", "read", "dismissed", "archived"
+  // Deep linking and navigation
+  actionType   String? // "navigate", "modal", "external", "none"
+  actionUrl    String? // Deep link URL or route
+  actionData   String? // JSON object with additional action data
+  // Rich content support
+  imageUrl     String? // Optional image/icon for the notification
+  metadata     String? // JSON object with additional notification data
+  // Scheduling and expiration
+  scheduledFor DateTime? // For future notifications
+  expiresAt    DateTime? // When notification should be auto-archived
+  // Tracking
+  readAt       DateTime? // When notification was marked as read
+  clickedAt    DateTime? // When notification was clicked
+  dismissedAt  DateTime? // When notification was dismissed
+  // System fields
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([userId, status, createdAt])
+  @@index([userId, type])
+  @@index([priority, createdAt])
+  @@index([scheduledFor])
+  @@index([expiresAt])
+}
+
+model BrandIntelligence {
+  id                   String    @id @default(cuid())
+  userId               String    @unique
+  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Advanced Brand Profiling
+  brandDNA             String? // JSON: Core brand DNA analysis
+  marketPosition       String? // JSON: Detailed market positioning
+  audienceSegments     String? // JSON: Detailed audience segmentation
+  competitiveLandscape String? // JSON: Comprehensive competitive analysis
+  // Content Intelligence
+  contentPerformance   String? // JSON: Historical content performance patterns
+  viralPredictors      String? // JSON: Viral content predictors for this brand
+  engagementDrivers    String? // JSON: What drives engagement for this brand
+  contentGaps          String? // JSON: Identified content opportunities
+  // Platform Intelligence
+  platformOptimization String? // JSON: Platform-specific optimization strategies
+  crossPlatformSynergy String? // JSON: Cross-platform content synergies
+  algorithmInsights    String? // JSON: Platform algorithm insights
+  // Predictive Intelligence
+  trendPrediction      String? // JSON: Trend prediction models
+  seasonalPatterns     String? // JSON: Seasonal content patterns
+  riskAssessment       String? // JSON: Brand risk assessment
+  opportunityMapping   String? // JSON: Opportunity identification
+  // Learning & Adaptation
+  learningInsights     String? // JSON: Machine learning insights
+  adaptationHistory    String? // JSON: How brand strategy has evolved
+  performanceMetrics   String? // JSON: Key performance indicators
+  // Real-time Intelligence
+  realTimeSignals      String? // JSON: Real-time brand signals
+  alertTriggers        String? // JSON: Alert configuration
+  monitoringTargets    String? // JSON: What to monitor
+  intelligenceScore    Float     @default(0) // 0-100 intelligence completeness score
+  lastUpdated          DateTime  @default(now())
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  Account              Account[]
+}
+
+model BrandInsight {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type            String // 'market_shift', 'competitor_move', 'audience_behavior', 'content_opportunity', 'risk_alert'
+  category        String // 'strategic', 'tactical', 'operational', 'competitive'
+  priority        String    @default("medium") // 'low', 'medium', 'high', 'critical'
+  title           String
+  description     String
+  insight         String // JSON: Detailed insight data
+  actionable      Boolean   @default(true)
+  actionItems     String? // JSON: Suggested actions
+  impactScore     Float     @default(0) // 0-10 potential impact
+  confidenceScore Float     @default(0) // 0-1 confidence in insight
+  sourceData      String? // JSON: Data sources used
+  relatedTrends   String? // JSON: Related trending topics
+  status          String    @default("new") // 'new', 'reviewed', 'acting', 'completed', 'dismissed'
+  reviewedAt      DateTime?
+  completedAt     DateTime?
+  expiresAt       DateTime? // When insight becomes stale
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  Account         Account?  @relation(fields: [accountId], references: [id])
+  accountId       String?
+
+  @@index([userId, type, priority])
+  @@index([userId, status])
   @@index([createdAt])
 }
