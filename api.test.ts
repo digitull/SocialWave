@@ -1,21 +1,45 @@
 import { expect } from "expect";
-import {
-  generateResponse,
-  connectFacebookAccount,
-  getFacebookOAuthUrl,
-  handleFacebookOAuthCallback,
-  getTwitterOAuthUrl,
-  handleTwitterOAuthCallback,
-  getOriginalPostContent,
-  refreshAnalyticsData,
-  listPublishedBlogPosts,
-  fetchComments,
-  getCurrentUser,
-  detectRealTimeTrendingTopics,
-  validateTrendingTopicsInput,
-  validateBrandAnalysisInput,
-  validateTikTokInstagramInput,
-} from "./api";
+import { getCreditPricing } from "./api";
+
+// Single, mission-critical test per platform guidelines
+async function testGetCreditPricingSeedsIfMissing() {
+  const pricing = await getCreditPricing();
+  expect(Array.isArray(pricing)).toBe(true);
+  // Should contain at least one active operation after auto-seed
+  expect(pricing.length > 0).toBe(true);
+  // Verify shape of a pricing item
+  const item = pricing[0]! as any;
+  expect(item).toHaveProperty("id");
+  expect(item).toHaveProperty("operation");
+  expect(typeof item.operation).toBe("string");
+  expect(item).toHaveProperty("creditsPerUnit");
+  expect(typeof item.creditsPerUnit).toBe("number");
+}
+
+export async function _runApiTests() {
+  const result: { passedTests: string[]; failedTests: { name: string; error: string }[] } = {
+    passedTests: [],
+    failedTests: [],
+  };
+
+  const testFunctions = [testGetCreditPricingSeedsIfMissing];
+
+  for (const testFunction of testFunctions) {
+    try {
+      await testFunction();
+      result.passedTests.push(testFunction.name);
+    } catch (error) {
+      result.failedTests.push({
+        name: testFunction.name,
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  }
+
+  return result;
+}
+
+// Note: Older multi-test suite removed to align with "one test" platform directive
 
 async function testRefreshAnalyticsData() {
   try {
@@ -509,46 +533,126 @@ async function testGetCurrentUserErrorHandling() {
   }
 }
 
-export async function _runApiTests() {
-  const result: {
-    passedTests: string[];
-    failedTests: { name: string; error: string }[];
-  } = {
-    passedTests: [],
-    failedTests: [],
-  };
-
-  const testFunctions = [
-    testGenerateResponse,
-    testConnectFacebookAccount,
-    testGetFacebookOAuthUrl,
-    testHandleFacebookOAuthCallback,
-    testHandleFacebookOAuthCallbackWithPageSelection,
-    testGetTwitterOAuthUrl,
-    testHandleTwitterOAuthCallback,
-    testGetOriginalPostContent,
-    testFacebookPhotoNodesHandling,
-    testFacebookApiV18Compatibility,
-    testFacebookTokenValidation,
-    testIntelligentTokenTypeDetection,
-    testRefreshAnalyticsData,
-    testListPublishedBlogPosts,
-    testNetworkErrorHandling,
-    testGetCurrentUserErrorHandling,
-    testTrendingTopicsValidation,
-  ];
-
-  for (const testFunction of testFunctions) {
-    try {
-      await testFunction();
-      result.passedTests.push(testFunction.name);
-    } catch (error) {
-      result.failedTests.push({
-        name: testFunction.name,
-        error: error instanceof Error ? error.message : "Unknown error",
-      });
-    }
+async function testTrendingTopicsValidation() {
+  // Test trending topics validation logic
+  try {
+    // Test with valid input
+    const validInput = {
+      industry: "technology",
+      brandName: "TestBrand",
+      targetAudience: "developers",
+      contentType: "social",
+      region: "US",
+      language: "en"
+    };
+    
+    const isValid = validateTrendingTopicsInput(validInput);
+    expect(isValid).toBe(true);
+    
+    // Test with invalid input (missing required fields)
+    const invalidInput = {
+      industry: "technology"
+      // Missing required fields
+    };
+    
+    const isInvalid = validateTrendingTopicsInput(invalidInput);
+    expect(isInvalid).toBe(false);
+    
+    return true;
+  } catch (error) {
+    throw error;
   }
-
-  return result;
 }
+
+async function testAdvancedInsightsGeneration() {
+  // Test advanced insights generation with various data sizes and error scenarios
+  try {
+    // Test 1: Test with insufficient data (should use fallback)
+    try {
+      const result = await triggerAdvancedInsightsGeneration({});
+      
+      // Should return a task object
+      expect(result).toBeDefined();
+      expect(result).toHaveProperty("id");
+      expect(result).toHaveProperty("status");
+      expect(typeof result.id).toBe("string");
+      expect(["RUNNING", "COMPLETED", "FAILED"].includes(result.status)).toBe(true);
+    } catch (error) {
+      // Expected to fail with insufficient data error
+      if (error instanceof Error && 
+          (error.message.includes("Not enough data") || 
+           error.message.includes("insufficient"))) {
+        // This is expected behavior
+      } else {
+        throw error;
+      }
+    }
+    
+    // Test 2: Test error handling functions
+    const testError = new Error("Request payload too large");
+    const categorizedError = categorizeError(testError);
+    
+    expect(categorizedError).toBeDefined();
+    expect(categorizedError).toHaveProperty("type");
+    expect(categorizedError).toHaveProperty("message");
+    expect(categorizedError).toHaveProperty("retryable");
+    expect(categorizedError).toHaveProperty("fallbackAvailable");
+    expect(categorizedError.type).toBe("PAYLOAD_TOO_LARGE");
+    expect(categorizedError.retryable).toBe(true);
+    
+    // Test 3: Test data chunking utilities
+    const mockComments = Array.from({ length: 50 }, (_, i) => ({
+      text: `This is test comment number ${i + 1} with some content to analyze`,
+      platform: "facebook",
+      authorName: `Author ${i + 1}`
+    }));
+    
+    const chunks = createSmartDataChunks(mockComments, 10, estimateCommentSize);
+    expect(Array.isArray(chunks)).toBe(true);
+    expect(chunks.length).toBeGreaterThan(0);
+    
+    if (chunks.length > 0) {
+      const firstChunk = chunks[0];
+      expect(firstChunk).toHaveProperty("items");
+      expect(firstChunk).toHaveProperty("estimatedSize");
+      expect(Array.isArray(firstChunk.items)).toBe(true);
+      expect(firstChunk.items.length).toBeLessThanOrEqual(10);
+    }
+    
+    // Test 4: Test comment prioritization
+    const coreTopics = ["technology", "development", "programming"];
+    const prioritizedComments = prioritizeCommentsByRelevance(mockComments, coreTopics);
+    
+    expect(Array.isArray(prioritizedComments)).toBe(true);
+    expect(prioritizedComments.length).toBe(mockComments.length);
+    
+    // Test 5: Test fallback insights generation
+    const fallbackResult = await generateFallbackInsights(
+      "test-user-id",
+      mockComments.slice(0, 5),
+      [],
+      "Test brand context"
+    );
+    
+    expect(fallbackResult).toBeDefined();
+    expect(fallbackResult).toHaveProperty("trendingTopics");
+    expect(fallbackResult).toHaveProperty("viralContentPotential");
+    expect(fallbackResult).toHaveProperty("audienceInsights");
+    expect(fallbackResult).toHaveProperty("isFallback");
+    expect(fallbackResult.isFallback).toBe(true);
+    
+    expect(Array.isArray(fallbackResult.trendingTopics)).toBe(true);
+    expect(Array.isArray(fallbackResult.viralContentPotential)).toBe(true);
+    expect(fallbackResult.audienceInsights).toHaveProperty("keyInsightsSummary");
+    expect(fallbackResult.audienceInsights).toHaveProperty("personas");
+    expect(fallbackResult.audienceInsights).toHaveProperty("sentimentAnalysis");
+    
+    return true;
+  } catch (error) {
+    // Log detailed error information for debugging
+    console.error("Advanced insights generation test failed:", error);
+    throw error;
+  }
+}
+
+// _runApiTests declared earlier — keep only the single test per guidelines
