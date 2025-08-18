@@ -14,14 +14,8 @@
       "dependencies": ["content_storage"]
     },
     "content_storage": {
-      "type": "custom",
-      "candid": "src/content_storage/service.did",
-      "wasm": "content_storage.wasm",
-      "remote": {
-        "id": {
-          "ic": "ryjl3-tyaaa-aaaaa-aaaba-cai"
-        }
-      }
+      "type": "motoko",
+      "main": "src/content_storage/main.mo"
     }
   },
   "networks": {
