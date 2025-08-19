@@ -16,14 +16,19 @@
     "content_storage": {
       "type": "motoko",
       "main": "src/content_storage/main.mo"
+    },
+    "analytics": {
+      "type": "motoko",
+      "main": "src/analytics/main.mo",
+      "dependencies": ["content_storage", "socialwave_backend"]
     }
   },
   "networks": {
     "local": {
-      "bind": "127.0.0.1:4943",
+      "bind": "127.0.0.1:8001",
       "type": "ephemeral",
       "replica": {
-        "port": 4943,
+        "port": 8001,
         "subnet_type": "application"
       }
     },
@@ -42,7 +47,7 @@
       "packtool": ""
     },
     "replica": {
-      "port": 4943,
+      "port": 8001,
       "subnet_type": "application"
     }
   },
